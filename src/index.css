@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply bg-cream text-ink antialiased;
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background: #1c211a;
+  color: #f5f5f4;
+}
+
+html.dark .bg-cream,
+html.dark .bg-cream-50,
+html.dark .bg-cream-100 {
+  background-color: #1c211a;
+}
+
+html.dark .bg-white {
+  background-color: #293027;
+}
+
+html.dark .bg-cream-200,
+html.dark .bg-cream-300 {
+  background-color: #3a4337;
+}
+
+html.dark .text-ink,
+html.dark .text-ink-700,
+html.dark .text-ink-600 {
+  color: #f5f5f4;
+}
+
+html.dark .text-ink-500,
+html.dark .text-ink-400 {
+  color: #c4c8bf;
+}
+
+html.dark [class*='border-cream-'] {
+  border-color: #4b5847;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #293027;
+  color: #f5f5f4;
+}
+
+:focus-visible {
+  outline: 3px solid #d49a4a;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #E8E0CD;
+}
+::-webkit-scrollbar-thumb {
+  background: #A67C52;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #856341;
+}
