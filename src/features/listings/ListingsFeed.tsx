@@ -32,6 +32,7 @@ export function ListingsFeed() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [errorDetail, setErrorDetail] = useState('');
   const [retryKey, setRetryKey] = useState(0);
 
   // Filtros
@@ -45,19 +46,9 @@ export function ListingsFeed() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
-    // 🔧 FIX 1: el efecto depende de `fbUser`. Cuando cambia el estado
-    // de autenticación (login/logout), el listener anterior se cierra
-    // limpiamente y se crea uno nuevo desde cero.
-    //
-    // 🔧 FIX 2: la consulta pública (status == 'published') siempre debería
-    // pasar las reglas de seguridad, sin importar el estado de auth. Si
-    // Firestore devuelve un error aquí, es casi siempre un fallo TRANSITORIO
-    // del SDK al reconectar el canal de comunicación (sobre todo justo
-    // después de un login o una carga en frío), no un problema real de
-    // permisos. Por eso reintentamos automáticamente en vez de rendirnos
-    // al primer error.
     setLoading(true);
     setLoadError(false);
+    setErrorDetail('');
 
     let cancelled = false;
     let retryTimeout: ReturnType<typeof setTimeout>;
@@ -86,13 +77,16 @@ export function ListingsFeed() {
           if (cancelled) return;
 
           if (attempt < MAX_RETRIES) {
-            // Backoff simple: 500ms, 1000ms, 1500ms...
             retryTimeout = setTimeout(() => {
               if (!cancelled) subscribe(attempt + 1);
             }, 500 * attempt);
           } else {
             setLoading(false);
             setLoadError(true);
+            // 🔍 Temporal: guardamos el código y mensaje exactos para diagnosticar
+            setErrorDetail(
+              `${(err as { code?: string }).code || 'sin código'}: ${err.message || 'sin mensaje'}`
+            );
           }
         }
       );
@@ -353,7 +347,7 @@ export function ListingsFeed() {
       {loading ? (
         <FeedSkeleton />
       ) : loadError ? (
-        <ErrorFeed onRetry={() => setRetryKey((k) => k + 1)} />
+        <ErrorFeed onRetry={() => setRetryKey((k) => k + 1)} detail={errorDetail} />
       ) : filtered.length === 0 ? (
         <EmptyFeed hasActiveFilters={hasActiveFilters} onClear={clearFilters} />
       ) : (
@@ -405,8 +399,9 @@ function FeedSkeleton() {
 
 // ─────────────────────────────────────────────────
 // Estado de error (tras agotar los reintentos automáticos)
+// 🔍 detail es TEMPORAL para diagnosticar — quitar cuando resolvamos esto
 // ─────────────────────────────────────────────────
-function ErrorFeed({ onRetry }: { onRetry: () => void }) {
+function ErrorFeed({ onRetry, detail }: { onRetry: () => void; detail?: string }) {
   return (
     <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
       <h3 className="text-lg font-bold text-red-700">
@@ -415,6 +410,11 @@ function ErrorFeed({ onRetry }: { onRetry: () => void }) {
       <p className="mx-auto mt-2 max-w-sm text-sm text-red-600">
         Ocurrió un problema de conexión. Intenta de nuevo.
       </p>
+      {detail && (
+        <p className="mx-auto mt-3 max-w-md break-words rounded-lg bg-red-100 p-2 font-mono text-xs text-red-800">
+          {detail}
+        </p>
+      )}
       <button
         onClick={onRetry}
         className="mt-5 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
