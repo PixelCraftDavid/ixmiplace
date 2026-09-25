@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, Timestamp, where, onSnapshot } from 'firebase/firestore';
 import { Map, Search, SlidersHorizontal, X } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { CATEGORIES, OPERATIONS } from '../../lib/constants';
@@ -72,7 +72,7 @@ export function ListingsFeed() {
       const q = query(
         collection(db, 'listings'),
         where('status', '==', 'published'),
-        where('expiresAt', '>', Date.now())
+        where('expiresAt', '>', Timestamp.now())
       );
 
       unsub = onSnapshot(
