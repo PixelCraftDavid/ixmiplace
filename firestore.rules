@@ -20,7 +20,6 @@ service cloud.firestore {
 
     function activePublishedListing(data) {
       return data.status == 'published'
-        && data.expiresAt is int
         && data.expiresAt > request.time.toMillis();
     }
 
@@ -79,6 +78,8 @@ service cloud.firestore {
       allow create: if verified()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.ownerEmailVerified == true
+        && request.resource.data.expiresAt is int
+        && request.resource.data.expiresAt > request.time.toMillis()
         && request.resource.data.keys().hasOnly([
           'ownerId', 'ownerEmailVerified', 'title', 'description',
           'category', 'operation', 'price', 'priceUnit', 'colonia',
