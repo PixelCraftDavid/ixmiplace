@@ -6,6 +6,8 @@ import { db } from '../../lib/firebase';
 import type { Listing, PublicProfile } from '../../types/models';
 import { ListingCard } from '../listings/ListingCard';
 
+const LISTING_EXPIRY_QUERY_BUFFER_MS = 60_000;
+
 export function PublicProfilePage() {
   const { id } = useParams<{ id: string }>();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
@@ -19,7 +21,17 @@ export function PublicProfilePage() {
       try {
         const [profileSnap, listingsSnap] = await Promise.all([
           getDoc(doc(db, 'publicProfiles', profileId)),
-          getDocs(query(collection(db, 'listings'), where('status', '==', 'published'))),
+          getDocs(
+            query(
+              collection(db, 'listings'),
+              where('status', '==', 'published'),
+              where(
+                'expiresAt',
+                '>',
+                Date.now() + LISTING_EXPIRY_QUERY_BUFFER_MS
+              )
+            )
+          ),
         ]);
         if (profileSnap.exists()) setProfile(profileSnap.data() as PublicProfile);
         const publicListings = listingsSnap.docs
