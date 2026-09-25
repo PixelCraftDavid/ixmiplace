@@ -39,7 +39,16 @@ export const listingSchema = z
     .positive('El precio debe ser mayor a 0')
     .max(LISTING_LIMITS.priceMax, 'Precio demasiado alto'),
 
-    priceUnit: z.enum(['mes', 'noche', 'total']).optional(),
+    priceUnit: z.enum(['mes', 'noche', 'total', 'estancia']).optional(),
+
+    establishmentName: z.string().trim().max(100).optional().or(z.literal('')),
+    roomType: z.string().trim().max(80).optional().or(z.literal('')),
+    stayDurationHours: z.number().int().min(1).max(24).optional(),
+    checkInTime: z.string().optional().or(z.literal('')),
+    checkOutTime: z.string().optional().or(z.literal('')),
+    reception24h: z.boolean().optional(),
+    foodAvailable: z.boolean().optional(),
+    foodDescription: z.string().trim().max(300).optional().or(z.literal('')),
 
     colonia: z
       .string()
@@ -73,7 +82,7 @@ export const listingSchema = z
     showPhone: z.boolean().default(true),
 
     availability: z
-      .enum(['available', 'reserved', 'rented', 'sold', 'unavailable', 'unconfirmed'])
+      .enum(['available', 'occupied', 'reserved', 'rented', 'sold', 'unavailable', 'unconfirmed'])
       .optional(),
   })
   // Validación condicional: unidad de precio coherente con la operación
@@ -87,6 +96,24 @@ export const listingSchema = z
     {
       message: 'Para venta, la unidad de precio debe ser "total" o vacía',
       path: ['priceUnit'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.category !== 'hotel' && data.category !== 'motel') return true;
+      if (data.operation !== 'hospedaje') return false;
+      if (!data.establishmentName || data.establishmentName.length < 2) return false;
+      if (!data.roomType || data.roomType.length < 2) return false;
+      if (!data.checkInTime || !data.checkOutTime) return false;
+      if (data.category === 'hotel' && data.priceUnit !== 'noche') return false;
+      if (data.category === 'motel' && !['estancia', 'noche'].includes(data.priceUnit ?? '')) return false;
+      if (data.category === 'motel' && data.priceUnit === 'estancia' && !data.stayDurationHours) return false;
+      if (data.foodAvailable && (!data.foodDescription || data.foodDescription.length < 3)) return false;
+      return true;
+    },
+    {
+      message: 'Completa los datos de hospedaje, habitación, horario y precio.',
+      path: ['roomType'],
     }
   );
 

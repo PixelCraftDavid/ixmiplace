@@ -61,6 +61,16 @@ export function CreateListingPage() {
     if (data.areaM2 && data.areaM2 > 0) listing.areaM2 = data.areaM2;
     if (data.amenities && data.amenities.length > 0)
       listing.amenities = data.amenities;
+    if (data.category === 'hotel' || data.category === 'motel') {
+      if (data.establishmentName?.trim()) listing.establishmentName = data.establishmentName.trim();
+      if (data.roomType?.trim()) listing.roomType = data.roomType.trim();
+      if (data.stayDurationHours) listing.stayDurationHours = data.stayDurationHours;
+      if (data.checkInTime) listing.checkInTime = data.checkInTime;
+      if (data.checkOutTime) listing.checkOutTime = data.checkOutTime;
+      listing.reception24h = data.reception24h ?? false;
+      listing.foodAvailable = data.foodAvailable ?? false;
+      if (data.foodAvailable && data.foodDescription?.trim()) listing.foodDescription = data.foodDescription.trim();
+    }
 
     await addDoc(collection(db, 'listings'), listing);
 
@@ -105,11 +115,7 @@ export function CreateListingPage() {
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
               <div>
                 <p className="font-semibold">Importante</p>
-                <p className="mt-1 leading-relaxed">
-                  Después de publicar, campos como categoría, operación, zona,
-                  precio y WhatsApp ya no podrán modificarse. Si necesitas
-                  cambiarlos, tendrás que crear otra publicación.
-                </p>
+                <p className="mt-1 leading-relaxed">Despues de publicar no podras cambiar categoria, operacion, zona ni WhatsApp. En hoteles y moteles podras cambiar la tarifa, disponibilidad y servicios.</p>
               </div>
             </div>
           </div>
@@ -174,11 +180,7 @@ export function CreateListingPage() {
               ¿Estás de acuerdo con esta decisión?
             </h2>
 
-            <p className="mt-3 text-sm leading-relaxed text-ink-600">
-              Una vez publicada, no podrás cambiar la categoría, operación, zona,
-              precio, ubicación ni WhatsApp. Si necesitas modificarlos, tendrás que
-              crear otra publicación.
-            </p>
+            <p className="mt-3 text-sm leading-relaxed text-ink-600">Al publicar no podras cambiar categoria, operacion, zona, ubicacion ni WhatsApp. En hoteles y moteles podras actualizar la tarifa, disponibilidad y servicios de cada habitacion.</p>
 
             <div className="mt-6 flex gap-3">
               <button

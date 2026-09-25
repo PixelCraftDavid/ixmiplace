@@ -23,7 +23,7 @@ export type ListingCategory =
 
 export type ListingOperation = 'renta' | 'venta' | 'hospedaje';
 
-export type PriceUnit = 'mes' | 'noche' | 'total';
+export type PriceUnit = 'mes' | 'noche' | 'total' | 'estancia';
 
 export type ListingStatus =
   | 'draft'      // borrador (no usado en V1, pero útil después)
@@ -34,6 +34,7 @@ export type ListingStatus =
 
 export type AvailabilityStatus =
   | 'available'    // 🟢
+  | 'occupied'     // habitación ocupada
   | 'reserved'     // 🟡 apartada
   | 'rented'       // 🔴 rentada
   | 'sold'         // 🔴 vendida
@@ -66,6 +67,16 @@ export interface Listing {
   parkingSpots?: number;
   areaM2?: number;
   amenities?: string[];   // ej. ["agua", "luz", "internet", "amueblado"]
+
+  // Datos adicionales para anuncios de habitaciones de hotel o motel
+  establishmentName?: string;
+  roomType?: string;
+  stayDurationHours?: number;
+  checkInTime?: string;
+  checkOutTime?: string;
+  reception24h?: boolean;
+  foodAvailable?: boolean;
+  foodDescription?: string;
 
   // Estado
   status: ListingStatus;

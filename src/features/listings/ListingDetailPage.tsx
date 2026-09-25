@@ -350,6 +350,21 @@ export function ListingDetailPage() {
             </section>
 
             {/* DETALLES */}
+            {(listing.category === 'hotel' || listing.category === 'motel') && (
+              <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-lg font-bold text-ink">Informacion de hospedaje</h2>
+                <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                  {listing.establishmentName && <div><dt className="text-ink-400">Establecimiento</dt><dd className="font-medium text-ink-700">{listing.establishmentName}</dd></div>}
+                  {listing.roomType && <div><dt className="text-ink-400">Habitacion</dt><dd className="font-medium text-ink-700">{listing.roomType}</dd></div>}
+                  {listing.checkInTime && <div><dt className="text-ink-400">Entrada</dt><dd className="font-medium text-ink-700">{listing.checkInTime}</dd></div>}
+                  {listing.checkOutTime && <div><dt className="text-ink-400">Salida</dt><dd className="font-medium text-ink-700">{listing.checkOutTime}</dd></div>}
+                  {listing.reception24h && <div><dd className="font-medium text-ink-700">Recepcion las 24 horas</dd></div>}
+                  {listing.category === 'motel' && listing.stayDurationHours && listing.priceUnit === 'estancia' && <div><dt className="text-ink-400">Duracion de estancia</dt><dd className="font-medium text-ink-700">{listing.stayDurationHours} horas</dd></div>}
+                  {listing.category === 'motel' && listing.foodAvailable && <div className="sm:col-span-2"><dt className="text-ink-400">Comida y bebidas</dt><dd className="font-medium text-ink-700">{listing.foodDescription}</dd></div>}
+                </dl>
+              </section>
+            )}
+
             {hasDetails && (
               <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 text-lg font-bold text-ink">

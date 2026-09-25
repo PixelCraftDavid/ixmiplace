@@ -18,9 +18,9 @@ import {
   CATEGORIES,
   OPERATIONS,
   AMENITIES,
+  LODGING_AMENITIES,
   AVAILABILITY,
   priceUnitsFor,
-  type Amenity,
 } from '../../lib/constants';
 import { ImageUploader } from './ImageUploader';
 import { LocationPicker } from './LocationPicker';
@@ -31,6 +31,7 @@ interface ListingFormProps {
   onSubmit: (data: ListingInput, photos: string[], photoPublicIds: string[]) => Promise<void>;
   submitLabel?: string;
   lockFixedFields?: boolean;
+  lockPrice?: boolean;
   immutableFieldsMessage?: string;
   requireConfirmation?: boolean;
   onConfirmSubmit?: (data: ListingInput, photos: string[], photoPublicIds: string[]) => void;
@@ -41,6 +42,7 @@ export function ListingForm({
   onSubmit,
   submitLabel = 'Publicar propiedad',
   lockFixedFields = false,
+  lockPrice = lockFixedFields,
   immutableFieldsMessage,
   requireConfirmation = false,
   onConfirmSubmit,
@@ -77,6 +79,14 @@ export function ListingForm({
       amenities: [],
       showPhone: true,
       availability: 'available',
+      establishmentName: '',
+      roomType: '',
+      stayDurationHours: 3,
+      checkInTime: '15:00',
+      checkOutTime: '12:00',
+      reception24h: false,
+      foodAvailable: false,
+      foodDescription: '',
       lat: 20.4833,
       lng: -99.2167,
       ...defaultValues,
@@ -84,7 +94,24 @@ export function ListingForm({
   });
 
   const operation = watch('operation');
-  const priceUnits = priceUnitsFor(operation);
+  const category = watch('category');
+  const priceUnit = watch('priceUnit');
+  const foodAvailable = watch('foodAvailable');
+  const isLodging = category === 'hotel' || category === 'motel';
+  const isMotel = category === 'motel';
+  const priceUnits = isMotel
+    ? [
+        { value: 'estancia' as const, label: 'por estancia' },
+        { value: 'noche' as const, label: 'por noche' },
+      ]
+    : category === 'hotel'
+      ? [{ value: 'noche' as const, label: 'por noche' }]
+      : priceUnitsFor(operation);
+  const categoryRegistration = register('category');
+  const amenityOptions = isLodging ? LODGING_AMENITIES : AMENITIES;
+  const availabilityOptions = isLodging
+    ? AVAILABILITY.filter((item) => ['available', 'occupied', 'reserved', 'unavailable', 'unconfirmed'].includes(item.value))
+    : AVAILABILITY.filter((item) => item.value !== 'occupied');
 
   async function handleFormSubmit(data: ListingInput) {
     setSubmitError('');
@@ -159,7 +186,18 @@ export function ListingForm({
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Categoría" required error={errors.category?.message}>
             <select
-              {...register('category')}
+              {...categoryRegistration}
+              onChange={(event) => {
+                categoryRegistration.onChange(event);
+                const nextCategory = event.target.value;
+                if (nextCategory === 'hotel' || nextCategory === 'motel') {
+                  setValue('operation', 'hospedaje', { shouldValidate: true });
+                  setValue('priceUnit', nextCategory === 'motel' ? 'estancia' : 'noche', { shouldValidate: true });
+                } else if (category === 'hotel' || category === 'motel') {
+                  setValue('operation', 'renta', { shouldValidate: true });
+                  setValue('priceUnit', 'mes', { shouldValidate: true });
+                }
+              }}
               className={inputClass}
               disabled={lockFixedFields}
             >
@@ -175,7 +213,7 @@ export function ListingForm({
             <select
               {...register('operation')}
               className={inputClass}
-              disabled={lockFixedFields}
+              disabled={lockFixedFields || isLodging}
             >
               {OPERATIONS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -185,6 +223,11 @@ export function ListingForm({
             </select>
           </Field>
         </div>
+        {isLodging && (
+          <p className="rounded-xl border border-brand-100 bg-brand-50 p-3 text-sm text-brand-800">
+            Cada publicacion representa una habitacion o tipo de habitacion; su disponibilidad se administra por separado.
+          </p>
+        )}
       </Section>
 
       {/* ═══════════ Precio ═══════════ */}
@@ -211,7 +254,7 @@ export function ListingForm({
                   placeholder="5000"
                   {...register('price', { valueAsNumber: true })}
                   className={`${inputClass} pl-9`}
-                  disabled={lockFixedFields}
+                  disabled={lockPrice}
                 />
               </div>
             </Field>
@@ -221,7 +264,7 @@ export function ListingForm({
             <select
               {...register('priceUnit')}
               className={inputClass}
-              disabled={operation === 'venta'}
+                   disabled={operation === 'venta' || category === 'hotel'}
             >
               {priceUnits.map((u) => (
                 <option key={u.value} value={u.value}>
@@ -231,6 +274,17 @@ export function ListingForm({
             </select>
           </Field>
         </div>
+        {isMotel && priceUnit === 'estancia' && (
+          <Field label="Duracion de estancia (horas)" required error={errors.stayDurationHours?.message}>
+            <input
+              type="number"
+              min="1"
+              max="24"
+              {...register('stayDurationHours', { valueAsNumber: true })}
+              className={inputClass}
+            />
+          </Field>
+        )}
       </Section>
 
       {/* ═══════════ Ubicación ═══════════ */}
@@ -326,20 +380,56 @@ export function ListingForm({
           </Field>
         </div>
 
+        {isLodging && (
+          <>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Nombre del hotel o motel" required error={errors.establishmentName?.message}>
+                <input type="text" placeholder="Ej: Hotel Ixmi" {...register('establishmentName')} className={inputClass} />
+              </Field>
+              <Field label="Tipo de habitacion" required error={errors.roomType?.message}>
+                <input type="text" placeholder="Ej: Sencilla, Suite, Doble" {...register('roomType')} className={inputClass} />
+              </Field>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Hora de entrada" required error={errors.checkInTime?.message}>
+                <input type="time" {...register('checkInTime')} className={inputClass} />
+              </Field>
+              <Field label="Hora de salida" required error={errors.checkOutTime?.message}>
+                <input type="time" {...register('checkOutTime')} className={inputClass} />
+              </Field>
+            </div>
+            <label className="flex items-center gap-3 text-sm text-ink-700">
+              <input type="checkbox" {...register('reception24h')} className="h-4 w-4 accent-brand-600" />
+              Recepcion disponible las 24 horas
+            </label>
+            {isMotel && (
+              <label className="flex items-center gap-3 text-sm text-ink-700">
+                <input type="checkbox" {...register('foodAvailable')} className="h-4 w-4 accent-brand-600" />
+                Ofrece comida o bebidas
+              </label>
+            )}
+            {isMotel && foodAvailable && (
+              <Field label="Comida y bebidas disponibles" required error={errors.foodDescription?.message}>
+                <textarea rows={3} placeholder="Describe el menu, horarios o servicio a la habitacion" {...register('foodDescription')} className={`${inputClass} resize-none`} />
+              </Field>
+            )}
+          </>
+        )}
+
         <Field label="Amenidades disponibles">
           <Controller
             control={control}
             name="amenities"
             render={({ field }) => (
               <div className="flex flex-wrap gap-2">
-                {AMENITIES.map((a) => {
+                {amenityOptions.map((a) => {
                   const selected = (field.value ?? []).includes(a);
                   return (
                     <button
                       key={a}
                       type="button"
                       onClick={() => {
-                        const current = (field.value ?? []) as Amenity[];
+                        const current = (field.value ?? []) as string[];
                         const next = selected
                           ? current.filter((x) => x !== a)
                           : [...current, a];
@@ -374,7 +464,7 @@ export function ListingForm({
       >
         <Field label="Estado de la propiedad">
           <select {...register('availability')} className={inputClass}>
-            {AVAILABILITY.map((item) => (
+            {availabilityOptions.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
               </option>

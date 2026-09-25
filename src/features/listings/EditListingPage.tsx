@@ -62,7 +62,7 @@ export function EditListingPage() {
     const lockedChanged =
       data.category !== listing.category ||
       data.operation !== listing.operation ||
-      data.price !== listing.price ||
+      ((listing.category !== 'hotel' && listing.category !== 'motel') && data.price !== listing.price) ||
       data.colonia.trim() !== listing.colonia.trim() ||
       data.whatsapp !== listing.whatsapp ||
       data.lat !== (listing.lat ?? 20.4833) ||
@@ -107,6 +107,19 @@ export function EditListingPage() {
     updates.areaM2 = data.areaM2 && data.areaM2 > 0 ? data.areaM2 : deleteField();
     updates.amenities =
       data.amenities && data.amenities.length > 0 ? data.amenities : deleteField();
+    if (listing.category === 'hotel' || listing.category === 'motel') {
+      updates.price = data.price;
+      updates.establishmentName = data.establishmentName?.trim() || deleteField();
+      updates.roomType = data.roomType?.trim() || deleteField();
+      updates.stayDurationHours = data.stayDurationHours ?? deleteField();
+      updates.checkInTime = data.checkInTime || deleteField();
+      updates.checkOutTime = data.checkOutTime || deleteField();
+      updates.reception24h = data.reception24h ?? false;
+      updates.foodAvailable = data.foodAvailable ?? false;
+      updates.foodDescription = data.foodAvailable && data.foodDescription?.trim()
+        ? data.foodDescription.trim()
+        : deleteField();
+    }
 
     const changedFields = Object.keys(updates).filter((field) => field !== 'updatedAt');
     const batch = writeBatch(db);
@@ -226,6 +239,14 @@ export function EditListingPage() {
             amenities: listing!.amenities ?? [],
             showPhone: listing!.showPhone,
             availability: listing!.availability,
+            establishmentName: listing!.establishmentName ?? '',
+            roomType: listing!.roomType ?? '',
+            stayDurationHours: listing!.stayDurationHours ?? 3,
+            checkInTime: listing!.checkInTime ?? '15:00',
+            checkOutTime: listing!.checkOutTime ?? '12:00',
+            reception24h: listing!.reception24h ?? false,
+            foodAvailable: listing!.foodAvailable ?? false,
+            foodDescription: listing!.foodDescription ?? '',
             lat: listing!.lat ?? 20.4833,
             lng: listing!.lng ?? -99.2167,
             photos: listing!.photos,
@@ -234,7 +255,8 @@ export function EditListingPage() {
           onSubmit={handleSubmit}
           submitLabel="Guardar cambios"
           lockFixedFields={true}
-          immutableFieldsMessage="Estos datos ya no se pueden editar una vez publicada la propiedad. Si necesitas cambiarlos, crea una nueva publicación o elimina esta y vuelve a publicar."
+          lockPrice={listing!.category !== 'hotel' && listing!.category !== 'motel'}
+          immutableFieldsMessage={listing!.category === 'hotel' || listing!.category === 'motel' ? 'Categoria, ubicacion y WhatsApp quedan fijos. Puedes actualizar la tarifa, los servicios y la disponibilidad.' : 'Estos datos quedan fijos al publicar. Crea otra publicacion si necesitas cambiarlos.'}
         />
       </div>
     </div>

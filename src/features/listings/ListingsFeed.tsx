@@ -26,8 +26,6 @@ const DATE_FILTERS: { value: DateFilter; label: string }[] = [
 
 const PAGE_SIZE = 9;
 const MAX_RETRIES = 3;
-// Compensa la latencia entre el reloj del cliente y request.time del servidor.
-const LISTING_EXPIRY_QUERY_BUFFER_MS = 60_000;
 
 export function ListingsFeed() {
   const { fbUser } = useAuth();
@@ -65,20 +63,16 @@ export function ListingsFeed() {
        *
        * status == "published"
        * Y
-       * expiresAt > hora actual del servidor.
+       * expiresAt > hora actual
        *
        * Por eso la consulta de Firestore debe incluir ambas
-       * condiciones. El minuto adicional evita que la hora del
-       * cliente quede unos milisegundos por detrás de request.time.
+       * condiciones. De esta manera Firestore puede comprobar
+       * que todos los documentos solicitados cumplen la regla.
        */
       const q = query(
         collection(db, 'listings'),
         where('status', '==', 'published'),
-        where(
-          'expiresAt',
-          '>',
-          Date.now() + LISTING_EXPIRY_QUERY_BUFFER_MS
-        )
+        where('expiresAt', '>', Date.now())
       );
 
       unsub = onSnapshot(

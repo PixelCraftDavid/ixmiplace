@@ -63,6 +63,7 @@ export function timeAgo(timestamp: number): string {
 export function availabilityColor(status: AvailabilityStatus): string {
   switch (status) {
     case 'available':   return 'bg-green-500';
+    case 'occupied':    return 'bg-red-500';
     case 'reserved':    return 'bg-yellow-500';
     case 'rented':      return 'bg-red-500';
     case 'sold':        return 'bg-red-500';

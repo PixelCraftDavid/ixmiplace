@@ -24,8 +24,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if signedIn()
-        && (request.auth.uid == userId || isAdmin());
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
 
       allow create: if signedIn()
         && request.auth.uid == userId
@@ -51,12 +50,10 @@ service cloud.firestore {
 
     match /publicProfiles/{userId} {
       allow read: if true;
-
       allow create: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.uid == userId
         && request.resource.data.isBanned == false;
-
       allow update: if isAdmin()
         || (signedIn()
           && request.auth.uid == userId
@@ -66,7 +63,6 @@ service cloud.firestore {
           && request.resource.data.uid == resource.data.uid
           && request.resource.data.emailVerified == resource.data.emailVerified
           && request.resource.data.isBanned == resource.data.isBanned);
-
       allow delete: if isAdmin();
     }
 
@@ -85,8 +81,35 @@ service cloud.firestore {
           'areaM2', 'amenities', 'status', 'availability',
           'availabilityConfirmedAt', 'expiresAt', 'photos', 'photoPublicIds',
           'whatsapp', 'showPhone', 'reportsCount', 'viewsCount',
+          'establishmentName', 'roomType', 'stayDurationHours',
+          'checkInTime', 'checkOutTime', 'reception24h',
+          'foodAvailable', 'foodDescription',
           'whatsappContactsCount', 'favoritesCount', 'createdAt', 'updatedAt'
-        ]);
+        ])
+        && (request.resource.data.category != 'hotel'
+          || (request.resource.data.operation == 'hospedaje'
+            && request.resource.data.priceUnit == 'noche'
+            && request.resource.data.establishmentName is string
+            && request.resource.data.establishmentName.size() >= 2
+            && request.resource.data.roomType is string
+            && request.resource.data.roomType.size() >= 2
+            && request.resource.data.checkInTime is string
+            && request.resource.data.checkOutTime is string))
+        && (request.resource.data.category != 'motel'
+          || (request.resource.data.operation == 'hospedaje'
+            && request.resource.data.priceUnit in ['estancia', 'noche']
+            && request.resource.data.establishmentName is string
+            && request.resource.data.establishmentName.size() >= 2
+            && request.resource.data.roomType is string
+            && request.resource.data.roomType.size() >= 2
+            && request.resource.data.checkInTime is string
+            && request.resource.data.checkOutTime is string
+            && (request.resource.data.priceUnit != 'estancia'
+              || request.resource.data.stayDurationHours is int)))
+        && (!('foodAvailable' in request.resource.data)
+          || request.resource.data.foodAvailable != true
+          || (request.resource.data.foodDescription is string
+            && request.resource.data.foodDescription.size() >= 3));
 
       allow update: if isAdmin()
         || (
@@ -131,134 +154,132 @@ service cloud.firestore {
           ])
         );
 
+      // Hotels and motels may edit their lodging offer and room availability.
       allow update: if verified()
+        && resource.data.ownerId == request.auth.uid
+        && resource.data.category in ['hotel', 'motel']
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.category == resource.data.category
+        && request.resource.data.operation == 'hospedaje'
+        && request.resource.data.colonia == resource.data.colonia
+        && request.resource.data.lat == resource.data.lat
+        && request.resource.data.lng == resource.data.lng
+        && request.resource.data.whatsapp == resource.data.whatsapp
+        && request.resource.data.ownerEmailVerified == true
+        && request.resource.data.price > 0
+        && request.resource.data.establishmentName is string
+        && request.resource.data.establishmentName.size() >= 2
+        && request.resource.data.roomType is string
+        && request.resource.data.roomType.size() >= 2
+        && request.resource.data.checkInTime is string
+        && request.resource.data.checkOutTime is string
+        && request.resource.data.availability in [
+          'available', 'occupied', 'reserved', 'unavailable', 'unconfirmed'
+        ]
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'reportsCount'
+          'title', 'description', 'price', 'priceUnit', 'address',
+          'bedrooms', 'bathrooms', 'parkingSpots', 'areaM2', 'amenities',
+          'photos', 'photoPublicIds', 'ownerEmailVerified', 'availability',
+          'availabilityConfirmedAt', 'showPhone', 'updatedAt',
+          'establishmentName', 'roomType', 'stayDurationHours',
+          'checkInTime', 'checkOutTime', 'reception24h',
+          'foodAvailable', 'foodDescription'
         ])
+        && (resource.data.category != 'hotel'
+          || request.resource.data.priceUnit == 'noche')
+        && (resource.data.category != 'motel'
+          || request.resource.data.priceUnit in ['estancia', 'noche'])
+        && (resource.data.category != 'motel'
+          || request.resource.data.priceUnit != 'estancia'
+          || (request.resource.data.stayDurationHours is int
+            && request.resource.data.stayDurationHours >= 1
+            && request.resource.data.stayDurationHours <= 24))
+        && (!('foodAvailable' in request.resource.data)
+          || request.resource.data.foodAvailable != true
+          || (request.resource.data.foodDescription is string
+            && request.resource.data.foodDescription.size() >= 3));
+
+      allow update: if verified()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportsCount'])
         && request.resource.data.reportsCount == resource.data.reportsCount + 1
-        && getAfter(
-          /databases/$(database)/documents/reports/$(request.auth.uid + '_' + listingId)
-        ).data.reporterId == request.auth.uid
-        && getAfter(
-          /databases/$(database)/documents/reports/$(request.auth.uid + '_' + listingId)
-        ).data.listingId == listingId;
+        && getAfter(/databases/$(database)/documents/reports/$(request.auth.uid + '_' + listingId)).data.reporterId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/reports/$(request.auth.uid + '_' + listingId)).data.listingId == listingId;
 
       allow update: if verified()
         && resource.data.ownerId == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'expiresAt', 'updatedAt'
-        ])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['expiresAt', 'updatedAt'])
         && request.resource.data.expiresAt > request.time.toMillis();
 
       allow update: if verified()
         && activePublishedListing(resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'viewsCount'
-        ])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount'])
         && request.resource.data.viewsCount == resource.data.viewsCount + 1;
 
       allow update: if verified()
         && activePublishedListing(resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'whatsappContactsCount'
-        ])
-        && request.resource.data.whatsappContactsCount
-          == resource.data.whatsappContactsCount + 1;
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['whatsappContactsCount'])
+        && request.resource.data.whatsappContactsCount == resource.data.whatsappContactsCount + 1;
 
       allow delete: if isAdmin()
         || (signedIn() && resource.data.ownerId == request.auth.uid);
     }
 
     match /favorites/{favoriteId} {
-      allow read: if signedIn()
-        && resource.data.userId == request.auth.uid;
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
 
       allow create: if verified()
         && request.resource.data.userId == request.auth.uid
         && favoriteId == request.auth.uid + '_' + request.resource.data.listingId;
 
-      allow delete: if signedIn()
-        && resource.data.userId == request.auth.uid;
-
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
       allow update: if false;
     }
 
     match /reports/{reportId} {
       allow read: if isAdmin()
         || (signedIn() && resource.data.reporterId == request.auth.uid);
-
       allow create: if verified()
         && request.resource.data.reporterId == request.auth.uid
         && reportId == request.auth.uid + '_' + request.resource.data.listingId
-        && exists(
-          /databases/$(database)/documents/listings/$(request.resource.data.listingId)
-        )
-        && activePublishedListing(
-          get(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data
-        );
-
+        && exists(/databases/$(database)/documents/listings/$(request.resource.data.listingId))
+        && activePublishedListing(get(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data);
       allow update, delete: if isAdmin();
     }
 
     match /notifications/{notificationId} {
-      allow read: if signedIn()
-        && resource.data.recipientId == request.auth.uid;
-
+      allow read: if signedIn() && resource.data.recipientId == request.auth.uid;
       allow create: if isAdmin();
-
       allow update: if signedIn()
         && resource.data.recipientId == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'isRead'
-        ]);
-
-      allow delete: if signedIn()
-        && resource.data.recipientId == request.auth.uid;
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+      allow delete: if signedIn() && resource.data.recipientId == request.auth.uid;
     }
 
     match /messages/{messageId} {
       allow read: if signedIn()
-        && (
-          resource.data.senderId == request.auth.uid
-          || resource.data.recipientId == request.auth.uid
-        );
-
+        && (resource.data.senderId == request.auth.uid
+          || resource.data.recipientId == request.auth.uid);
       allow create: if verified()
         && request.resource.data.senderId == request.auth.uid
         && request.resource.data.senderId != request.resource.data.recipientId
-        && exists(
-          /databases/$(database)/documents/listings/$(request.resource.data.listingId)
-        )
-        && get(
-          /databases/$(database)/documents/listings/$(request.resource.data.listingId)
-        ).data.ownerId == request.resource.data.recipientId
-        && activePublishedListing(
-          get(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data
-        );
-
+        && exists(/databases/$(database)/documents/listings/$(request.resource.data.listingId))
+        && get(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data.ownerId == request.resource.data.recipientId
+        && activePublishedListing(get(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data);
       allow update: if signedIn()
         && resource.data.recipientId == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'status'
-        ])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
         && request.resource.data.status == 'read';
-
       allow delete: if false;
     }
 
     match /listingHistory/{historyId} {
       allow read: if signedIn()
-        && (
-          resource.data.actorId == request.auth.uid
-          || get(
-            /databases/$(database)/documents/listings/$(resource.data.listingId)
-          ).data.ownerId == request.auth.uid
-          || isAdmin()
-        );
-
+        && (resource.data.actorId == request.auth.uid
+          || get(/databases/$(database)/documents/listings/$(resource.data.listingId)).data.ownerId == request.auth.uid
+          || isAdmin());
       allow create: if isAdmin()
         || (verified() && request.resource.data.actorId == request.auth.uid);
-
       allow update, delete: if false;
     }
   }

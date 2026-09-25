@@ -67,6 +67,7 @@ export function priceUnitLabel(unit?: PriceUnit): string {
     case 'mes':   return '/ mes';
     case 'noche': return '/ noche';
     case 'total': return '';
+    case 'estancia': return '/ estancia';
     default:      return '';
   }
 }
@@ -82,6 +83,7 @@ export const AVAILABILITY: {
   bg: string;       // clase de fondo suave
 }[] = [
   { value: 'available',   label: 'Disponible',         dot: 'bg-green-500',  bg: 'bg-green-50  text-green-700' },
+  { value: 'occupied',    label: 'Ocupada',             dot: 'bg-red-500',    bg: 'bg-red-50    text-red-700' },
   { value: 'reserved',    label: 'Apartada',           dot: 'bg-yellow-500', bg: 'bg-yellow-50 text-yellow-700' },
   { value: 'rented',      label: 'Rentada',            dot: 'bg-red-500',    bg: 'bg-red-50    text-red-700' },
   { value: 'sold',        label: 'Vendida',            dot: 'bg-red-500',    bg: 'bg-red-50    text-red-700' },
@@ -113,6 +115,21 @@ export const AMENITIES = [
 ] as const;
 
 export type Amenity = (typeof AMENITIES)[number];
+
+export const LODGING_AMENITIES = [
+  'wifi',
+  'televisión',
+  'jacuzzi',
+  'tina',
+  'servicio a la habitación',
+  'restaurante',
+  'desayuno incluido',
+  'baño privado',
+  'agua caliente',
+  'aire acondicionado',
+  'estacionamiento',
+  'seguridad',
+] as const;
 
 // ============================================================
 // Reglas de negocio
