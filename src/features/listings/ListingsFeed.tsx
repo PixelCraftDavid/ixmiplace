@@ -26,6 +26,7 @@ const DATE_FILTERS: { value: DateFilter; label: string }[] = [
 
 const PAGE_SIZE = 9;
 const MAX_RETRIES = 3;
+const LISTING_EXPIRY_QUERY_BUFFER_MS = 60_000;
 
 export function ListingsFeed() {
   const { fbUser } = useAuth();
@@ -63,7 +64,7 @@ export function ListingsFeed() {
        *
        * status == "published"
        * Y
-       * expiresAt > hora actual
+       * expiresAt > hora actual + margen de seguridad
        *
        * Por eso la consulta de Firestore debe incluir ambas
        * condiciones. De esta manera Firestore puede comprobar
@@ -72,7 +73,7 @@ export function ListingsFeed() {
       const q = query(
         collection(db, 'listings'),
         where('status', '==', 'published'),
-        where('expiresAt', '>', Date.now())
+        where('expiresAt', '>', Date.now() + LISTING_EXPIRY_QUERY_BUFFER_MS)
       );
 
       unsub = onSnapshot(
@@ -265,7 +266,9 @@ export function ListingsFeed() {
             </h2>
 
             <p className="mt-1 text-ink-500">
-              {loading
+              {loadError
+                ? 'No se pudo consultar el catálogo'
+                : loading
                 ? 'Cargando…'
                 : `${filtered.length} ${
                     filtered.length === 1
