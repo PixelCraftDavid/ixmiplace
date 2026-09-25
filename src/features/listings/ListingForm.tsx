@@ -529,7 +529,7 @@ export function ListingForm({
       )}
 
       {/* ═══════════ Botón enviar ═══════════ */}
-      <div className="sticky bottom-0 -mx-4 mt-8 border-t border-cream-200 bg-cream-100/95 px-4 py-4 backdrop-blur-xl sm:mx-0 sm:rounded-2xl sm:border">
+      <div className="mt-8 rounded-2xl border border-cream-200 bg-white p-4 shadow-sm">
         <button
           type="submit"
           disabled={isSubmitting}

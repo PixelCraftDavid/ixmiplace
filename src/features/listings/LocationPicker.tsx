@@ -190,7 +190,7 @@ export function LocationPicker({ initialPosition, onChange }: LocationPickerProp
       )}
 
       {/* Mapa */}
-      <div className="h-72 overflow-hidden rounded-xl border border-cream-300">
+      <div className="relative isolate h-72 overflow-hidden rounded-xl border border-cream-300">
         <MapContainer
           center={position}
           zoom={initialPosition ? 16 : 14}
