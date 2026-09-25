@@ -25,11 +25,14 @@ const DATE_FILTERS: { value: DateFilter; label: string }[] = [
 ];
 
 const PAGE_SIZE = 9;
+const MAX_RETRIES = 3;
 
 export function ListingsFeed() {
   const { fbUser } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   // Filtros
   const [search, setSearch] = useState('');
@@ -42,37 +45,67 @@ export function ListingsFeed() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
-    // 🔧 FIX: el efecto ahora depende de `fbUser`. Cuando cambia el estado
+    // 🔧 FIX 1: el efecto depende de `fbUser`. Cuando cambia el estado
     // de autenticación (login/logout), el listener anterior se cierra
-    // limpiamente y se crea uno nuevo desde cero, en vez de dejar que el
-    // SDK de Firestore intente "resumir" la conexión anterior — que es lo
-    // que puede disparar un permission-denied transitorio justo en el
-    // instante del cambio de sesión, aunque la query en sí sea pública.
+    // limpiamente y se crea uno nuevo desde cero.
+    //
+    // 🔧 FIX 2: la consulta pública (status == 'published') siempre debería
+    // pasar las reglas de seguridad, sin importar el estado de auth. Si
+    // Firestore devuelve un error aquí, es casi siempre un fallo TRANSITORIO
+    // del SDK al reconectar el canal de comunicación (sobre todo justo
+    // después de un login o una carga en frío), no un problema real de
+    // permisos. Por eso reintentamos automáticamente en vez de rendirnos
+    // al primer error.
     setLoading(true);
+    setLoadError(false);
 
-    const q = query(
-      collection(db, 'listings'),
-      where('status', '==', 'published')
-    );
+    let cancelled = false;
+    let retryTimeout: ReturnType<typeof setTimeout>;
+    let unsub: () => void = () => {};
 
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const data: Listing[] = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<Listing, 'id'>),
-        }));
-        setListings(data);
-        setLoading(false);
-      },
-      (err) => {
-        console.error('Error cargando feed:', err);
-        setLoading(false);
-      }
-    );
+    function subscribe(attempt: number) {
+      const q = query(
+        collection(db, 'listings'),
+        where('status', '==', 'published')
+      );
 
-    return () => unsub();
-  }, [fbUser]);
+      unsub = onSnapshot(
+        q,
+        (snap) => {
+          if (cancelled) return;
+          const data: Listing[] = snap.docs.map((d) => ({
+            id: d.id,
+            ...(d.data() as Omit<Listing, 'id'>),
+          }));
+          setListings(data);
+          setLoading(false);
+          setLoadError(false);
+        },
+        (err) => {
+          console.error(`Error cargando feed (intento ${attempt}):`, err);
+          if (cancelled) return;
+
+          if (attempt < MAX_RETRIES) {
+            // Backoff simple: 500ms, 1000ms, 1500ms...
+            retryTimeout = setTimeout(() => {
+              if (!cancelled) subscribe(attempt + 1);
+            }, 500 * attempt);
+          } else {
+            setLoading(false);
+            setLoadError(true);
+          }
+        }
+      );
+    }
+
+    subscribe(1);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(retryTimeout);
+      unsub();
+    };
+  }, [fbUser, retryKey]);
 
   // Aplicar filtros + ordenar en memoria
   const filtered = useMemo(() => {
@@ -319,6 +352,8 @@ export function ListingsFeed() {
       {/* Grid de resultados */}
       {loading ? (
         <FeedSkeleton />
+      ) : loadError ? (
+        <ErrorFeed onRetry={() => setRetryKey((k) => k + 1)} />
       ) : filtered.length === 0 ? (
         <EmptyFeed hasActiveFilters={hasActiveFilters} onClear={clearFilters} />
       ) : (
@@ -364,6 +399,28 @@ function FeedSkeleton() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// Estado de error (tras agotar los reintentos automáticos)
+// ─────────────────────────────────────────────────
+function ErrorFeed({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
+      <h3 className="text-lg font-bold text-red-700">
+        No pudimos cargar las propiedades
+      </h3>
+      <p className="mx-auto mt-2 max-w-sm text-sm text-red-600">
+        Ocurrió un problema de conexión. Intenta de nuevo.
+      </p>
+      <button
+        onClick={onRetry}
+        className="mt-5 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
+      >
+        Reintentar
+      </button>
     </div>
   );
 }
