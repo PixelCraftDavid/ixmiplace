@@ -1,5 +1,12 @@
-const CACHE_NAME = 'ixmiplace-shell-v1';
-const APP_SHELL = ['/', '/index.html', '/favicon.svg', '/manifest.webmanifest'];
+const CACHE_NAME = 'ixmiplace-shell-v2';
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/logo-ixmiplace.jpg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/manifest.webmanifest',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
