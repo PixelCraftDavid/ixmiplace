@@ -29,6 +29,7 @@ const MAX_RETRIES = 3;
 
 export function ListingsFeed() {
   const { fbUser } = useAuth();
+
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -55,37 +56,66 @@ export function ListingsFeed() {
     let unsub: () => void = () => {};
 
     function subscribe(attempt: number) {
+      /*
+       * IMPORTANTE:
+       *
+       * La Security Rule de listings exige:
+       *
+       * status == "published"
+       * Y
+       * expiresAt > hora actual
+       *
+       * Por eso la consulta de Firestore debe incluir ambas
+       * condiciones. De esta manera Firestore puede comprobar
+       * que todos los documentos solicitados cumplen la regla.
+       */
       const q = query(
         collection(db, 'listings'),
-        where('status', '==', 'published')
+        where('status', '==', 'published'),
+        where('expiresAt', '>', Date.now())
       );
 
       unsub = onSnapshot(
         q,
         (snap) => {
           if (cancelled) return;
+
           const data: Listing[] = snap.docs.map((d) => ({
             id: d.id,
             ...(d.data() as Omit<Listing, 'id'>),
           }));
+
           setListings(data);
           setLoading(false);
           setLoadError(false);
+          setErrorDetail('');
+
+          console.log(
+            `Listings cargados correctamente: ${snap.size}`
+          );
         },
         (err) => {
-          console.error(`Error cargando feed (intento ${attempt}):`, err);
+          console.error(
+            `Error cargando feed (intento ${attempt}):`,
+            err
+          );
+
           if (cancelled) return;
 
           if (attempt < MAX_RETRIES) {
             retryTimeout = setTimeout(() => {
-              if (!cancelled) subscribe(attempt + 1);
+              if (!cancelled) {
+                subscribe(attempt + 1);
+              }
             }, 500 * attempt);
           } else {
             setLoading(false);
             setLoadError(true);
-            // 🔍 Temporal: guardamos el código y mensaje exactos para diagnosticar
+
             setErrorDetail(
-              `${(err as { code?: string }).code || 'sin código'}: ${err.message || 'sin mensaje'}`
+              `${(err as { code?: string }).code || 'sin código'}: ${
+                err.message || 'sin mensaje'
+              }`
             );
           }
         }
@@ -105,10 +135,19 @@ export function ListingsFeed() {
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
 
+    /*
+     * Esta comprobación sigue siendo útil como segunda capa
+     * en el frontend.
+     *
+     * La protección real está en Firestore Security Rules.
+     */
     let result = listings.filter(
-      (listing) => !listing.expiresAt || listing.expiresAt > Date.now()
+      (listing) =>
+        !listing.expiresAt ||
+        listing.expiresAt > Date.now()
     );
 
+    // Búsqueda
     if (term) {
       result = result.filter(
         (l) =>
@@ -118,37 +157,71 @@ export function ListingsFeed() {
       );
     }
 
+    // Categoría
     if (category !== 'all') {
-      result = result.filter((l) => l.category === category);
+      result = result.filter(
+        (l) => l.category === category
+      );
     }
 
+    // Operación
     if (operation !== 'all') {
-      result = result.filter((l) => l.operation === operation);
+      result = result.filter(
+        (l) => l.operation === operation
+      );
     }
 
+    // Fecha
     if (dateFilter !== 'all') {
       const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+      const startOfToday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      ).getTime();
+
       const cutoff =
         dateFilter === 'today'
           ? startOfToday
-          : Date.now() - (dateFilter === 'week' ? 7 : 30) * 24 * 60 * 60 * 1000;
+          : Date.now() -
+            (dateFilter === 'week' ? 7 : 30) *
+              24 *
+              60 *
+              60 *
+              1000;
 
-      result = result.filter((l) => l.createdAt >= cutoff);
+      result = result.filter(
+        (l) => l.createdAt >= cutoff
+      );
     }
 
     // Ordenar
     const sorted = [...result];
+
     if (sort === 'recent') {
-      sorted.sort((a, b) => b.createdAt - a.createdAt);
+      sorted.sort(
+        (a, b) => b.createdAt - a.createdAt
+      );
     } else if (sort === 'price-asc') {
-      sorted.sort((a, b) => a.price - b.price);
+      sorted.sort(
+        (a, b) => a.price - b.price
+      );
     } else if (sort === 'price-desc') {
-      sorted.sort((a, b) => b.price - a.price);
+      sorted.sort(
+        (a, b) => b.price - a.price
+      );
     }
 
     return sorted;
-  }, [listings, search, category, operation, sort, dateFilter]);
+  }, [
+    listings,
+    search,
+    category,
+    operation,
+    sort,
+    dateFilter,
+  ]);
 
   const hasActiveFilters =
     search.length > 0 ||
@@ -158,10 +231,21 @@ export function ListingsFeed() {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [search, category, operation, dateFilter, sort]);
+  }, [
+    search,
+    category,
+    operation,
+    dateFilter,
+    sort,
+  ]);
 
-  const visibleListings = filtered.slice(0, visibleCount);
-  const hasMoreListings = visibleCount < filtered.length;
+  const visibleListings = filtered.slice(
+    0,
+    visibleCount
+  );
+
+  const hasMoreListings =
+    visibleCount < filtered.length;
 
   function clearFilters() {
     setSearch('');
@@ -179,18 +263,23 @@ export function ListingsFeed() {
             <h2 className="text-2xl font-extrabold text-ink sm:text-3xl">
               Propiedades en Ixmiquilpan
             </h2>
+
             <p className="mt-1 text-ink-500">
               {loading
                 ? 'Cargando…'
                 : `${filtered.length} ${
-                    filtered.length === 1 ? 'propiedad' : 'propiedades'
+                    filtered.length === 1
+                      ? 'propiedad'
+                      : 'propiedades'
                   } disponibles`}
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => setShowFilters((s) => !s)}
+            onClick={() =>
+              setShowFilters((s) => !s)
+            }
             className={`flex items-center gap-2 self-start rounded-xl px-4 py-2.5
                         font-medium transition sm:self-auto
                         ${
@@ -200,10 +289,18 @@ export function ListingsFeed() {
                         }`}
           >
             <SlidersHorizontal className="h-4 w-4" />
+
             Filtros
+
             {hasActiveFilters && (
               <span className="rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-bold">
-                {[category, operation, dateFilter].filter((f) => f !== 'all').length +
+                {[
+                  category,
+                  operation,
+                  dateFilter,
+                ].filter(
+                  (f) => f !== 'all'
+                ).length +
                   (search ? 1 : 0)}
               </span>
             )}
@@ -211,7 +308,9 @@ export function ListingsFeed() {
 
           <button
             type="button"
-            onClick={() => setShowMap((visible) => !visible)}
+            onClick={() =>
+              setShowMap((visible) => !visible)
+            }
             className={`flex items-center gap-2 self-start rounded-xl px-4 py-2.5 font-medium transition sm:self-auto ${
               showMap
                 ? 'bg-secondary-600 text-white shadow-md shadow-secondary-500/25'
@@ -219,7 +318,10 @@ export function ListingsFeed() {
             }`}
           >
             <Map className="h-4 w-4" />
-            {showMap ? 'Ocultar mapa' : 'Ver mapa'}
+
+            {showMap
+              ? 'Ocultar mapa'
+              : 'Ver mapa'}
           </button>
         </div>
 
@@ -229,11 +331,14 @@ export function ListingsFeed() {
             {/* Búsqueda */}
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+
               <input
                 type="text"
                 placeholder="Buscar por título, colonia o descripción…"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) =>
+                  setSearch(e.target.value)
+                }
                 className="w-full rounded-xl border border-cream-300 bg-cream-50 py-2.5 pl-11 pr-4
                            text-ink placeholder-ink-400 transition
                            focus:border-brand-500 focus:bg-white focus:outline-none
@@ -243,82 +348,126 @@ export function ListingsFeed() {
 
             {/* Categoría + Operación + Fecha + Orden */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Fecha */}
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-ink-500">
                   Fecha de publicación
                 </label>
+
                 <select
                   value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-                  className="w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5
-                             text-sm text-ink focus:border-brand-500 focus:bg-white
-                             focus:outline-none focus:ring-4 focus:ring-brand-500/15"
-                >
-                  {DATE_FILTERS.map((date) => (
-                    <option key={date.value} value={date.value}>
-                      {date.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-ink-500">
-                  Categoría
-                </label>
-                <select
-                  value={category}
                   onChange={(e) =>
-                    setCategory(e.target.value as ListingCategory | 'all')
+                    setDateFilter(
+                      e.target.value as DateFilter
+                    )
                   }
                   className="w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5
                              text-sm text-ink focus:border-brand-500 focus:bg-white
                              focus:outline-none focus:ring-4 focus:ring-brand-500/15"
                 >
-                  <option value="all">Todas</option>
+                  {DATE_FILTERS.map(
+                    (date) => (
+                      <option
+                        key={date.value}
+                        value={date.value}
+                      >
+                        {date.label}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              {/* Categoría */}
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-ink-500">
+                  Categoría
+                </label>
+
+                <select
+                  value={category}
+                  onChange={(e) =>
+                    setCategory(
+                      e.target.value as
+                        | ListingCategory
+                        | 'all'
+                    )
+                  }
+                  className="w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5
+                             text-sm text-ink focus:border-brand-500 focus:bg-white
+                             focus:outline-none focus:ring-4 focus:ring-brand-500/15"
+                >
+                  <option value="all">
+                    Todas
+                  </option>
+
                   {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>
+                    <option
+                      key={c.value}
+                      value={c.value}
+                    >
                       {c.emoji} {c.label}
                     </option>
                   ))}
                 </select>
               </div>
 
+              {/* Operación */}
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-ink-500">
                   Operación
                 </label>
+
                 <select
                   value={operation}
                   onChange={(e) =>
-                    setOperation(e.target.value as ListingOperation | 'all')
+                    setOperation(
+                      e.target.value as
+                        | ListingOperation
+                        | 'all'
+                    )
                   }
                   className="w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5
                              text-sm text-ink focus:border-brand-500 focus:bg-white
                              focus:outline-none focus:ring-4 focus:ring-brand-500/15"
                 >
-                  <option value="all">Todas</option>
+                  <option value="all">
+                    Todas
+                  </option>
+
                   {OPERATIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
+                    <option
+                      key={o.value}
+                      value={o.value}
+                    >
                       {o.label}
                     </option>
                   ))}
                 </select>
               </div>
 
+              {/* Ordenar */}
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-ink-500">
                   Ordenar
                 </label>
+
                 <select
                   value={sort}
-                  onChange={(e) => setSort(e.target.value as SortOption)}
+                  onChange={(e) =>
+                    setSort(
+                      e.target.value as SortOption
+                    )
+                  }
                   className="w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5
                              text-sm text-ink focus:border-brand-500 focus:bg-white
                              focus:outline-none focus:ring-4 focus:ring-brand-500/15"
                 >
                   {SORTS.map((s) => (
-                    <option key={s.value} value={s.value}>
+                    <option
+                      key={s.value}
+                      value={s.value}
+                    >
                       {s.label}
                     </option>
                   ))}
@@ -341,34 +490,56 @@ export function ListingsFeed() {
         )}
       </div>
 
-      {showMap && <ListingsMap listings={filtered} />}
+      {/* Mapa */}
+      {showMap && (
+        <ListingsMap listings={filtered} />
+      )}
 
       {/* Grid de resultados */}
       {loading ? (
         <FeedSkeleton />
       ) : loadError ? (
-        <ErrorFeed onRetry={() => setRetryKey((k) => k + 1)} detail={errorDetail} />
+        <ErrorFeed
+          onRetry={() =>
+            setRetryKey((k) => k + 1)
+          }
+          detail={errorDetail}
+        />
       ) : filtered.length === 0 ? (
-        <EmptyFeed hasActiveFilters={hasActiveFilters} onClear={clearFilters} />
+        <EmptyFeed
+          hasActiveFilters={hasActiveFilters}
+          onClear={clearFilters}
+        />
       ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleListings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {visibleListings.map((listing) => (
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+            />
           ))}
         </div>
       )}
 
-      {!loading && filtered.length > 0 && hasMoreListings && (
-        <div className="flex justify-center pt-2">
-          <button
-            type="button"
-            onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-            className="rounded-xl border border-cream-300 bg-white px-5 py-3 text-sm font-semibold text-ink-600 shadow-sm transition hover:bg-cream-100 hover:text-ink-800"
-          >
-            Cargar más propiedades
-          </button>
-        </div>
-      )}
+      {/* Cargar más */}
+      {!loading &&
+        filtered.length > 0 &&
+        hasMoreListings && (
+          <div className="flex justify-center pt-2">
+            <button
+              type="button"
+              onClick={() =>
+                setVisibleCount(
+                  (count) =>
+                    count + PAGE_SIZE
+                )
+              }
+              className="rounded-xl border border-cream-300 bg-white px-5 py-3 text-sm font-semibold text-ink-600 shadow-sm transition hover:bg-cream-100 hover:text-ink-800"
+            >
+              Cargar más propiedades
+            </button>
+          </div>
+        )}
     </div>
   );
 }
@@ -376,45 +547,59 @@ export function ListingsFeed() {
 // ─────────────────────────────────────────────────
 // Skeleton de carga
 // ─────────────────────────────────────────────────
+
 function FeedSkeleton() {
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div
-          key={i}
-          className="overflow-hidden rounded-2xl border border-cream-200 bg-white shadow-sm"
-        >
-          <div className="aspect-[4/3] animate-pulse bg-cream-200" />
-          <div className="space-y-3 p-4">
-            <div className="h-4 w-3/4 animate-pulse rounded bg-cream-200" />
-            <div className="h-3 w-1/2 animate-pulse rounded bg-cream-200" />
-            <div className="h-6 w-1/3 animate-pulse rounded bg-cream-200" />
-            <div className="h-9 w-full animate-pulse rounded-xl bg-cream-200" />
+      {Array.from({ length: 6 }).map(
+        (_, i) => (
+          <div
+            key={i}
+            className="overflow-hidden rounded-2xl border border-cream-200 bg-white shadow-sm"
+          >
+            <div className="aspect-[4/3] animate-pulse bg-cream-200" />
+
+            <div className="space-y-3 p-4">
+              <div className="h-4 w-3/4 animate-pulse rounded bg-cream-200" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-cream-200" />
+              <div className="h-6 w-1/3 animate-pulse rounded bg-cream-200" />
+              <div className="h-9 w-full animate-pulse rounded-xl bg-cream-200" />
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      )}
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────
-// Estado de error (tras agotar los reintentos automáticos)
-// 🔍 detail es TEMPORAL para diagnosticar — quitar cuando resolvamos esto
+// Estado de error
 // ─────────────────────────────────────────────────
-function ErrorFeed({ onRetry, detail }: { onRetry: () => void; detail?: string }) {
+
+function ErrorFeed({
+  onRetry,
+  detail,
+}: {
+  onRetry: () => void;
+  detail?: string;
+}) {
   return (
     <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
       <h3 className="text-lg font-bold text-red-700">
         No pudimos cargar las propiedades
       </h3>
+
       <p className="mx-auto mt-2 max-w-sm text-sm text-red-600">
-        Ocurrió un problema de conexión. Intenta de nuevo.
+        Ocurrió un problema de conexión.
+        Intenta de nuevo.
       </p>
+
       {detail && (
         <p className="mx-auto mt-3 max-w-md break-words rounded-lg bg-red-100 p-2 font-mono text-xs text-red-800">
           {detail}
         </p>
       )}
+
       <button
         onClick={onRetry}
         className="mt-5 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
@@ -428,6 +613,7 @@ function ErrorFeed({ onRetry, detail }: { onRetry: () => void; detail?: string }
 // ─────────────────────────────────────────────────
 // Estado vacío
 // ─────────────────────────────────────────────────
+
 function EmptyFeed({
   hasActiveFilters,
   onClear,
@@ -446,6 +632,7 @@ function EmptyFeed({
           ? 'No encontramos propiedades'
           : 'Aún no hay propiedades publicadas'}
       </h3>
+
       <p className="mx-auto mt-2 max-w-sm text-ink-500">
         {hasActiveFilters
           ? 'Prueba ajustando los filtros o la búsqueda.'
