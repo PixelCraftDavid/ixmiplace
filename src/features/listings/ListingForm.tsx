@@ -32,6 +32,7 @@ interface ListingFormProps {
   submitLabel?: string;
   lockFixedFields?: boolean;
   lockPrice?: boolean;
+  onCategoryChange?: (category: ListingInput['category']) => void;
   immutableFieldsMessage?: string;
   requireConfirmation?: boolean;
   onConfirmSubmit?: (data: ListingInput, photos: string[], photoPublicIds: string[]) => void;
@@ -43,6 +44,7 @@ export function ListingForm({
   submitLabel = 'Publicar propiedad',
   lockFixedFields = false,
   lockPrice = lockFixedFields,
+  onCategoryChange,
   immutableFieldsMessage,
   requireConfirmation = false,
   onConfirmSubmit,
@@ -190,6 +192,7 @@ export function ListingForm({
               onChange={(event) => {
                 categoryRegistration.onChange(event);
                 const nextCategory = event.target.value;
+                onCategoryChange?.(nextCategory as ListingInput['category']);
                 if (nextCategory === 'hotel' || nextCategory === 'motel') {
                   setValue('operation', 'hospedaje', { shouldValidate: true });
                   setValue('priceUnit', nextCategory === 'motel' ? 'estancia' : 'noche', { shouldValidate: true });

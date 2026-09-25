@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, Heart, Home, ChevronDown, User, ShieldCheck, Bell, Moon, Sun, Mail } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -8,6 +8,8 @@ import { useAuth } from '@/features/auth/AuthContext';
 export function Navbar() {
   const { fbUser, profile } = useAuth();
   const nav = useNavigate();
+  const { pathname } = useLocation();
+  const overDarkHero = pathname === '/';
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const menuRef = useRef<HTMLDivElement>(null);
@@ -41,10 +43,10 @@ export function Navbar() {
   }
 
   return (
-    <header className="absolute top-0 left-0 right-0 z-20">
+    <header className={`absolute inset-x-0 top-0 z-40 ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link to="/" className="text-xl font-extrabold text-white drop-shadow-md">
-          Ixmi<span className="text-brand-400">Place</span>
+        <Link to="/" className={`text-xl font-extrabold ${overDarkHero ? 'text-white drop-shadow-md' : 'text-ink-700 dark:text-ink-50'}`}>
+          Ixmi<span className={overDarkHero ? 'text-brand-400' : 'text-brand-600 dark:text-brand-300'}>Place</span>
         </Link>
 
         <nav aria-label="Navegación principal" className="flex items-center gap-3">
@@ -53,7 +55,7 @@ export function Navbar() {
             onClick={toggleTheme}
             aria-label={darkMode ? 'Activar modo claro' : 'Activar modo oscuro'}
             title={darkMode ? 'Modo claro' : 'Modo oscuro'}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
+            className={`flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition ${overDarkHero ? 'border-white/30 bg-white/10 text-white hover:bg-white/20' : 'border-cream-300 bg-white text-ink-700 shadow-sm hover:bg-cream-50 dark:border-white/20 dark:bg-white/10 dark:text-ink-50 dark:hover:bg-white/20'}`}
           >
             {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
@@ -65,9 +67,7 @@ export function Navbar() {
                 onClick={() => setMenuOpen((v) => !v)}
                 aria-haspopup="true"
                 aria-expanded={menuOpen}
-                className="flex items-center gap-2 rounded-full border border-white/30
-                           bg-white/10 py-1.5 pl-1.5 pr-3 text-sm text-white
-                           backdrop-blur-md transition hover:bg-white/20"
+                className={`flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3 text-sm backdrop-blur-md transition ${overDarkHero ? 'border-white/30 bg-white/10 text-white hover:bg-white/20' : 'border-cream-300 bg-white text-ink-700 shadow-sm hover:bg-cream-50 dark:border-white/20 dark:bg-white/10 dark:text-ink-50 dark:hover:bg-white/20'}`}
               >
                 {profile?.photoURL ? (
                   <img
@@ -77,7 +77,7 @@ export function Navbar() {
                     className="h-7 w-7 rounded-full border-2 border-white/40"
                   />
                 ) : (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full ${overDarkHero ? 'bg-white/20' : 'bg-brand-50 text-brand-700 dark:bg-white/15 dark:text-white'}`}>
                     <User className="h-4 w-4" />
                   </span>
                 )}
@@ -173,7 +173,7 @@ export function Navbar() {
             </div>
           ) : (
             <>
-              <Link to="/login" className="text-sm text-white hover:underline">
+              <Link to="/login" className={`text-sm ${overDarkHero ? 'text-white' : 'text-ink-700 dark:text-ink-50'} hover:underline`}>
                 Entrar
               </Link>
               <Link

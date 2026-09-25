@@ -5,11 +5,13 @@ import { AlertTriangle, CheckCircle2, PencilLine, X } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
 import { LISTING_LIMITS } from '../../lib/constants';
 import { ListingForm } from './ListingForm';
+import { ListingScenePreview } from './ListingScenePreview';
 import type { ListingInput } from '../../lib/zod-schemas';
 import type { Listing } from '../../types/models';
 
 export function CreateListingPage() {
   const nav = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState<ListingInput['category']>('casa');
   const [success, setSuccess] = useState(false);
   const [pendingPublish, setPendingPublish] = useState<{
     data: ListingInput;
@@ -126,7 +128,7 @@ export function CreateListingPage() {
 
   return (
     <div className="min-h-screen bg-cream pt-24 pb-12">
-      <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6">
         {/* Header */}
         <div className="mb-8 text-center">
           <div
@@ -149,14 +151,24 @@ export function CreateListingPage() {
           </p>
         </div>
 
-        <ListingForm
-          onSubmit={handleSubmit}
-          submitLabel="Publicar propiedad"
-          requireConfirmation={true}
-          onConfirmSubmit={(data, photos, photoPublicIds) => {
-            setPendingPublish({ data, photos, photoPublicIds });
-          }}
-        />
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+          <div className="min-w-0">
+            <ListingForm
+              onSubmit={handleSubmit}
+              onCategoryChange={setSelectedCategory}
+              submitLabel="Publicar propiedad"
+              requireConfirmation={true}
+              onConfirmSubmit={(data, photos, photoPublicIds) => {
+                setPendingPublish({ data, photos, photoPublicIds });
+              }}
+            />
+          </div>
+          <div className="hidden min-w-0 lg:block">
+            <div className="sticky top-24">
+              <ListingScenePreview category={selectedCategory} />
+            </div>
+          </div>
+        </div>
       </div>
 
       {pendingPublish && (
