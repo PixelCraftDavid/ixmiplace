@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { AlertTriangle, CheckCircle2, PencilLine, X } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
 import { LISTING_LIMITS } from '../../lib/constants';
@@ -55,7 +55,7 @@ export function CreateListingPage() {
       createdAt: now,
       updatedAt: now,
       publicationConsentVersion: LISTING_CONSENT_VERSION,
-      publicationConsentAt: now,
+      publicationConsentAt: serverTimestamp(),
     };
 
     if (data.priceUnit) listing.priceUnit = data.priceUnit;

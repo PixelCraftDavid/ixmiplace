@@ -24,6 +24,12 @@ service cloud.firestore {
         && data.expiresAt > request.time.toMillis();
     }
 
+    // Acepta Timestamp de servidor y, durante la transición, milisegundos antiguos.
+    function validConsentTime(value) {
+      return (value is timestamp && value == request.time)
+        || (value is int && value <= request.time.toMillis());
+    }
+
     match /users/{userId} {
       allow read: if signedIn()
         && (request.auth.uid == userId || isAdmin());
@@ -45,44 +51,28 @@ service cloud.firestore {
             'privacyConsentVersion', 'privacyConsentAt',
             'phoneConsentVersion', 'phoneConsentAt'
           ])
-          && (!('termsAcceptedVersion' in request.resource.data)
-            || (request.resource.data.termsAcceptedVersion is string
-              && request.resource.data.termsAcceptedAt is int))
-          && (!('adultConfirmedVersion' in request.resource.data)
-            || (request.resource.data.adultConfirmedVersion is string
-              && request.resource.data.adultConfirmedAt is int))
-          && (!('privacyConsentVersion' in request.resource.data)
-            || (request.resource.data.privacyConsentVersion is string
-              && request.resource.data.privacyConsentAt is int))
-          && (!('phoneConsentVersion' in request.resource.data)
-            || (request.resource.data.phoneConsentVersion is string
-              && request.resource.data.phoneConsentAt is int))
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'termsAcceptedVersion', 'termsAcceptedAt'
           ])
             || (request.resource.data.termsAcceptedVersion is string
               && request.resource.data.termsAcceptedVersion.size() > 0
-              && request.resource.data.termsAcceptedAt is int
-              && request.resource.data.termsAcceptedAt <= request.time.toMillis()))
+              && validConsentTime(request.resource.data.termsAcceptedAt)))
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'privacyConsentVersion', 'privacyConsentAt'
           ])
             || (request.resource.data.privacyConsentVersion is string
               && request.resource.data.privacyConsentVersion.size() > 0
-              && request.resource.data.privacyConsentAt is int
-              && request.resource.data.privacyConsentAt <= request.time.toMillis()))
+              && validConsentTime(request.resource.data.privacyConsentAt)))
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'adultConfirmedVersion', 'adultConfirmedAt'
           ])
             || (request.resource.data.adultConfirmedVersion == '2026-09-26-v2'
-              && request.resource.data.adultConfirmedAt is int
-              && request.resource.data.adultConfirmedAt <= request.time.toMillis()))
+              && validConsentTime(request.resource.data.adultConfirmedAt)))
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'phone'
           ])
             || (request.resource.data.phoneConsentVersion == '2026-09-26-v2'
-              && request.resource.data.phoneConsentAt is int
-              && request.resource.data.phoneConsentAt <= request.time.toMillis()))
+              && validConsentTime(request.resource.data.phoneConsentAt)))
           && request.resource.data.role == resource.data.role
           && request.resource.data.isBanned == resource.data.isBanned
           && request.resource.data.uid == resource.data.uid
@@ -126,8 +116,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adultConfirmedVersion == '2026-09-26-v2'
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.privacyConsentVersion == '2026-09-26-v2'
         && request.resource.data.publicationConsentVersion == '2026-09-26'
-        && request.resource.data.publicationConsentAt is int
-        && request.resource.data.publicationConsentAt <= request.time.toMillis()
+        && validConsentTime(request.resource.data.publicationConsentAt)
         && request.resource.data.status == 'pending'
         && request.resource.data.expiresAt is int
         && request.resource.data.expiresAt > request.time.toMillis()
@@ -362,8 +351,7 @@ service cloud.firestore {
       allow create: if verified()
         && request.resource.data.reporterId == request.auth.uid
         && request.resource.data.privacyConsentVersion == '2026-09-26-v2'
-        && request.resource.data.privacyConsentAt is int
-        && request.resource.data.privacyConsentAt <= request.time.toMillis()
+        && validConsentTime(request.resource.data.privacyConsentAt)
         && reportId == request.auth.uid + '_' + request.resource.data.listingId
         && exists(
           /databases/$(database)/documents/listings/$(request.resource.data.listingId)
@@ -401,8 +389,7 @@ service cloud.firestore {
       allow create: if verified()
         && request.resource.data.senderId == request.auth.uid
         && request.resource.data.privacyConsentVersion == '2026-09-26-v2'
-        && request.resource.data.privacyConsentAt is int
-        && request.resource.data.privacyConsentAt <= request.time.toMillis()
+        && validConsentTime(request.resource.data.privacyConsentAt)
         && request.resource.data.senderId != request.resource.data.recipientId
         && exists(
           /databases/$(database)/documents/listings/$(request.resource.data.listingId)

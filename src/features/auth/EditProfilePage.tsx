@@ -4,7 +4,7 @@ import {
   reauthenticateWithCredential,
   updatePassword,
 } from 'firebase/auth';
-import { doc, writeBatch } from 'firebase/firestore';
+import { doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, KeyRound, Save, UserRound } from 'lucide-react';
 import { auth, db } from '../../lib/firebase';
@@ -55,14 +55,13 @@ export function EditProfilePage() {
 
     setProfileSaving(true);
     try {
-      const now = Date.now();
       const batch = writeBatch(db);
       batch.update(doc(db, 'users', fbUser.uid), {
         displayName: nextName,
         phone: nextPhone,
         emailVerified: auth.currentUser.emailVerified,
         ...(phoneChanged
-          ? { phoneConsentVersion: PRIVACY_NOTICE_VERSION, phoneConsentAt: now }
+          ? { phoneConsentVersion: PRIVACY_NOTICE_VERSION, phoneConsentAt: serverTimestamp() }
           : {}),
       });
       batch.update(doc(db, 'publicProfiles', fbUser.uid), {

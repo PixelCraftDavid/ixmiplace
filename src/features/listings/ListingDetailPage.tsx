@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { collection, doc, getDoc, increment, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, increment, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import {
   ArrowLeft,
   MapPin,
@@ -125,7 +125,7 @@ export function ListingDetailPage() {
     }
   }
 
-  async function submitReport(data: ReportInput, privacyConsentAt: number) {
+  async function submitReport(data: ReportInput) {
     if (!fbUser || !auth.currentUser || !listing) {
       setReportError('Debes iniciar sesión para reportar una publicación.');
       return;
@@ -151,7 +151,7 @@ export function ListingDetailPage() {
         status: 'open',
         createdAt: Date.now(),
         privacyConsentVersion: PRIVACY_NOTICE_VERSION,
-        privacyConsentAt,
+        privacyConsentAt: serverTimestamp(),
       });
       batch.update(doc(db, 'listings', listing.id), {
         reportsCount: increment(1),
@@ -166,7 +166,7 @@ export function ListingDetailPage() {
     }
   }
 
-  async function submitContact(data: InternalMessageInput, privacyConsentAt: number) {
+  async function submitContact(data: InternalMessageInput) {
     if (!fbUser || !listing || !profile) {
       setContactError('Inicia sesión y verifica tu correo para enviar mensajes.');
       return;
@@ -191,7 +191,7 @@ export function ListingDetailPage() {
         status: 'unread',
         createdAt: Date.now(),
         privacyConsentVersion: PRIVACY_NOTICE_VERSION,
-        privacyConsentAt,
+        privacyConsentAt: serverTimestamp(),
       });
       setContactSent(true);
     } catch (error) {
@@ -649,7 +649,7 @@ function ContactDialog({
   isSignedIn: boolean;
   ownerName: string;
   onClose: () => void;
-  onSubmit: (data: InternalMessageInput, privacyConsentAt: number) => Promise<void>;
+  onSubmit: (data: InternalMessageInput) => Promise<void>;
 }) {
   const [subject, setSubject] = useState('Me interesa tu propiedad');
   const [message, setMessage] = useState('');
@@ -694,7 +694,7 @@ function ContactDialog({
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
                 <div className="mt-5 flex gap-3">
                   <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-cream-300 px-4 py-3 font-semibold text-ink-600 hover:bg-cream-100">Cancelar</button>
-                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ subject, message }, Date.now())} className="flex-1 rounded-xl bg-brand-500 px-4 py-3 font-semibold text-white hover:bg-brand-600 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar mensaje'}</button>
+                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ subject, message })} className="flex-1 rounded-xl bg-brand-500 px-4 py-3 font-semibold text-white hover:bg-brand-600 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar mensaje'}</button>
                 </div>
               </>
             )}
@@ -718,7 +718,7 @@ function ReportDialog({
   submitting: boolean;
   isSignedIn: boolean;
   onClose: () => void;
-  onSubmit: (data: ReportInput, privacyConsentAt: number) => Promise<void>;
+  onSubmit: (data: ReportInput) => Promise<void>;
 }) {
   const [reason, setReason] = useState<ReportInput['reason']>('spam');
   const [comment, setComment] = useState('');
@@ -771,7 +771,7 @@ function ReportDialog({
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
                 <div className="mt-5 flex gap-3">
                   <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-cream-300 px-4 py-3 font-semibold text-ink-600 hover:bg-cream-100">Cancelar</button>
-                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ reason, comment }, Date.now())} className="flex-1 rounded-xl bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar reporte'}</button>
+                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ reason, comment })} className="flex-1 rounded-xl bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar reporte'}</button>
                 </div>
               </>
             )}

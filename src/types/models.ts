@@ -1,3 +1,5 @@
+import type { FieldValue, Timestamp } from 'firebase/firestore';
+
 export type UserRole = 'user' | 'owner' | 'admin';
 
 export interface AppUser {
@@ -11,13 +13,13 @@ export interface AppUser {
   createdAt: number;
   isBanned?: boolean;
   termsAcceptedVersion?: string;
-  termsAcceptedAt?: number;
+  termsAcceptedAt?: number | Timestamp | FieldValue;
   adultConfirmedVersion?: string;
-  adultConfirmedAt?: number;
+  adultConfirmedAt?: number | Timestamp | FieldValue;
   privacyConsentVersion?: string;
-  privacyConsentAt?: number;
+  privacyConsentAt?: number | Timestamp | FieldValue;
   phoneConsentVersion?: string;
-  phoneConsentAt?: number;
+  phoneConsentAt?: number | Timestamp | FieldValue;
 }
 
 export type ListingCategory =
@@ -117,7 +119,7 @@ export interface Listing {
   createdAt: number;
   updatedAt: number;
   publicationConsentVersion?: string;
-  publicationConsentAt?: number;
+  publicationConsentAt?: number | Timestamp | FieldValue;
 }
 
 // Reportes

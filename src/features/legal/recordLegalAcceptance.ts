@@ -1,35 +1,38 @@
 import type { User } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from './legalVersions';
 
-export async function recordLegalAcceptance(user: User, acceptedAt = Date.now()) {
+export async function recordLegalAcceptance(user: User) {
+  await user.reload();
+  await user.getIdToken(true);
   const userRef = doc(db, 'users', user.uid);
   const acceptance = {
     emailVerified: user.emailVerified,
     termsAcceptedVersion: TERMS_VERSION,
-    termsAcceptedAt: acceptedAt,
+    termsAcceptedAt: serverTimestamp(),
     adultConfirmedVersion: TERMS_VERSION,
-    adultConfirmedAt: acceptedAt,
+    adultConfirmedAt: serverTimestamp(),
     privacyConsentVersion: PRIVACY_NOTICE_VERSION,
-    privacyConsentAt: acceptedAt,
+    privacyConsentAt: serverTimestamp(),
   };
-  const existing = await getDoc(userRef);
+  await runTransaction(db, async (transaction) => {
+    const existing = await transaction.get(userRef);
+    if (existing.exists()) {
+      transaction.update(userRef, acceptance);
+      return;
+    }
 
-  if (existing.exists()) {
-    await updateDoc(userRef, acceptance);
-    return;
-  }
-
-  await setDoc(userRef, {
-    uid: user.uid,
-    email: user.email ?? '',
-    displayName: user.displayName ?? user.email?.split('@')[0] ?? 'Usuario',
-    role: 'user',
-    createdAt: acceptedAt,
-    isBanned: false,
-    ...(user.phoneNumber ? { phone: user.phoneNumber } : {}),
-    ...(user.photoURL ? { photoURL: user.photoURL } : {}),
-    ...acceptance,
+    transaction.set(userRef, {
+      uid: user.uid,
+      email: user.email ?? '',
+      displayName: user.displayName ?? user.email?.split('@')[0] ?? 'Usuario',
+      role: 'user',
+      createdAt: Date.now(),
+      isBanned: false,
+      ...(user.phoneNumber ? { phone: user.phoneNumber } : {}),
+      ...(user.photoURL ? { photoURL: user.photoURL } : {}),
+      ...acceptance,
+    });
   });
 }

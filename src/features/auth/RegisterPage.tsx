@@ -9,7 +9,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, db } from '@/lib/firebase';
 import { isDisposableEmail } from '@/lib/email';
@@ -71,7 +71,6 @@ export function RegisterPage() {
       );
       await updateProfile(cred.user, { displayName: data.displayName });
 
-      const acceptedAt = Date.now();
       await setDoc(doc(db, 'users', cred.user.uid), {
         uid: cred.user.uid,
         email: data.email,
@@ -81,11 +80,11 @@ export function RegisterPage() {
         createdAt: Date.now(),
         isBanned: false,
         termsAcceptedVersion: TERMS_VERSION,
-        termsAcceptedAt: acceptedAt,
+        termsAcceptedAt: serverTimestamp(),
         adultConfirmedVersion: TERMS_VERSION,
-        adultConfirmedAt: acceptedAt,
+        adultConfirmedAt: serverTimestamp(),
         privacyConsentVersion: PRIVACY_NOTICE_VERSION,
-        privacyConsentAt: acceptedAt,
+        privacyConsentAt: serverTimestamp(),
       });
 
       await sendEmailVerification(cred.user);

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { db, auth } from '../../lib/firebase';
@@ -36,7 +36,7 @@ export function CompleteProfilePage() {
       await updateDoc(doc(db, 'users', auth.currentUser.uid), {
         phone,
         phoneConsentVersion: PRIVACY_NOTICE_VERSION,
-        phoneConsentAt: Date.now(),
+        phoneConsentAt: serverTimestamp(),
       });
 
       // 2. Esperar a que refreshProfile termine
