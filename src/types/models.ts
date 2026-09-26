@@ -10,6 +10,12 @@ export interface AppUser {
   photoURL?: string;
   createdAt: number;
   isBanned?: boolean;
+  termsAcceptedVersion?: string;
+  termsAcceptedAt?: number;
+  privacyConsentVersion?: string;
+  privacyConsentAt?: number;
+  phoneConsentVersion?: string;
+  phoneConsentAt?: number;
 }
 
 export type ListingCategory =
@@ -108,6 +114,8 @@ export interface Listing {
   // Timestamps
   createdAt: number;
   updatedAt: number;
+  publicationConsentVersion?: string;
+  publicationConsentAt?: number;
 }
 
 // Reportes

@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user.photoURL) newProfile.photoURL = user.photoURL;
 
       try {
-        await setDoc(ref, newProfile);
+        await setDoc(ref, newProfile, { merge: true });
         await syncPublicProfile(user, newProfile);
         setProfile(newProfile);
         return newProfile;

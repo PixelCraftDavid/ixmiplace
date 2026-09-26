@@ -39,8 +39,40 @@ service cloud.firestore {
         || (signedIn()
           && request.auth.uid == userId
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'displayName', 'photoURL', 'phone', 'emailVerified'
+            'displayName', 'photoURL', 'phone', 'emailVerified',
+            'termsAcceptedVersion', 'termsAcceptedAt',
+            'privacyConsentVersion', 'privacyConsentAt',
+            'phoneConsentVersion', 'phoneConsentAt'
           ])
+          && (!('termsAcceptedVersion' in request.resource.data)
+            || (request.resource.data.termsAcceptedVersion is string
+              && request.resource.data.termsAcceptedAt is int))
+          && (!('privacyConsentVersion' in request.resource.data)
+            || (request.resource.data.privacyConsentVersion is string
+              && request.resource.data.privacyConsentAt is int))
+          && (!('phoneConsentVersion' in request.resource.data)
+            || (request.resource.data.phoneConsentVersion is string
+              && request.resource.data.phoneConsentAt is int))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'termsAcceptedVersion', 'termsAcceptedAt'
+          ])
+            || (request.resource.data.termsAcceptedVersion is string
+              && request.resource.data.termsAcceptedVersion.size() > 0
+              && request.resource.data.termsAcceptedAt is int
+              && request.resource.data.termsAcceptedAt <= request.time.toMillis()))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'privacyConsentVersion', 'privacyConsentAt'
+          ])
+            || (request.resource.data.privacyConsentVersion is string
+              && request.resource.data.privacyConsentVersion.size() > 0
+              && request.resource.data.privacyConsentAt is int
+              && request.resource.data.privacyConsentAt <= request.time.toMillis()))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'phone'
+          ])
+            || (request.resource.data.phoneConsentVersion == '2026-09-26'
+              && request.resource.data.phoneConsentAt is int
+              && request.resource.data.phoneConsentAt <= request.time.toMillis()))
           && request.resource.data.role == resource.data.role
           && request.resource.data.isBanned == resource.data.isBanned
           && request.resource.data.uid == resource.data.uid
@@ -80,6 +112,11 @@ service cloud.firestore {
       allow create: if verified()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.ownerEmailVerified == true
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.termsAcceptedVersion == '2026-09-26'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.privacyConsentVersion == '2026-09-26'
+        && request.resource.data.publicationConsentVersion == '2026-09-26'
+        && request.resource.data.publicationConsentAt is int
+        && request.resource.data.publicationConsentAt <= request.time.toMillis()
         && request.resource.data.status == 'pending'
         && request.resource.data.expiresAt is int
         && request.resource.data.expiresAt > request.time.toMillis()
@@ -90,6 +127,7 @@ service cloud.firestore {
           'areaM2', 'amenities', 'status', 'availability',
           'availabilityConfirmedAt', 'expiresAt', 'photos', 'photoPublicIds',
           'whatsapp', 'showPhone', 'reportsCount', 'viewsCount',
+          'publicationConsentVersion', 'publicationConsentAt',
           'establishmentName', 'roomType', 'stayDurationHours',
           'checkInTime', 'checkOutTime', 'reception24h',
           'foodAvailable', 'foodDescription',
@@ -312,6 +350,9 @@ service cloud.firestore {
 
       allow create: if verified()
         && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.privacyConsentVersion == '2026-09-26'
+        && request.resource.data.privacyConsentAt is int
+        && request.resource.data.privacyConsentAt <= request.time.toMillis()
         && reportId == request.auth.uid + '_' + request.resource.data.listingId
         && exists(
           /databases/$(database)/documents/listings/$(request.resource.data.listingId)
@@ -348,6 +389,9 @@ service cloud.firestore {
 
       allow create: if verified()
         && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.privacyConsentVersion == '2026-09-26'
+        && request.resource.data.privacyConsentAt is int
+        && request.resource.data.privacyConsentAt <= request.time.toMillis()
         && request.resource.data.senderId != request.resource.data.recipientId
         && exists(
           /databases/$(database)/documents/listings/$(request.resource.data.listingId)

@@ -30,6 +30,7 @@ export function PrivacyNoticePage() {
               <li>Contacto y perfil: teléfono/WhatsApp, foto de perfil y nombre visible.</li>
               <li>Publicaciones: título, descripción, categoría, precio, zona y ubicación que aparece en el mapa, fotografías, servicios, teléfono si decides mostrarlo y disponibilidad.</li>
               <li>Uso de la plataforma: favoritos, mensajes, reportes, notificaciones, historial de publicaciones y contadores de visitas/contactos.</li>
+              <li>Constancias de elección: versiones y fechas de aceptación de los Términos y de los avisos/consentimientos mostrados al crear una cuenta, publicar, completar el perfil, enviar mensajes o reportes.</li>
               <li>Apoyo voluntario: la página de apoyo muestra públicamente la CLABE de Mercado Pago del responsable para recibir transferencias. IxmiPlace no solicita ni guarda los datos bancarios de quien envía el apoyo.</li>
               <li>Si escribes al correo de contacto, el contenido del mensaje y la dirección desde la que lo envías para responder tu consulta o coordinar un apoyo voluntario.</li>
               <li>Datos técnicos del navegador: preferencia de tema y marcas locales que ayudan a evitar registrar repetidamente ciertos contadores de visitas y contactos, además del estado de sesión administrado por Firebase Authentication.</li>
@@ -39,7 +40,7 @@ export function PrivacyNoticePage() {
           </NoticeSection>
 
           <NoticeSection title="3. Finalidades">
-            <p>Tratamos los datos para crear y proteger cuentas; verificar correo; completar perfiles; publicar y administrar anuncios; permitir mensajes entre personas interesadas y propietarios; gestionar favoritos, reportes y notificaciones; moderar contenido; prevenir abuso, fraude o spam; mantener la seguridad y el funcionamiento técnico; y responder solicitudes de privacidad.</p>
+            <p>Tratamos los datos para crear y proteger cuentas; verificar correo; completar perfiles; publicar y administrar anuncios; permitir mensajes entre personas interesadas y propietarios; gestionar favoritos, reportes y notificaciones; moderar contenido; prevenir abuso, fraude o spam; mantener la seguridad y el funcionamiento técnico; documentar las aceptaciones y autorizaciones que manifiestas; y responder solicitudes de privacidad.</p>
             <p>Si en el futuro se agregan comunicaciones promocionales u otra finalidad secundaria, se informará antes de utilizarlas y se ofrecerán medios para limitar su uso cuando corresponda.</p>
           </NoticeSection>
 

@@ -80,6 +80,7 @@ export const listingSchema = z
     amenities: z.array(z.string()).optional(),
 
     showPhone: z.boolean().default(true),
+    publicationConsentAccepted: z.boolean().optional(),
 
     availability: z
       .enum(['available', 'occupied', 'reserved', 'rented', 'sold', 'unavailable', 'unconfirmed'])

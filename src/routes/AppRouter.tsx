@@ -20,6 +20,8 @@ import { ListingHistoryPage } from '../features/listings/ListingHistoryPage';
 import { PublicProfilePage } from '../features/auth/PublicProfilePage';
 import { SuspendedPage } from '../features/auth/SuspendedPage';
 import { PrivacyNoticePage } from '../features/legal/PrivacyNoticePage';
+import { TermsPage } from '../features/legal/TermsPage';
+import { LegalAcceptancePage } from '../features/legal/LegalAcceptancePage';
 import { SupportPage } from '../features/support/SupportPage';
 import { SiteFooter } from '../components/layout/SiteFooter';
 
@@ -62,6 +64,8 @@ export function AppRouter() {
           <Route path="/propietario/:id" element={<PublicProfilePage />} />
           <Route path="/cuenta-suspendida" element={<SuspendedPage />} />
           <Route path="/aviso-de-privacidad" element={<PrivacyNoticePage />} />
+          <Route path="/terminos" element={<TermsPage />} />
+          <Route path="/aceptar-terminos" element={<LegalAcceptancePage />} />
           <Route path="/apoyar" element={<SupportPage />} />
 
           {/* Protegidas */}

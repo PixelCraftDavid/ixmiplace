@@ -8,6 +8,7 @@ import { ListingForm } from './ListingForm';
 import { ListingScenePreview } from './ListingScenePreview';
 import type { ListingInput } from '../../lib/zod-schemas';
 import type { Listing } from '../../types/models';
+import { LISTING_CONSENT_VERSION } from '../legal/legalVersions';
 
 export function CreateListingPage() {
   const nav = useNavigate();
@@ -25,6 +26,7 @@ export function CreateListingPage() {
     photoPublicIds: string[] = []
   ) {
     if (!auth.currentUser) throw new Error('Sesión expirada');
+    if (!data.publicationConsentAccepted) throw new Error('Debes confirmar tu autorización para publicar este anuncio.');
 
     const now = Date.now();
     const listing: Omit<Listing, 'id'> = {
@@ -52,6 +54,8 @@ export function CreateListingPage() {
       favoritesCount: 0,
       createdAt: now,
       updatedAt: now,
+      publicationConsentVersion: LISTING_CONSENT_VERSION,
+      publicationConsentAt: now,
     };
 
     if (data.priceUnit) listing.priceUnit = data.priceUnit;

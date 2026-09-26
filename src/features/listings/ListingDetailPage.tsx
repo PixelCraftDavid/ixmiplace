@@ -39,6 +39,7 @@ import type { Listing, AppUser } from '../../types/models';
 import { trackListingMetric } from '../../lib/listing-metrics';
 import { isListingExpired } from '../../lib/listing-expiration';
 import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline';
+import { PRIVACY_NOTICE_VERSION } from '../legal/legalVersions';
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -124,7 +125,7 @@ export function ListingDetailPage() {
     }
   }
 
-  async function submitReport(data: ReportInput) {
+  async function submitReport(data: ReportInput, privacyConsentAt: number) {
     if (!fbUser || !auth.currentUser || !listing) {
       setReportError('Debes iniciar sesión para reportar una publicación.');
       return;
@@ -149,6 +150,8 @@ export function ListingDetailPage() {
         ...(parsed.data.comment ? { comment: parsed.data.comment } : {}),
         status: 'open',
         createdAt: Date.now(),
+        privacyConsentVersion: PRIVACY_NOTICE_VERSION,
+        privacyConsentAt,
       });
       batch.update(doc(db, 'listings', listing.id), {
         reportsCount: increment(1),
@@ -163,7 +166,7 @@ export function ListingDetailPage() {
     }
   }
 
-  async function submitContact(data: InternalMessageInput) {
+  async function submitContact(data: InternalMessageInput, privacyConsentAt: number) {
     if (!fbUser || !listing || !profile) {
       setContactError('Inicia sesión y verifica tu correo para enviar mensajes.');
       return;
@@ -187,6 +190,8 @@ export function ListingDetailPage() {
         message: parsed.data.message,
         status: 'unread',
         createdAt: Date.now(),
+        privacyConsentVersion: PRIVACY_NOTICE_VERSION,
+        privacyConsentAt,
       });
       setContactSent(true);
     } catch (error) {
@@ -644,10 +649,11 @@ function ContactDialog({
   isSignedIn: boolean;
   ownerName: string;
   onClose: () => void;
-  onSubmit: (data: InternalMessageInput) => Promise<void>;
+  onSubmit: (data: InternalMessageInput, privacyConsentAt: number) => Promise<void>;
 }) {
   const [subject, setSubject] = useState('Me interesa tu propiedad');
   const [message, setMessage] = useState('');
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm">
@@ -681,10 +687,14 @@ function ContactDialog({
                   Mensaje
                   <textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={1000} rows={5} placeholder="Hola, me interesa saber más sobre esta propiedad…" className="mt-2 w-full resize-none rounded-xl border border-cream-300 bg-cream-50 p-3 font-normal text-ink outline-none focus:border-brand-500" />
                 </label>
+                <label className="mt-4 flex items-start gap-2.5 text-xs leading-relaxed text-ink-500">
+                  <input type="checkbox" checked={acceptedPrivacy} onChange={(event) => setAcceptedPrivacy(event.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600" />
+                  <span>Consiento compartir mi nombre, asunto y mensaje con el propietario para que pueda responderme. <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline">Ver Aviso de Privacidad</Link>.</span>
+                </label>
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
                 <div className="mt-5 flex gap-3">
                   <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-cream-300 px-4 py-3 font-semibold text-ink-600 hover:bg-cream-100">Cancelar</button>
-                  <button type="button" disabled={submitting} onClick={() => void onSubmit({ subject, message })} className="flex-1 rounded-xl bg-brand-500 px-4 py-3 font-semibold text-white hover:bg-brand-600 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar mensaje'}</button>
+                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ subject, message }, Date.now())} className="flex-1 rounded-xl bg-brand-500 px-4 py-3 font-semibold text-white hover:bg-brand-600 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar mensaje'}</button>
                 </div>
               </>
             )}
@@ -708,10 +718,11 @@ function ReportDialog({
   submitting: boolean;
   isSignedIn: boolean;
   onClose: () => void;
-  onSubmit: (data: ReportInput) => Promise<void>;
+  onSubmit: (data: ReportInput, privacyConsentAt: number) => Promise<void>;
 }) {
   const [reason, setReason] = useState<ReportInput['reason']>('spam');
   const [comment, setComment] = useState('');
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm">
@@ -753,10 +764,14 @@ function ReportDialog({
                   Comentario <span className="font-normal text-ink-400">(opcional)</span>
                   <textarea value={comment} onChange={(event) => setComment(event.target.value)} maxLength={500} rows={4} className="mt-2 w-full resize-none rounded-xl border border-cream-300 bg-cream-50 p-3 font-normal text-ink outline-none focus:border-brand-500" placeholder="Cuéntanos brevemente qué detectaste…" />
                 </label>
+                <label className="mt-4 flex items-start gap-2.5 text-xs leading-relaxed text-ink-500">
+                  <input type="checkbox" checked={acceptedPrivacy} onChange={(event) => setAcceptedPrivacy(event.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600" />
+                  <span>Consiento que el equipo administrador trate el reporte y los datos que incluya para revisar el anuncio. <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline">Ver Aviso de Privacidad</Link>.</span>
+                </label>
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
                 <div className="mt-5 flex gap-3">
                   <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-cream-300 px-4 py-3 font-semibold text-ink-600 hover:bg-cream-100">Cancelar</button>
-                  <button type="button" disabled={submitting} onClick={() => void onSubmit({ reason, comment })} className="flex-1 rounded-xl bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar reporte'}</button>
+                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ reason, comment }, Date.now())} className="flex-1 rounded-xl bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar reporte'}</button>
                 </div>
               </>
             )}

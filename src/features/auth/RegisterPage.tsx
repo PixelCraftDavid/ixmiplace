@@ -15,6 +15,9 @@ import { auth, db } from '@/lib/firebase';
 import { isDisposableEmail } from '@/lib/email';
 import { HouseScene } from '@/components/three/HouseScene';
 import { PrivacyNoticeInline } from '@/components/legal/PrivacyNoticeInline';
+import { LegalAcceptanceFields } from '@/components/legal/LegalAcceptanceFields';
+import { recordLegalAcceptance } from '@/features/legal/recordLegalAcceptance';
+import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '@/features/legal/legalVersions';
 
 const schema = z.object({
   displayName: z.string().min(2, 'Mínimo 2 caracteres').max(60),
@@ -37,6 +40,8 @@ function traducirError(code: string): string {
 export function RegisterPage() {
   const nav = useNavigate();
   const [error, setError] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
   const {
     register,
@@ -46,6 +51,11 @@ export function RegisterPage() {
 
   async function onSubmit(data: FormData) {
     setError('');
+
+    if (!acceptedTerms || !acceptedPrivacy) {
+      setError('Acepta los Términos y confirma el Aviso de Privacidad para crear tu cuenta.');
+      return;
+    }
 
     if (isDisposableEmail(data.email)) {
       setError('Usa un correo personal o institucional permanente. No aceptamos correos temporales.');
@@ -60,6 +70,7 @@ export function RegisterPage() {
       );
       await updateProfile(cred.user, { displayName: data.displayName });
 
+      const acceptedAt = Date.now();
       await setDoc(doc(db, 'users', cred.user.uid), {
         uid: cred.user.uid,
         email: data.email,
@@ -68,6 +79,10 @@ export function RegisterPage() {
         role: 'user',
         createdAt: Date.now(),
         isBanned: false,
+        termsAcceptedVersion: TERMS_VERSION,
+        termsAcceptedAt: acceptedAt,
+        privacyConsentVersion: PRIVACY_NOTICE_VERSION,
+        privacyConsentAt: acceptedAt,
       });
 
       await sendEmailVerification(cred.user);
@@ -80,9 +95,14 @@ export function RegisterPage() {
 
   async function handleGoogle() {
     setError('');
+    if (!acceptedTerms || !acceptedPrivacy) {
+      setError('Acepta los Términos y confirma el Aviso de Privacidad para crear tu cuenta.');
+      return;
+    }
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const credential = await signInWithPopup(auth, provider);
+      await recordLegalAcceptance(credential.user);
       // El AuthProvider crea el perfil si no existe.
       // RequireAuth se encarga de mandar a /complete-profile si falta teléfono.
       nav('/');
@@ -106,12 +126,20 @@ export function RegisterPage() {
 
           <PrivacyNoticeInline kind="account" />
 
+          <LegalAcceptanceFields
+            acceptedTerms={acceptedTerms}
+            acceptedPrivacy={acceptedPrivacy}
+            onTermsChange={setAcceptedTerms}
+            onPrivacyChange={setAcceptedPrivacy}
+          />
+
           <button
             onClick={handleGoogle}
             type="button"
+            disabled={!acceptedTerms || !acceptedPrivacy}
             className="flex w-full items-center justify-center gap-3
                        rounded-xl border border-cream-300 py-2.5
-                       font-medium text-ink-700 transition hover:bg-cream-50"
+                       font-medium text-ink-700 transition hover:bg-cream-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg width="18" height="18" viewBox="0 0 48 48">
               <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z"/>
@@ -176,7 +204,7 @@ export function RegisterPage() {
             {error && <p className="text-sm text-red-600">{error}</p>}
 
             <button
-              disabled={isSubmitting}
+              disabled={isSubmitting || !acceptedTerms || !acceptedPrivacy}
               className="w-full rounded-xl bg-brand-600 py-3 font-semibold
                          text-white transition hover:bg-brand-700 disabled:opacity-60"
             >

@@ -13,6 +13,7 @@ export function SiteFooter() {
         </div>
         <nav aria-label="Enlaces legales y de apoyo" className="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm">
           <Link to="/aviso-de-privacidad" className="hover:text-brand-700 dark:hover:text-brand-300">Aviso de privacidad</Link>
+          <Link to="/terminos" className="hover:text-brand-700 dark:hover:text-brand-300">Términos y condiciones</Link>
           <Link to="/apoyar" className="inline-flex items-center gap-1.5 font-semibold text-brand-700 hover:text-brand-800 dark:text-brand-300 dark:hover:text-brand-200">
             <Heart className="h-4 w-4" /> Apoyar el proyecto
           </Link>

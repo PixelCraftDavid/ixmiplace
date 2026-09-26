@@ -1,6 +1,7 @@
 import { useForm, Controller } from 'react-hook-form';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Loader2,
   AlertCircle,
@@ -81,6 +82,7 @@ export function ListingForm({
       areaM2: undefined,
       amenities: [],
       showPhone: true,
+      publicationConsentAccepted: false,
       availability: 'available',
       establishmentName: '',
       roomType: '',
@@ -119,6 +121,11 @@ export function ListingForm({
   async function handleFormSubmit(data: ListingInput) {
     setSubmitError('');
     setPhotosError('');
+
+    if (requireConfirmation && data.publicationConsentAccepted !== true) {
+      setSubmitError('Confirma que tienes autorización para publicar y que la información puede mostrarse públicamente.');
+      return;
+    }
 
     if (photos.length === 0) {
       setPhotosError('Sube al menos 1 foto de la propiedad.');
@@ -526,6 +533,19 @@ export function ListingForm({
       </Section>
 
       {/* ═══════════ Error general ═══════════ */}
+      {requireConfirmation && (
+        <label className="flex items-start gap-3 rounded-2xl border border-cream-200 bg-white p-4 text-sm leading-relaxed text-ink-600 shadow-sm">
+          <input
+            type="checkbox"
+            {...register('publicationConsentAccepted')}
+            className="mt-1 h-4 w-4 shrink-0 accent-brand-600"
+          />
+          <span>
+            Confirmo que tengo autorización para ofrecer esta propiedad y que los datos y fotos son correctos y puedo publicarlos. Entiendo que el anuncio aprobado será público y que IxmiPlace no verifica la propiedad, sus permisos, condiciones ni disponibilidad. Acepto los <Link to="/terminos" target="_blank" className="font-semibold text-brand-700 underline">Términos</Link> y la publicación conforme al <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline">Aviso de Privacidad</Link>.
+          </span>
+        </label>
+      )}
+
       {submitError && (
         <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0" />

@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { HouseLoader } from '../../components/ui/HouseLoader';
+import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../legal/legalVersions';
 
 interface Props {
   requireVerified?: boolean;
@@ -44,6 +45,14 @@ export function RequireAuth({ requireVerified = true }: Props) {
 
   if (profile.isBanned && loc.pathname !== '/cuenta-suspendida') {
     return <Navigate to="/cuenta-suspendida" replace />;
+  }
+
+  if (
+    (profile.termsAcceptedVersion !== TERMS_VERSION ||
+      profile.privacyConsentVersion !== PRIVACY_NOTICE_VERSION) &&
+    loc.pathname !== '/aceptar-terminos'
+  ) {
+    return <Navigate to="/aceptar-terminos" state={{ from: loc }} replace />;
   }
 
   // 5. Sin teléfono → completar perfil

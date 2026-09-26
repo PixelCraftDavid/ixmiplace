@@ -34,7 +34,7 @@ export function LoginPage() {
       await signInWithEmailAndPassword(auth, data.email, data.password);
       nav('/');
     } catch {
-      setError('Credenciales incorrectas.');
+      setError('No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.');
     }
   }
 
@@ -44,7 +44,7 @@ export function LoginPage() {
       await signInWithPopup(auth, new GoogleAuthProvider());
       nav('/');
     } catch {
-      setError('No se pudo iniciar con Google.');
+      setError('No se pudo iniciar con Google. Inténtalo de nuevo.');
     }
   }
 
@@ -67,7 +67,7 @@ export function LoginPage() {
             type="button"
             className="flex w-full items-center justify-center gap-3
                        rounded-xl border border-cream-300 py-2.5
-                       font-medium text-ink-700 transition hover:bg-cream-50"
+                       font-medium text-ink-700 transition hover:bg-cream-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg width="18" height="18" viewBox="0 0 48 48">
               <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z"/>
