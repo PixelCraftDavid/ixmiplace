@@ -30,7 +30,7 @@ function HomePage() {
   return (
     <main className="min-h-screen bg-cream">
       <Hero />
-      <section className="mx-auto -mt-8 mb-8 max-w-6xl px-4">
+      <section className="mx-auto mb-8 max-w-6xl px-4 pt-8">
         <div className="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-brand-950 dark:border-brand-900/50 dark:bg-brand-900/20 dark:text-brand-100">
           <p className="font-semibold">IxmiPlace sigue en desarrollo y puedes probarlo.</p>
           <p className="mt-1 text-sm leading-relaxed opacity-80">Iremos sumando mejoras notables con el tiempo para acercar nuevas tecnologías a Ixmiquilpan.</p>
