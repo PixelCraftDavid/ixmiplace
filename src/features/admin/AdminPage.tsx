@@ -295,7 +295,11 @@ export function AdminPage() {
           let expiresAtMillis: number | null = null;
           if (typeof expiresAt === 'number' && Number.isFinite(expiresAt)) {
             expiresAtMillis = expiresAt;
-          } else if (expiresAt && typeof expiresAt.toMillis === 'function') {
+          } else if (
+            expiresAt !== null &&
+            typeof expiresAt === 'object' &&
+            typeof expiresAt.toMillis === 'function'
+          ) {
             expiresAtMillis = expiresAt.toMillis();
             updates.expiresAt = expiresAtMillis;
             expirationsNormalized += 1;
