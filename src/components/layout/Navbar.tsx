@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, Heart, Home, ChevronDown, User, ShieldCheck, Bell, Moon, Sun, Mail } from 'lucide-react';
+import { LogOut, Heart, Home, ChevronDown, User, ShieldCheck, Bell, Moon, Sun, Mail, Settings } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/features/auth/AuthContext';
@@ -111,6 +111,15 @@ export function Navbar() {
                     </p>
                     <p className="truncate text-xs text-ink-400">{fbUser.email}</p>
                   </div>
+
+                  <Link
+                    to="/perfil"
+                    onClick={closeMenu}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100"
+                  >
+                    <Settings className="h-4 w-4 text-ink-400" />
+                    Editar perfil
+                  </Link>
 
                   <Link
                     to="/mis-publicaciones"

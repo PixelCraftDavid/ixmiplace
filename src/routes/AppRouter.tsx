@@ -5,6 +5,7 @@ import { RegisterPage } from '../features/auth/RegisterPage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { VerifyEmailPage } from '../features/auth/VerifyEmailPage';
 import { CompleteProfilePage } from '../features/auth/CompleteProfilePage';
+import { EditProfilePage } from '../features/auth/EditProfilePage';
 import { CreateListingPage } from '../features/listings/CreateListingPage';
 import { EditListingPage } from '../features/listings/EditListingPage';
 import { MyListingsPage } from '../features/listings/MyListingsPage';
@@ -74,6 +75,7 @@ export function AppRouter() {
             <Route path="/publicar" element={<CreateListingPage />} />
             <Route path="/editar/:id" element={<EditListingPage />} />
             <Route path="/mis-publicaciones" element={<MyListingsPage />} />
+            <Route path="/perfil" element={<EditProfilePage />} />
             <Route path="/favoritos" element={<FavoritesPage />} />
             <Route path="/notificaciones" element={<NotificationsPage />} />
             <Route path="/mensajes" element={<MessagesPage />} />
