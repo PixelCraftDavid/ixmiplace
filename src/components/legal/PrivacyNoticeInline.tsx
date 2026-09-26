@@ -68,7 +68,7 @@ export function PrivacyNoticeInline({ kind }: { kind: NoticeKind }) {
             </div>
 
             <div className="mt-4 space-y-3 text-sm leading-relaxed">
-              <p>El responsable es <strong>Ángel David Santos Pacheco</strong>, en Ixmiquilpan, Hidalgo. Para ejercer tus derechos o preguntar sobre tus datos, escribe a <a className="font-semibold underline" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a>.</p>
+              <p>El responsable es <strong>Ángel David Santos Pacheco</strong> y el proyecto se opera desde Ixmiquilpan, Hidalgo. Para ejercer tus derechos o preguntar sobre tus datos, escribe a <a className="font-semibold underline" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a>; ese es el canal digital de contacto.</p>
               <p>{summaries[kind]}</p>
               <p>Puedes limitar la divulgación editando tu publicación u ocultando el teléfono. Para conocer los datos tratados, finalidades, proveedores y cómo ejercer tus derechos ARCO, consulta el aviso completo.</p>
             </div>

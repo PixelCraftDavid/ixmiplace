@@ -21,7 +21,7 @@ export function PrivacyNoticePage() {
 
         <div className="space-y-5">
           <NoticeSection title="1. Responsable y contacto">
-            <p>El responsable del tratamiento es <strong>Ángel David Santos Pacheco</strong>, con domicilio en <strong>Ixmiquilpan, Hidalgo, México</strong>. Para consultas sobre privacidad o para ejercer derechos ARCO, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a>.</p>
+            <p>El responsable del tratamiento es <strong>Ángel David Santos Pacheco</strong>. El proyecto se opera desde <strong>Ixmiquilpan, Hidalgo, México</strong>. Para consultas sobre privacidad o para ejercer derechos ARCO, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a>; ese es el canal digital de contacto y recepción de solicitudes.</p>
           </NoticeSection>
 
           <NoticeSection title="2. Datos que podemos tratar">
@@ -32,9 +32,10 @@ export function PrivacyNoticePage() {
               <li>Uso de la plataforma: favoritos, mensajes, reportes, notificaciones, historial de publicaciones y contadores de visitas/contactos.</li>
               <li>Apoyo voluntario: la página de apoyo muestra públicamente la CLABE de Mercado Pago del responsable para recibir transferencias. IxmiPlace no solicita ni guarda los datos bancarios de quien envía el apoyo.</li>
               <li>Si escribes al correo de contacto, el contenido del mensaje y la dirección desde la que lo envías para responder tu consulta o coordinar un apoyo voluntario.</li>
-              <li>Datos técnicos necesarios para operar el sitio, como preferencias locales del navegador y registros técnicos gestionados por los proveedores de infraestructura.</li>
+              <li>Datos técnicos del navegador: preferencia de tema y marcas locales que ayudan a evitar registrar repetidamente ciertos contadores de visitas y contactos, además del estado de sesión administrado por Firebase Authentication.</li>
             </ul>
             <p className="mt-3">IxmiPlace no solicita intencionalmente datos personales sensibles. Evita incluirlos en mensajes, reportes o publicaciones.</p>
+            <p>El sitio guarda la preferencia de tema y esas marcas técnicas en <code>localStorage</code>. Firebase Authentication conserva el estado de inicio de sesión mediante persistencia local, usando el mecanismo compatible con el navegador, como IndexedDB o <code>localStorage</code>. El código propio revisado no usa <code>sessionStorage</code> ni configura cookies de publicidad o perfilamiento; los proveedores externos pueden utilizar tecnologías propias necesarias para sus servicios conforme a sus avisos y condiciones.</p>
           </NoticeSection>
 
           <NoticeSection title="3. Finalidades">
@@ -56,7 +57,8 @@ export function PrivacyNoticePage() {
           </NoticeSection>
 
           <NoticeSection title="7. Derechos ARCO">
-            <p>Puedes solicitar acceso a tus datos, su rectificación, cancelación u oponerte a su tratamiento. Envía un correo a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a> con el asunto “Solicitud de privacidad”, el correo asociado a tu cuenta, el derecho que deseas ejercer y una descripción suficiente para localizar tus datos. Para protegerlos, podremos solicitar información razonable para verificar tu identidad. Atenderemos la solicitud conforme a los requisitos y plazos legales aplicables.</p>
+            <p>Puedes solicitar acceso a tus datos, su rectificación, cancelación u oponerte a su tratamiento. Envía un correo a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a> con el asunto “Solicitud de privacidad”, tu nombre, un medio para recibir respuesta, el correo asociado a tu cuenta, el derecho que deseas ejercer y una descripción suficiente para localizar tus datos. Para protegerlos, podremos solicitar información razonable para verificar tu identidad.</p>
+            <p>Comunicaremos la determinación en un plazo máximo de <strong>20 días hábiles</strong> desde que recibamos la solicitud. Si resulta procedente, la haremos efectiva dentro de los <strong>15 días hábiles</strong> siguientes a la comunicación de la respuesta. La ley permite ampliar esos plazos una sola vez por un periodo igual cuando las circunstancias del caso lo justifiquen.</p>
           </NoticeSection>
 
           <NoticeSection title="8. Seguridad, cambios y proyecto en desarrollo">
