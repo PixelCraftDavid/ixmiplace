@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { app } from '@/lib/firebase';
 
 // Fuente
 import '@fontsource/poppins/400.css';
@@ -26,6 +27,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js');
+    const serviceWorkerUrl = new URL('/sw.js', window.location.origin);
+    serviceWorkerUrl.searchParams.set('firebaseConfig', JSON.stringify(app.options));
+    void navigator.serviceWorker.register(serviceWorkerUrl);
   });
 }

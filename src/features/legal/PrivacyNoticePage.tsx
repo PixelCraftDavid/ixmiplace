@@ -15,7 +15,7 @@ export function PrivacyNoticePage() {
           </div>
           <h1 className="text-3xl font-extrabold sm:text-4xl">Aviso de Privacidad Integral</h1>
           <p className="mt-3 text-sm leading-relaxed text-ink-500 dark:text-ink-300">
-            Última actualización: 26 de septiembre de 2026 (versión 2). Este aviso explica cómo se tratan los datos personales al usar IxmiPlace, proyecto independiente en desarrollo para publicar y consultar propiedades en Ixmiquilpan.
+            Última actualización: 26 de septiembre de 2026 (versión 3). Este aviso explica cómo se tratan los datos personales al usar IxmiPlace, proyecto independiente en desarrollo para publicar y consultar propiedades en Ixmiquilpan.
           </p>
         </header>
 
@@ -30,6 +30,7 @@ export function PrivacyNoticePage() {
               <li>Contacto y perfil: teléfono/WhatsApp, foto de perfil y nombre visible.</li>
               <li>Publicaciones: título, descripción, categoría, precio, zona y ubicación que aparece en el mapa, fotografías, servicios, teléfono si decides mostrarlo y disponibilidad.</li>
               <li>Uso de la plataforma: favoritos, mensajes, reportes, notificaciones, historial de publicaciones y contadores de visitas/contactos.</li>
+              <li>Notificaciones push: si las activas, se guarda un token técnico de este dispositivo o navegador para enviarte avisos sobre mensajes, publicaciones y moderación. El token no incluye el contenido de tus mensajes. Puedes desactivarlas desde la página de Notificaciones o en los ajustes de tu dispositivo/navegador.</li>
               <li>Constancias de elección: versiones y fechas de aceptación de los Términos y de los avisos/consentimientos mostrados al crear una cuenta, publicar, completar el perfil, enviar mensajes o reportes.</li>
               <li>Apoyo voluntario: la página de apoyo muestra públicamente la CLABE de Mercado Pago del responsable para recibir transferencias. IxmiPlace no solicita ni guarda los datos bancarios de quien envía el apoyo.</li>
               <li>Si escribes al correo de contacto, el contenido del mensaje y la dirección desde la que lo envías para responder tu consulta o coordinar un apoyo voluntario.</li>
@@ -50,7 +51,7 @@ export function PrivacyNoticePage() {
           </NoticeSection>
 
           <NoticeSection title="5. Proveedores de tecnología">
-            <p>Para operar el servicio se utilizan proveedores tecnológicos que pueden tratar información por cuenta del responsable: Firebase/Google para autenticación y base de datos; Cloudinary para almacenar y entregar imágenes; Vercel para alojamiento; y OpenStreetMap/Nominatim para mostrar mapas y buscar ubicaciones. El apoyo voluntario se realiza fuera de IxmiPlace mediante una transferencia iniciada desde el banco o Mercado Pago de quien aporta; esas instituciones procesan la operación según sus propios avisos y condiciones. También puede haber comunicación directa por correo o WhatsApp si tú eliges esos canales. Estos proveedores pueden operar infraestructura fuera de México conforme a sus servicios y condiciones.</p>
+            <p>Para operar el servicio se utilizan proveedores tecnológicos que pueden tratar información por cuenta del responsable: Firebase/Google para autenticación, base de datos y, solo si las activas, notificaciones push; Cloudinary para almacenar y entregar imágenes; Vercel para alojamiento y funciones de envío; y OpenStreetMap/Nominatim para mostrar mapas y buscar ubicaciones. El apoyo voluntario se realiza fuera de IxmiPlace mediante una transferencia iniciada desde el banco o Mercado Pago de quien aporta; esas instituciones procesan la operación según sus propios avisos y condiciones. También puede haber comunicación directa por correo o WhatsApp si tú eliges esos canales. Estos proveedores pueden operar infraestructura fuera de México conforme a sus servicios y condiciones.</p>
           </NoticeSection>
 
           <NoticeSection title="6. Conservación y opciones para limitar el uso">

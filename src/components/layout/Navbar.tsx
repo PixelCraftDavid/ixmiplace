@@ -4,6 +4,7 @@ import { LogOut, Heart, Home, ChevronDown, User, ShieldCheck, Bell, Moon, Sun, M
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/features/auth/AuthContext';
+import { listenForForegroundPush } from '@/lib/push-notifications';
 
 export function Navbar() {
   const { fbUser, profile } = useAuth();
@@ -29,6 +30,50 @@ export function Navbar() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    let generation = 0;
+    let stopListening: (() => void) | undefined;
+
+    const subscribe = async () => {
+      const currentGeneration = ++generation;
+      const unsubscribe = await listenForForegroundPush((payload) => {
+        if (Notification.permission !== 'granted') return;
+        const notification = new Notification(payload.notification?.title || 'IxmiPlace', {
+          body: payload.notification?.body || 'Tienes una novedad en IxmiPlace.',
+          icon: '/icon-192.png',
+        });
+        notification.onclick = () => {
+          const targetUrl = new URL(payload.data?.url || '/notificaciones', window.location.origin);
+          if (targetUrl.origin !== window.location.origin) return;
+          window.focus();
+          window.location.assign(targetUrl.href);
+        };
+      });
+      if (currentGeneration !== generation) unsubscribe();
+      else {
+        stopListening?.();
+        stopListening = unsubscribe;
+      }
+    };
+
+    const handleEnabled = () => void subscribe();
+    const handleDisabled = () => {
+      generation += 1;
+      stopListening?.();
+      stopListening = undefined;
+    };
+    window.addEventListener('ixmiplace:push-enabled', handleEnabled);
+    window.addEventListener('ixmiplace:push-disabled', handleDisabled);
+    void subscribe();
+
+    return () => {
+      generation += 1;
+      stopListening?.();
+      window.removeEventListener('ixmiplace:push-enabled', handleEnabled);
+      window.removeEventListener('ixmiplace:push-disabled', handleDisabled);
+    };
+  }, [fbUser?.uid]);
 
   // Cierra el menú al navegar a cualquier link dentro de él
   function closeMenu() {
@@ -63,9 +108,10 @@ export function Navbar() {
             to="/apoyar"
             aria-label="Apoyar a IxmiPlace"
             title="Apoyar a IxmiPlace"
-            className={`hidden h-10 items-center justify-center gap-1.5 rounded-full border px-3 text-sm font-semibold backdrop-blur-md transition sm:inline-flex ${overDarkHero ? 'border-white/30 bg-white/10 text-white hover:bg-white/20' : 'border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-900/30 dark:text-brand-200 dark:hover:bg-brand-900/50'}`}
+            className="group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-rose-300/60 bg-gradient-to-br from-rose-500 to-orange-500 text-white shadow-md shadow-rose-950/25 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rose-950/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c211a] sm:w-auto sm:gap-1.5 sm:px-3"
           >
-            <Heart className="h-4 w-4" /> <span className="hidden md:inline">Apoyar</span>
+            <Heart className="h-4 w-4 fill-current transition-transform duration-200 group-hover:scale-110" />
+            <span className="hidden text-sm font-semibold sm:inline">Apoyar</span>
           </Link>
           {fbUser ? (
             <div className="relative" ref={menuRef}>

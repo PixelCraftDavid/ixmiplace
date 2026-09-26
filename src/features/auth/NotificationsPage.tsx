@@ -1,15 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Check, Loader2, Trash2 } from 'lucide-react';
+import { Bell, BellRing, Check, CheckCircle2, Loader2, Trash2 } from 'lucide-react';
 import { collection, doc, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from './AuthContext';
 import type { AppNotification } from '../../types/models';
+import {
+  disablePushNotifications,
+  enablePushNotifications,
+  getPushSubscriptionState,
+} from '../../lib/push-notifications';
 
 export function NotificationsPage() {
   const { fbUser } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pushState, setPushState] = useState<'loading' | 'unsupported' | 'denied' | 'enabled' | 'disabled'>('loading');
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushError, setPushError] = useState('');
 
   useEffect(() => {
     if (!fbUser) return;
@@ -37,6 +45,18 @@ export function NotificationsPage() {
     );
   }, [fbUser]);
 
+  useEffect(() => {
+    if (!fbUser) return;
+    let cancelled = false;
+    void getPushSubscriptionState(fbUser.uid).then((state) => {
+      if (!cancelled) setPushState(state);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fbUser]);
+
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.isRead).length,
     [notifications]
@@ -45,6 +65,26 @@ export function NotificationsPage() {
   async function markAsRead(notification: AppNotification) {
     if (notification.isRead) return;
     await updateDoc(doc(db, 'notifications', notification.id), { isRead: true });
+  }
+
+  async function togglePushNotifications() {
+    if (!fbUser) return;
+    setPushBusy(true);
+    setPushError('');
+    try {
+      if (pushState === 'enabled') {
+        await disablePushNotifications(fbUser.uid);
+        setPushState('disabled');
+      } else {
+        await enablePushNotifications(fbUser.uid);
+        setPushState('enabled');
+      }
+    } catch (error) {
+      setPushError(error instanceof Error ? error.message : 'No se pudo actualizar la configuración.');
+      if ('Notification' in window && Notification.permission === 'denied') setPushState('denied');
+    } finally {
+      setPushBusy(false);
+    }
   }
 
   return (
@@ -60,6 +100,34 @@ export function NotificationsPage() {
           </div>
           {unreadCount > 0 && <span className="rounded-full bg-brand-500 px-3 py-1 text-sm font-bold text-white">{unreadCount} nuevas</span>}
         </header>
+
+        <section className="mb-8 flex flex-col gap-4 rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-amber-50 p-5 shadow-sm dark:border-brand-900/50 dark:from-brand-900/20 dark:via-[#293027] dark:to-amber-900/10 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-brand-600 shadow-sm dark:bg-[#1c211a] dark:text-brand-300">
+              {pushState === 'enabled' ? <CheckCircle2 className="h-5 w-5" /> : <BellRing className="h-5 w-5" />}
+            </span>
+            <div>
+              <h2 className="font-bold text-ink-800 dark:text-ink-50">Avisos en tu dispositivo</h2>
+              <p className="mt-1 max-w-xl text-sm leading-relaxed text-ink-500 dark:text-ink-300">
+                Si las activas, guardaremos un identificador técnico de este dispositivo para avisarte de mensajes, cambios en tus publicaciones y novedades de IxmiPlace. Las alertas no muestran el contenido de tus mensajes. Puedes desactivarlas aquí; consulta el <Link to="/aviso-de-privacidad" className="font-semibold text-brand-700 underline dark:text-brand-300">Aviso de Privacidad</Link>.
+              </p>
+              {pushState === 'unsupported' && <p className="mt-2 text-xs font-medium text-amber-800 dark:text-amber-200">Este navegador no admite notificaciones push.</p>}
+              {pushState === 'denied' && <p className="mt-2 text-xs font-medium text-amber-800 dark:text-amber-200">El permiso está bloqueado. Puedes habilitarlo desde los ajustes del sitio en tu navegador.</p>}
+              {pushError && <p role="alert" className="mt-2 text-xs font-medium text-red-700 dark:text-red-300">{pushError}</p>}
+            </div>
+          </div>
+          {pushState !== 'unsupported' && pushState !== 'denied' && (
+            <button
+              type="button"
+              onClick={() => void togglePushNotifications()}
+              disabled={pushBusy || pushState === 'loading'}
+              className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-wait disabled:opacity-60 ${pushState === 'enabled' ? 'border border-cream-300 bg-white text-ink-700 hover:bg-cream-50 dark:border-[#4b5847] dark:bg-[#1c211a] dark:text-ink-100 dark:hover:bg-[#323a30]' : 'bg-brand-600 text-white hover:bg-brand-700'}`}
+            >
+              {pushBusy || pushState === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+              {pushState === 'enabled' ? 'Desactivar en este dispositivo' : 'Activar notificaciones'}
+            </button>
+          )}
+        </section>
 
         {loading ? (
           <div className="flex justify-center py-24 text-ink-400"><Loader2 className="h-8 w-8 animate-spin" /></div>

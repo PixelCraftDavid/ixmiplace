@@ -1,0 +1,198 @@
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { getMessaging } from 'firebase-admin/messaging';
+
+const APP_ORIGIN = process.env.APP_ORIGIN || 'https://ixmiplace.vercel.app';
+const VALID_EVENTS = new Set([
+  'listing_created',
+  'message_created',
+  'notification_created',
+  'report_created',
+]);
+
+function getFirebaseAdmin() {
+  if (getApps().length) return getApps()[0];
+
+  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error('Faltan las credenciales privadas de Firebase Admin en Vercel.');
+  }
+
+  return initializeApp({
+    credential: cert({ projectId, clientEmail, privateKey }),
+    projectId,
+  });
+}
+
+function respond(res, status, body) {
+  res.status(status).json(body);
+}
+
+async function reserveEvent(db, collectionName, id, authorize) {
+  const ref = db.collection(collectionName).doc(id);
+  const data = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    if (!snapshot.exists) return null;
+    const current = snapshot.data();
+    if (!authorize(current)) return null;
+    if (current._pushSentAt) return { skipped: true };
+
+    const claimedAt = current._pushClaimedAt?.toMillis?.() ?? 0;
+    if (claimedAt && Date.now() - claimedAt < 60_000) return { skipped: true };
+
+    transaction.update(ref, { _pushClaimedAt: FieldValue.serverTimestamp() });
+    return { ref, value: current };
+  });
+
+  return data;
+}
+
+async function findAdminIds(db) {
+  const snapshot = await db.collection('users').where('role', '==', 'admin').get();
+  return snapshot.docs
+    .filter((userDoc) => userDoc.data().isBanned !== true && userDoc.data().emailVerified === true)
+    .map((userDoc) => userDoc.id);
+}
+
+async function sendToUsers(db, userIds, title, body, url) {
+  const tokenRefs = [];
+  for (const userId of [...new Set(userIds.filter(Boolean))]) {
+    const tokens = await db.collection('users').doc(userId).collection('pushTokens').get();
+    for (const tokenDoc of tokens.docs) {
+      const token = tokenDoc.data().token;
+      if (typeof token === 'string' && token.length >= 20) tokenRefs.push({ ref: tokenDoc.ref, token });
+    }
+  }
+
+  let sent = 0;
+  for (let offset = 0; offset < tokenRefs.length; offset += 500) {
+    const chunk = tokenRefs.slice(offset, offset + 500);
+    const result = await getMessaging(getFirebaseAdmin()).sendEachForMulticast({
+      tokens: chunk.map(({ token }) => token),
+      notification: { title, body },
+      data: { url },
+      webpush: {
+        notification: {
+          icon: `${APP_ORIGIN}/icon-192.png`,
+          badge: `${APP_ORIGIN}/icon-192.png`,
+        },
+      },
+    });
+
+    sent += result.successCount;
+    const removals = [];
+    result.responses.forEach((response, index) => {
+      const code = response.error?.code;
+      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
+        removals.push(chunk[index].ref.delete());
+      }
+    });
+    await Promise.all(removals);
+  }
+
+  return { sent, registeredDevices: tokenRefs.length };
+}
+
+export default async function handler(req, res) {
+  const origin = req.headers.origin;
+  if (origin && origin !== APP_ORIGIN) return respond(res, 403, { error: 'Origen no permitido.' });
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', APP_ORIGIN);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return respond(res, 405, { error: 'Método no permitido.' });
+
+  let claimedEventRef;
+  try {
+    const authorization = req.headers.authorization || '';
+    const idToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+    if (!idToken) return respond(res, 401, { error: 'Debes iniciar sesión.' });
+
+    const app = getFirebaseAdmin();
+    const adminAuth = getAuth(app);
+    const decoded = await adminAuth.verifyIdToken(idToken);
+    if (!decoded.email_verified) return respond(res, 403, { error: 'Verifica tu correo.' });
+
+    const db = getFirestore(app);
+    const userSnapshot = await db.collection('users').doc(decoded.uid).get();
+    const profile = userSnapshot.data();
+    if (!profile || profile.isBanned === true) return respond(res, 403, { error: 'Cuenta no autorizada.' });
+
+    const { type, id } = req.body || {};
+    if (!VALID_EVENTS.has(type) || typeof id !== 'string' || id.length < 1 || id.length > 180) {
+      return respond(res, 400, { error: 'Evento no válido.' });
+    }
+
+    let reserved;
+    let recipientIds = [];
+    let title = 'Novedad en IxmiPlace';
+    let body = 'Tienes una actualización en tu cuenta.';
+    let targetUrl = `${APP_ORIGIN}/notificaciones`;
+
+    if (type === 'listing_created') {
+      reserved = await reserveEvent(db, 'listings', id, (listing) =>
+        listing.ownerId === decoded.uid && listing.status === 'pending'
+      );
+      if (!reserved) return respond(res, 403, { error: 'Publicación no autorizada.' });
+      if (reserved.skipped) return respond(res, 200, { ok: true, skipped: true });
+      claimedEventRef = reserved.ref;
+      recipientIds = await findAdminIds(db);
+      title = 'Nueva publicación por revisar';
+      body = 'Hay un nuevo anuncio pendiente de moderación.';
+      targetUrl = `${APP_ORIGIN}/admin`;
+    } else if (type === 'message_created') {
+      reserved = await reserveEvent(db, 'messages', id, (message) =>
+        message.senderId === decoded.uid && message.senderId !== message.recipientId && message.status === 'unread'
+      );
+      if (!reserved) return respond(res, 403, { error: 'Mensaje no autorizado.' });
+      if (reserved.skipped) return respond(res, 200, { ok: true, skipped: true });
+      claimedEventRef = reserved.ref;
+      recipientIds = [reserved.value.recipientId];
+      title = 'Tienes un mensaje nuevo';
+      body = 'Abre IxmiPlace para leerlo.';
+      targetUrl = `${APP_ORIGIN}/mensajes`;
+    } else if (type === 'notification_created') {
+      if (profile.role !== 'admin') return respond(res, 403, { error: 'Solo administración puede emitir este aviso.' });
+      reserved = await reserveEvent(db, 'notifications', id, (notification) => typeof notification.recipientId === 'string');
+      if (!reserved) return respond(res, 403, { error: 'Aviso no autorizado.' });
+      if (reserved.skipped) return respond(res, 200, { ok: true, skipped: true });
+      claimedEventRef = reserved.ref;
+      recipientIds = [reserved.value.recipientId];
+      title = 'Actualización de tu publicación';
+      body = 'Hay una novedad sobre una de tus publicaciones.';
+    } else {
+      reserved = await reserveEvent(db, 'reports', id, (report) => report.reporterId === decoded.uid && report.status === 'open');
+      if (!reserved) return respond(res, 403, { error: 'Reporte no autorizado.' });
+      if (reserved.skipped) return respond(res, 200, { ok: true, skipped: true });
+      claimedEventRef = reserved.ref;
+      recipientIds = await findAdminIds(db);
+      title = 'Nuevo reporte recibido';
+      body = 'Hay un reporte de publicación pendiente de revisar.';
+      targetUrl = `${APP_ORIGIN}/admin`;
+    }
+
+    const delivery = await sendToUsers(db, recipientIds, title, body, targetUrl);
+    await reserved.ref.update({
+      _pushSentAt: FieldValue.serverTimestamp(),
+      _pushClaimedAt: FieldValue.delete(),
+    });
+    return respond(res, 200, { ok: true, ...delivery });
+  } catch (error) {
+    if (claimedEventRef) {
+      try {
+        await claimedEventRef.update({ _pushClaimedAt: FieldValue.delete() });
+      } catch {
+        // El bloqueo de reintentos caduca automáticamente a los 60 segundos.
+      }
+    }
+    console.error('Error en el servicio de push:', error?.message || error);
+    return respond(res, 500, { error: 'No se pudo procesar la notificación.' });
+  }
+}

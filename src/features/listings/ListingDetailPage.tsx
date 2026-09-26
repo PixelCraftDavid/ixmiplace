@@ -40,6 +40,7 @@ import { trackListingMetric } from '../../lib/listing-metrics';
 import { isListingExpired } from '../../lib/listing-expiration';
 import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline';
 import { PRIVACY_NOTICE_VERSION } from '../legal/legalVersions';
+import { requestPushDelivery } from '../../lib/push-notifications';
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -157,6 +158,7 @@ export function ListingDetailPage() {
         reportsCount: increment(1),
       });
       await batch.commit();
+      await requestPushDelivery('report_created', reportId);
       setReportSent(true);
     } catch (err) {
       console.error('Error enviando reporte:', err);
@@ -181,7 +183,8 @@ export function ListingDetailPage() {
     setContacting(true);
     setContactError('');
     try {
-      await setDoc(doc(collection(db, 'messages')), {
+      const messageRef = doc(collection(db, 'messages'));
+      await setDoc(messageRef, {
         listingId: listing.id,
         senderId: fbUser.uid,
         recipientId: listing.ownerId,
@@ -193,6 +196,7 @@ export function ListingDetailPage() {
         privacyConsentVersion: PRIVACY_NOTICE_VERSION,
         privacyConsentAt: serverTimestamp(),
       });
+      await requestPushDelivery('message_created', messageRef.id);
       setContactSent(true);
     } catch (error) {
       console.error('Error enviando mensaje:', error);

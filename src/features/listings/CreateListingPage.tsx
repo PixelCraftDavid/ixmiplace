@@ -9,6 +9,7 @@ import { ListingScenePreview } from './ListingScenePreview';
 import type { ListingInput } from '../../lib/zod-schemas';
 import type { Listing } from '../../types/models';
 import { LISTING_CONSENT_VERSION } from '../legal/legalVersions';
+import { requestPushDelivery } from '../../lib/push-notifications';
 
 export function CreateListingPage() {
   const nav = useNavigate();
@@ -88,6 +89,7 @@ export function CreateListingPage() {
       });
     }
     await batch.commit();
+    await requestPushDelivery('listing_created', listingRef.id);
 
     setSuccess(true);
     setTimeout(() => nav('/mis-publicaciones', { replace: true }), 1500);

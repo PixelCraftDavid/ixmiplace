@@ -50,7 +50,7 @@ export function LegalAcceptancePage() {
         <div>
           <p className="text-sm font-semibold text-brand-700 dark:text-brand-300">Actualización legal</p>
           <h1 className="mt-2 text-2xl font-extrabold text-ink-800 dark:text-ink-50">Revisa y acepta para continuar</h1>
-          <p className="mt-2 text-sm leading-relaxed text-ink-500 dark:text-ink-300">Actualizamos las reglas de uso y el Aviso de Privacidad. Tu cuenta seguirá igual; necesitamos guardar tu decisión antes de continuar.</p>
+          <p className="mt-2 text-sm leading-relaxed text-ink-500 dark:text-ink-300">Actualizamos el Aviso de Privacidad para explicar el uso opcional de notificaciones push. Revisa el aviso y confirma tu decisión para continuar.</p>
         </div>
         <LegalAcceptanceFields
           acceptedTerms={acceptedTerms}

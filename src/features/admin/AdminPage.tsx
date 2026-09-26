@@ -32,6 +32,7 @@ import { useAuth } from '../auth/AuthContext';
 import { categoryEmoji, operationLabel, priceUnitLabel } from '../../lib/constants';
 import { formatPrice } from '../../lib/utils';
 import type { AppUser, Listing, ListingStatus, Report } from '../../types/models';
+import { requestPushDelivery } from '../../lib/push-notifications';
 
 type AdminFilter = 'all' | 'pending' | 'published' | 'rejected' | 'archived';
 
@@ -224,6 +225,7 @@ export function AdminPage() {
         createdAt: Date.now(),
       });
       await batch.commit();
+      await requestPushDelivery('notification_created', notificationRef.id);
       setRejecting(null);
       setRejectionReason('');
     } catch (updateError) {
@@ -297,6 +299,7 @@ export function AdminPage() {
       });
 
       await batch.commit();
+      await requestPushDelivery('notification_created', notificationRef.id);
       setDeleting(null);
       setDeletionReason('');
     } catch (deleteError) {
