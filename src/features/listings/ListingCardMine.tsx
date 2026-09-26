@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, deleteDoc, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, writeBatch } from 'firebase/firestore';
 import {
   Eye,
   Pencil,
@@ -22,6 +22,7 @@ import {
 } from '../../lib/constants';
 import type { Listing } from '../../types/models';
 import { LISTING_LIMITS } from '../../lib/constants';
+import { isListingExpired } from '../../lib/listing-expiration';
 
 interface Props {
   listing: Listing;
@@ -81,7 +82,12 @@ export function ListingCardMine({ listing }: Props) {
   async function handleDelete() {
     setDeleting(true);
     try {
-      await deleteDoc(doc(db, 'listings', listing.id));
+      const privateDetailsRef = doc(db, 'listingPrivateDetails', listing.id);
+      const privateDetails = await getDoc(privateDetailsRef);
+      const batch = writeBatch(db);
+      batch.delete(doc(db, 'listings', listing.id));
+      if (privateDetails.exists()) batch.delete(privateDetailsRef);
+      await batch.commit();
     } catch (err) {
       console.error('Error eliminando publicación:', err);
       alert('No se pudo eliminar. Intenta de nuevo.');
@@ -91,14 +97,18 @@ export function ListingCardMine({ listing }: Props) {
     }
   }
 
-  const isExpired = Boolean(listing.expiresAt && listing.expiresAt <= Date.now());
+  const isExpired = isListingExpired(listing.expiresAt);
 
   async function handleRenew() {
     setRenewing(true);
     try {
       const now = Date.now();
       const batch = writeBatch(db);
+      const changedFields = listing.status === 'archived'
+        ? ['status', 'expiresAt']
+        : ['expiresAt'];
       batch.update(doc(db, 'listings', listing.id), {
+        ...(listing.status === 'archived' ? { status: 'published' } : {}),
         expiresAt: now + LISTING_LIMITS.activeDays * 24 * 60 * 60 * 1000,
         updatedAt: now,
       });
@@ -107,7 +117,7 @@ export function ListingCardMine({ listing }: Props) {
         actorId: listing.ownerId,
         actorRole: 'owner',
         action: 'renewed',
-        changedFields: ['expiresAt'],
+        changedFields,
         summary: 'El propietario renovó la publicación por 30 días.',
         createdAt: now,
       });
@@ -242,7 +252,7 @@ export function ListingCardMine({ listing }: Props) {
             </div>
           )}
 
-          {listing.status === 'published' && isExpired && (
+          {(listing.status === 'published' || listing.status === 'archived') && isExpired && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
               <p>Esta publicación expiró y ya no aparece en el feed público.</p>
               <button

@@ -37,6 +37,7 @@ import { FavoriteButton } from '../favorites/FavoriteButton';
 import { LocationView } from './LocationView';
 import type { Listing, AppUser } from '../../types/models';
 import { trackListingMetric } from '../../lib/listing-metrics';
+import { isListingExpired } from '../../lib/listing-expiration';
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -71,8 +72,13 @@ export function ListingDetailPage() {
         }
         const data = { id: snap.id, ...(snap.data() as Omit<Listing, 'id'>) };
 
-        if (data.status === 'published' && data.expiresAt <= Date.now()) {
+        if (data.status === 'published' && isListingExpired(data.expiresAt)) {
           setError('Esta publicación ya expiró y no está disponible públicamente.');
+          return;
+        }
+
+        if (data.status !== 'published' && data.ownerId !== auth.currentUser?.uid && profile?.role !== 'admin') {
+          setError('Esta publicación ya no está disponible públicamente.');
           return;
         }
 

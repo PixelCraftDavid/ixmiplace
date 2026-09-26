@@ -57,7 +57,7 @@ export interface Listing {
 
   // Ubicación
   colonia: string;
-  address?: string;   // opcional: dirección exacta, solo visible al dueño y admin
+  address?: string;   // detalle privado; se carga desde listingPrivateDetails al editar
   lat?: number;
   lng?: number;
 
@@ -82,7 +82,7 @@ export interface Listing {
   status: ListingStatus;
   availability: AvailabilityStatus;
   availabilityConfirmedAt: number;   // timestamp
-  expiresAt: number;                 // timestamp
+  expiresAt: number | { toMillis: () => number }; // milisegundos o Timestamp legado
 
   // Fotos: URLs completas de Cloudinary y opcionalmente IDs públicos para borrado seguro
   photos: string[];

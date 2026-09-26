@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addDoc, collection } from 'firebase/firestore';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 import { AlertTriangle, CheckCircle2, PencilLine, X } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
 import { LISTING_LIMITS } from '../../lib/constants';
@@ -55,7 +55,6 @@ export function CreateListingPage() {
     };
 
     if (data.priceUnit) listing.priceUnit = data.priceUnit;
-    if (data.address?.trim()) listing.address = data.address.trim();
     if (data.bedrooms && data.bedrooms > 0) listing.bedrooms = data.bedrooms;
     if (data.bathrooms && data.bathrooms > 0) listing.bathrooms = data.bathrooms;
     if (data.parkingSpots && data.parkingSpots > 0)
@@ -74,7 +73,17 @@ export function CreateListingPage() {
       if (data.foodAvailable && data.foodDescription?.trim()) listing.foodDescription = data.foodDescription.trim();
     }
 
-    await addDoc(collection(db, 'listings'), listing);
+    const listingRef = doc(collection(db, 'listings'));
+    const batch = writeBatch(db);
+    batch.set(listingRef, listing);
+    if (data.address?.trim()) {
+      batch.set(doc(db, 'listingPrivateDetails', listingRef.id), {
+        ownerId: auth.currentUser.uid,
+        address: data.address.trim(),
+        updatedAt: now,
+      });
+    }
+    await batch.commit();
 
     setSuccess(true);
     setTimeout(() => nav('/mis-publicaciones', { replace: true }), 1500);

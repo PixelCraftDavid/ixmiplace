@@ -20,6 +20,7 @@ service cloud.firestore {
 
     function activePublishedListing(data) {
       return data.status == 'published'
+        && data.expiresAt is int
         && data.expiresAt > request.time.toMillis();
     }
 
@@ -71,19 +72,21 @@ service cloud.firestore {
     }
 
     match /listings/{listingId} {
-      allow read: if activePublishedListing(resource.data)
+      // Las reglas de consulta autorizan por estado; el cliente oculta vencidos por fecha.
+      allow read: if resource.data.status == 'published'
         || (signedIn() && resource.data.ownerId == request.auth.uid)
         || isAdmin();
 
       allow create: if verified()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.ownerEmailVerified == true
+        && request.resource.data.status == 'pending'
         && request.resource.data.expiresAt is int
         && request.resource.data.expiresAt > request.time.toMillis()
         && request.resource.data.keys().hasOnly([
           'ownerId', 'ownerEmailVerified', 'title', 'description',
           'category', 'operation', 'price', 'priceUnit', 'colonia',
-          'address', 'lat', 'lng', 'bedrooms', 'bathrooms', 'parkingSpots',
+          'lat', 'lng', 'bedrooms', 'bathrooms', 'parkingSpots',
           'areaM2', 'amenities', 'status', 'availability',
           'availabilityConfirmedAt', 'expiresAt', 'photos', 'photoPublicIds',
           'whatsapp', 'showPhone', 'reportsCount', 'viewsCount',
@@ -144,7 +147,6 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'title',
             'description',
-            'address',
             'bedrooms',
             'bathrooms',
             'parkingSpots',
@@ -186,7 +188,7 @@ service cloud.firestore {
           'available', 'occupied', 'reserved', 'unavailable', 'unconfirmed'
         ]
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'title', 'description', 'price', 'priceUnit', 'address',
+          'title', 'description', 'price', 'priceUnit',
           'bedrooms', 'bathrooms', 'parkingSpots', 'areaM2', 'amenities',
           'photos', 'photoPublicIds', 'ownerEmailVerified', 'availability',
           'availabilityConfirmedAt', 'showPhone', 'updatedAt',
@@ -228,6 +230,19 @@ service cloud.firestore {
         && request.resource.data.expiresAt is int
         && request.resource.data.expiresAt > request.time.toMillis();
 
+      // El propietario puede renovar un anuncio archivado y volver a publicarlo.
+      allow update: if verified()
+        && resource.data.ownerId == request.auth.uid
+        && resource.data.status == 'archived'
+        && resource.data.expiresAt is int
+        && resource.data.expiresAt <= request.time.toMillis()
+        && request.resource.data.status == 'published'
+        && request.resource.data.expiresAt is int
+        && request.resource.data.expiresAt > request.time.toMillis()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'expiresAt', 'updatedAt'
+        ]);
+
       allow update: if verified()
         && activePublishedListing(resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -242,6 +257,36 @@ service cloud.firestore {
         ])
         && request.resource.data.whatsappContactsCount
           == resource.data.whatsappContactsCount + 1;
+
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.ownerId == request.auth.uid);
+    }
+
+    // Dirección exacta: solo el propietario del anuncio y administradores.
+    match /listingPrivateDetails/{listingId} {
+      allow get: if isAdmin()
+        || (signedIn()
+          && get(/databases/$(database)/documents/listings/$(listingId)).data.ownerId == request.auth.uid);
+      allow list: if isAdmin();
+
+      allow create: if isAdmin()
+        || (verified()
+          && request.resource.data.ownerId == request.auth.uid
+          && getAfter(/databases/$(database)/documents/listings/$(listingId)).data.ownerId == request.auth.uid
+          && request.resource.data.keys().hasOnly(['ownerId', 'address', 'updatedAt'])
+          && request.resource.data.address is string
+          && request.resource.data.address.size() <= 200);
+
+      allow update: if isAdmin()
+        || (verified()
+          && resource.data.ownerId == request.auth.uid
+          && getAfter(/databases/$(database)/documents/listings/$(listingId)).data.ownerId == request.auth.uid
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'address', 'updatedAt'
+          ])
+          && request.resource.data.address is string
+          && request.resource.data.address.size() <= 200);
 
       allow delete: if isAdmin()
         || (signedIn() && resource.data.ownerId == request.auth.uid);

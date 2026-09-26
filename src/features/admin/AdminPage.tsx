@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import {
   collection,
+  deleteField,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -69,6 +71,8 @@ export function AdminPage() {
   const [reportBusyId, setReportBusyId] = useState('');
   const [rejecting, setRejecting] = useState<Listing | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [migrationRunning, setMigrationRunning] = useState(false);
+  const [migrationSummary, setMigrationSummary] = useState('');
 
   useEffect(() => {
     if (!profile || profile.role !== 'admin') return;
@@ -255,6 +259,74 @@ export function AdminPage() {
     }
   }
 
+  async function migrateLegacyListingData() {
+    setMigrationRunning(true);
+    setMigrationSummary('');
+    setError('');
+    try {
+      const snapshot = await getDocs(collection(db, 'listings'));
+      const now = Date.now();
+      let addressesMoved = 0;
+      let expirationsNormalized = 0;
+      let expiredArchived = 0;
+
+      for (let offset = 0; offset < snapshot.docs.length; offset += 200) {
+        const batch = writeBatch(db);
+        const page = snapshot.docs.slice(offset, offset + 200);
+        let hasWrites = false;
+
+        for (const listingDoc of page) {
+          const listing = listingDoc.data();
+          const updates: Record<string, unknown> = {};
+          const address = typeof listing.address === 'string' ? listing.address.trim() : '';
+
+          if (address) {
+            batch.set(
+              doc(db, 'listingPrivateDetails', listingDoc.id),
+              { ownerId: listing.ownerId, address, updatedAt: now },
+              { merge: true }
+            );
+            addressesMoved += 1;
+            hasWrites = true;
+          }
+          if ('address' in listing) updates.address = deleteField();
+
+          const expiresAt = listing.expiresAt as { toMillis?: () => number } | number | undefined;
+          let expiresAtMillis: number | null = null;
+          if (typeof expiresAt === 'number' && Number.isFinite(expiresAt)) {
+            expiresAtMillis = expiresAt;
+          } else if (expiresAt && typeof expiresAt.toMillis === 'function') {
+            expiresAtMillis = expiresAt.toMillis();
+            updates.expiresAt = expiresAtMillis;
+            expirationsNormalized += 1;
+          }
+
+          if (listing.status === 'published' && expiresAtMillis !== null && expiresAtMillis <= now) {
+            updates.status = 'archived';
+            expiredArchived += 1;
+          }
+
+          if (Object.keys(updates).length > 0) {
+            updates.updatedAt = now;
+            batch.update(listingDoc.ref, updates);
+            hasWrites = true;
+          }
+        }
+
+        if (hasWrites) await batch.commit();
+      }
+
+      setMigrationSummary(
+        `Listo: ${snapshot.size} anuncios revisados, ${addressesMoved} direcciones protegidas, ${expirationsNormalized} fechas normalizadas y ${expiredArchived} anuncios vencidos archivados.`
+      );
+    } catch (migrationError) {
+      console.error('Error migrando los datos privados de anuncios:', migrationError);
+      setError('No se pudieron migrar los datos. Verifica que las reglas de Firestore estén publicadas y vuelve a intentarlo.');
+    } finally {
+      setMigrationRunning(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-cream px-4 pb-16 pt-24">
       <div className="mx-auto max-w-7xl py-8">
@@ -278,6 +350,25 @@ export function AdminPage() {
             />
           </label>
         </header>
+
+        <section className="mb-8 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-bold text-amber-950">Preparar anuncios existentes</h2>
+            <p className="mt-1 max-w-3xl text-sm text-amber-900/80">
+              Esta acción no usa Cloud Functions ni activa cobros. Migra direcciones antiguas y archiva anuncios vencidos cuando la ejecutes; el feed los oculta al vencer aunque todavía no pulses el botón.
+            </p>
+            {migrationSummary && <p className="mt-2 text-sm font-semibold text-emerald-800">{migrationSummary}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={() => void migrateLegacyListingData()}
+            disabled={migrationRunning}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-700 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-800 disabled:opacity-60"
+          >
+            {migrationRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+            {migrationRunning ? 'Revisando…' : 'Migrar y archivar vencidos'}
+          </button>
+        </section>
 
         <section className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
           <Metric icon={<Clock3 />} label="En revisión" value={counts.pending} tone="amber" />

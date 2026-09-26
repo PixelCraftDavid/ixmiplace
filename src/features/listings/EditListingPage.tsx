@@ -41,7 +41,14 @@ export function EditListingPage() {
           return;
         }
 
-        setListing(data);
+        const privateDetailsSnap = await getDoc(doc(db, 'listingPrivateDetails', id));
+        setListing({
+          ...data,
+          address:
+            privateDetailsSnap.data()?.address ??
+            data.address ??
+            '',
+        });
         setState('ready');
       } catch (err) {
         console.error('Error cargando publicación para editar:', err);
@@ -99,7 +106,6 @@ export function EditListingPage() {
     // Campos opcionales: si tienen valor, se actualizan;
     // si quedaron vacíos, se eliminan del documento con deleteField()
     updates.priceUnit = data.priceUnit ?? deleteField();
-    updates.address = data.address?.trim() ? data.address.trim() : deleteField();
     updates.bedrooms = data.bedrooms && data.bedrooms > 0 ? data.bedrooms : deleteField();
     updates.bathrooms = data.bathrooms && data.bathrooms > 0 ? data.bathrooms : deleteField();
     updates.parkingSpots =
@@ -122,8 +128,21 @@ export function EditListingPage() {
     }
 
     const changedFields = Object.keys(updates).filter((field) => field !== 'updatedAt');
+    if ((data.address?.trim() ?? '') !== (listing.address?.trim() ?? '')) {
+      changedFields.push('address');
+    }
     const batch = writeBatch(db);
     batch.update(doc(db, 'listings', id), updates);
+    const privateDetailsRef = doc(db, 'listingPrivateDetails', id);
+    batch.set(
+      privateDetailsRef,
+      {
+        ownerId: auth.currentUser.uid,
+        address: data.address?.trim() ?? '',
+        updatedAt: Date.now(),
+      },
+      { merge: true }
+    );
     batch.set(doc(collection(db, 'listingHistory')), {
       listingId: id,
       actorId: auth.currentUser.uid,

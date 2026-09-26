@@ -5,14 +5,20 @@ import { ArrowLeft, Check, Loader2, Home } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import type { Listing, PublicProfile } from '../../types/models';
 import { ListingCard } from '../listings/ListingCard';
+import { listingExpiryMillis } from '../../lib/listing-expiration';
 
-const LISTING_EXPIRY_QUERY_BUFFER_MS = 60_000;
 
 export function PublicProfilePage() {
   const { id } = useParams<{ id: string }>();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clock, setClock] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setClock(Date.now()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -24,19 +30,14 @@ export function PublicProfilePage() {
           getDocs(
             query(
               collection(db, 'listings'),
-              where('status', '==', 'published'),
-              where(
-                'expiresAt',
-                '>',
-                Date.now() + LISTING_EXPIRY_QUERY_BUFFER_MS
-              )
+              where('status', '==', 'published')
             )
           ),
         ]);
         if (profileSnap.exists()) setProfile(profileSnap.data() as PublicProfile);
         const publicListings = listingsSnap.docs
           .map((listingDoc) => ({ id: listingDoc.id, ...(listingDoc.data() as Omit<Listing, 'id'>) }))
-          .filter((listing) => listing.ownerId === profileId && listing.expiresAt > Date.now());
+          .filter((listing) => listing.ownerId === profileId);
         publicListings.sort((a, b) => b.createdAt - a.createdAt);
         setListings(publicListings);
       } catch (error) {
@@ -51,6 +52,11 @@ export function PublicProfilePage() {
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-cream text-ink-400"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   if (!profile || profile.isBanned) return <div className="flex min-h-screen items-center justify-center bg-cream px-4 text-center"><div><Home className="mx-auto h-10 w-10 text-ink-400" /><h1 className="mt-4 text-2xl font-bold text-ink">Perfil no disponible</h1><Link to="/" className="mt-5 inline-flex items-center gap-2 text-brand-600"><ArrowLeft className="h-4 w-4" /> Volver al inicio</Link></div></div>;
 
+  const activeListings = listings.filter((listing) => {
+    const expiresAt = listingExpiryMillis(listing.expiresAt);
+    return expiresAt === null || expiresAt > clock;
+  });
+
   return (
     <main className="min-h-screen bg-cream px-4 pb-16 pt-24">
       <div className="mx-auto max-w-6xl py-8">
@@ -62,7 +68,7 @@ export function PublicProfilePage() {
           </div>
         </section>
         <h2 className="mb-4 text-2xl font-extrabold text-ink">Propiedades publicadas</h2>
-        {listings.length === 0 ? <p className="rounded-2xl border border-cream-200 bg-white p-10 text-center text-ink-500">Este propietario no tiene publicaciones activas.</p> : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div>}
+        {activeListings.length === 0 ? <p className="rounded-2xl border border-cream-200 bg-white p-10 text-center text-ink-500">Este propietario no tiene publicaciones activas.</p> : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{activeListings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div>}
       </div>
     </main>
   );

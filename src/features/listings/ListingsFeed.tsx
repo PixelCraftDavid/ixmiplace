@@ -7,6 +7,7 @@ import { ListingCard } from './ListingCard';
 import { ListingsMap } from './ListingsMap';
 import { useAuth } from '../auth/AuthContext';
 import type { Listing, ListingCategory, ListingOperation } from '../../types/models';
+import { listingExpiryMillis } from '../../lib/listing-expiration';
 
 type SortOption = 'recent' | 'price-asc' | 'price-desc';
 type DateFilter = 'all' | 'today' | 'week' | 'month';
@@ -26,7 +27,6 @@ const DATE_FILTERS: { value: DateFilter; label: string }[] = [
 
 const PAGE_SIZE = 9;
 const MAX_RETRIES = 3;
-const LISTING_EXPIRY_QUERY_BUFFER_MS = 60_000;
 
 export function ListingsFeed() {
   const { fbUser } = useAuth();
@@ -46,6 +46,12 @@ export function ListingsFeed() {
   const [showFilters, setShowFilters] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [clock, setClock] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setClock(Date.now()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -57,23 +63,9 @@ export function ListingsFeed() {
     let unsub: () => void = () => {};
 
     function subscribe(attempt: number) {
-      /*
-       * IMPORTANTE:
-       *
-       * La Security Rule de listings exige:
-       *
-       * status == "published"
-       * Y
-       * expiresAt > hora actual + margen de seguridad
-       *
-       * Por eso la consulta de Firestore debe incluir ambas
-       * condiciones. De esta manera Firestore puede comprobar
-       * que todos los documentos solicitados cumplen la regla.
-       */
       const q = query(
         collection(db, 'listings'),
-        where('status', '==', 'published'),
-        where('expiresAt', '>', Date.now() + LISTING_EXPIRY_QUERY_BUFFER_MS)
+        where('status', '==', 'published')
       );
 
       unsub = onSnapshot(
@@ -136,17 +128,10 @@ export function ListingsFeed() {
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    /*
-     * Esta comprobación sigue siendo útil como segunda capa
-     * en el frontend.
-     *
-     * La protección real está en Firestore Security Rules.
-     */
-    let result = listings.filter(
-      (listing) =>
-        !listing.expiresAt ||
-        listing.expiresAt > Date.now()
-    );
+    let result = listings.filter((listing) => {
+      const expiresAt = listingExpiryMillis(listing.expiresAt);
+      return expiresAt === null || expiresAt > clock;
+    });
 
     // Búsqueda
     if (term) {
@@ -222,6 +207,7 @@ export function ListingsFeed() {
     operation,
     sort,
     dateFilter,
+    clock,
   ]);
 
   const hasActiveFilters =
