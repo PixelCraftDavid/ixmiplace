@@ -14,6 +14,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { auth, db } from '@/lib/firebase';
 import { isDisposableEmail } from '@/lib/email';
 import { HouseScene } from '@/components/three/HouseScene';
+import { PrivacyNoticeInline } from '@/components/legal/PrivacyNoticeInline';
 
 const schema = z.object({
   displayName: z.string().min(2, 'Mínimo 2 caracteres').max(60),
@@ -102,6 +103,8 @@ export function RegisterPage() {
             </h1>
             <p className="text-sm text-ink-400">Crea tu cuenta gratis</p>
           </div>
+
+          <PrivacyNoticeInline kind="account" />
 
           <button
             onClick={handleGoogle}

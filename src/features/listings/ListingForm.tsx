@@ -25,6 +25,7 @@ import {
 import { ImageUploader } from './ImageUploader';
 import { LocationPicker } from './LocationPicker';
 import { useAuth } from '../auth/AuthContext';
+import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline';
 
 interface ListingFormProps {
   defaultValues?: Partial<ListingInput> & { photos?: string[]; photoPublicIds?: string[] };
@@ -152,6 +153,7 @@ export function ListingForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      <PrivacyNoticeInline kind="listing" />
       {lockFixedFields && immutableFieldsMessage && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <div className="flex items-start gap-3">

@@ -38,6 +38,7 @@ import { LocationView } from './LocationView';
 import type { Listing, AppUser } from '../../types/models';
 import { trackListingMetric } from '../../lib/listing-metrics';
 import { isListingExpired } from '../../lib/listing-expiration';
+import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline';
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -671,6 +672,7 @@ function ContactDialog({
               <p className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Inicia sesión y verifica tu correo para enviar un mensaje.</p>
             ) : (
               <>
+                <div className="mt-5"><PrivacyNoticeInline kind="contact" /></div>
                 <label className="mt-5 block text-sm font-semibold text-ink-700">
                   Asunto
                   <input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={100} className="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5 font-normal text-ink outline-none focus:border-brand-500" />
@@ -736,6 +738,7 @@ function ReportDialog({
               <p className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Inicia sesión y verifica tu correo para enviar un reporte.</p>
             ) : (
               <>
+                <div className="mt-5"><PrivacyNoticeInline kind="report" /></div>
                 <label className="mt-5 block text-sm font-semibold text-ink-700">
                   Motivo
                   <select value={reason} onChange={(event) => setReason(event.target.value as ReportInput['reason'])} className="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5 font-normal text-ink outline-none focus:border-brand-500">

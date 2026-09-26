@@ -10,6 +10,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '@/lib/firebase';
 import { HouseScene } from '@/components/three/HouseScene';
+import { PrivacyNoticeInline } from '@/components/legal/PrivacyNoticeInline';
 
 const schema = z.object({
   email: z.string().email('Correo inválido'),
@@ -58,6 +59,8 @@ export function LoginPage() {
             </h1>
             <p className="text-sm text-ink-400">Bienvenido de vuelta</p>
           </div>
+
+          <PrivacyNoticeInline kind="account" />
 
           <button
             onClick={handleGoogle}

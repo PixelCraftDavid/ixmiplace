@@ -3,6 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../../lib/firebase';
 import { useAuth } from './AuthContext';
+import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline';
 
 export function CompleteProfilePage() {
   const nav = useNavigate();
@@ -53,6 +54,8 @@ export function CompleteProfilePage() {
             Necesitamos tu WhatsApp para que los interesados te contacten.
           </p>
         </div>
+
+        <PrivacyNoticeInline kind="profile" />
 
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
