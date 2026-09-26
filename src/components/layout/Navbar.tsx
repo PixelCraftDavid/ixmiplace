@@ -59,6 +59,14 @@ export function Navbar() {
           >
             {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
+          <Link
+            to="/apoyar"
+            aria-label="Apoyar a IxmiPlace"
+            title="Apoyar a IxmiPlace"
+            className={`hidden h-10 items-center justify-center gap-1.5 rounded-full border px-3 text-sm font-semibold backdrop-blur-md transition sm:inline-flex ${overDarkHero ? 'border-white/30 bg-white/10 text-white hover:bg-white/20' : 'border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-900/30 dark:text-brand-200 dark:hover:bg-brand-900/50'}`}
+          >
+            <Heart className="h-4 w-4" /> <span className="hidden md:inline">Apoyar</span>
+          </Link>
           {fbUser ? (
             <div className="relative" ref={menuRef}>
               {/* Botón que abre/cierra el menú */}
