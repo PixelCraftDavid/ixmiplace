@@ -13,6 +13,7 @@ import {
   BarChart3,
   Ban,
   UserCheck,
+  Trash2,
 } from 'lucide-react';
 import {
   collection,
@@ -71,6 +72,9 @@ export function AdminPage() {
   const [reportBusyId, setReportBusyId] = useState('');
   const [rejecting, setRejecting] = useState<Listing | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [deleting, setDeleting] = useState<Listing | null>(null);
+  const [deletionReason, setDeletionReason] = useState('');
+  const [deletionBusy, setDeletionBusy] = useState(false);
   const [migrationRunning, setMigrationRunning] = useState(false);
   const [migrationSummary, setMigrationSummary] = useState('');
 
@@ -259,6 +263,50 @@ export function AdminPage() {
     }
   }
 
+  async function deleteListing(listing: Listing) {
+    const reason = deletionReason.trim();
+    if (!reason) return;
+
+    setDeletionBusy(true);
+    setError('');
+    try {
+      const batch = writeBatch(db);
+      batch.delete(doc(db, 'listings', listing.id));
+      batch.delete(doc(db, 'listingPrivateDetails', listing.id));
+
+      const historyRef = doc(firestoreCollection(db, 'listingHistory'));
+      batch.set(historyRef, {
+        listingId: listing.id,
+        actorId: adminUid,
+        actorRole: 'admin',
+        action: 'deleted',
+        changedFields: ['document'],
+        summary: `Publicación eliminada por moderación. Motivo: ${reason}`,
+        createdAt: Date.now(),
+      });
+
+      const notificationRef = doc(firestoreCollection(db, 'notifications'));
+      batch.set(notificationRef, {
+        recipientId: listing.ownerId,
+        type: 'listing_removed',
+        title: 'Publicación retirada',
+        message: `Tu publicación “${listing.title}” fue retirada por moderación. Motivo: ${reason}`,
+        listingId: listing.id,
+        isRead: false,
+        createdAt: Date.now(),
+      });
+
+      await batch.commit();
+      setDeleting(null);
+      setDeletionReason('');
+    } catch (deleteError) {
+      console.error('Error eliminando publicación:', deleteError);
+      setError('No se pudo eliminar la publicación. Revisa las reglas publicadas en Firebase y vuelve a intentarlo.');
+    } finally {
+      setDeletionBusy(false);
+    }
+  }
+
   async function migrateLegacyListingData() {
     setMigrationRunning(true);
     setMigrationSummary('');
@@ -438,6 +486,10 @@ export function AdminPage() {
                   setRejectionReason('');
                 }}
                 onReview={() => void updateListingStatus(listing, 'pending')}
+                onDelete={() => {
+                  setDeleting(listing);
+                  setDeletionReason('');
+                }}
               />
             ))}
           </div>
@@ -510,6 +562,70 @@ export function AdminPage() {
           </div>
         </div>
       )}
+
+      {deleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-listing-title"
+            className="w-full max-w-lg rounded-2xl border border-red-200 bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-red-700">Acción permanente</p>
+                <h2 id="delete-listing-title" className="mt-1 text-xl font-bold text-ink">Eliminar publicación</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleting(null)}
+                disabled={deletionBusy}
+                className="rounded-full p-2 text-ink-400 hover:bg-cream-100 disabled:opacity-50"
+                aria-label="Cerrar"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="mt-4 text-sm leading-relaxed text-ink-600">
+              Se eliminará <strong>{deleting.title}</strong> y su dirección privada. La acción quedará registrada y avisaremos al propietario con el motivo. Los reportes existentes se conservarán para moderación.
+            </p>
+
+            <label className="mt-5 block text-sm font-semibold text-ink-700">
+              Motivo de eliminación <span className="text-red-600">*</span>
+              <textarea
+                value={deletionReason}
+                onChange={(event) => setDeletionReason(event.target.value)}
+                rows={3}
+                maxLength={300}
+                placeholder="Ej. ubicación incorrecta, anuncio duplicado o reporte confirmado…"
+                className="mt-2 w-full resize-none rounded-xl border border-cream-300 bg-cream-50 p-3 font-normal text-ink outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+              />
+              <span className="mt-1 block text-xs font-normal text-ink-400">El motivo se guardará en el historial administrativo y se enviará al propietario.</span>
+            </label>
+
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setDeleting(null)}
+                disabled={deletionBusy}
+                className="rounded-xl border border-cream-300 px-4 py-3 font-semibold text-ink-600 hover:bg-cream-100 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void deleteListing(deleting)}
+                disabled={deletionBusy || deletionReason.trim().length < 5}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deletionBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                {deletionBusy ? 'Eliminando…' : 'Eliminar definitivamente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -529,7 +645,7 @@ function Metric({ icon, label, value, tone }: { icon: React.ReactNode; label: st
   );
 }
 
-function AdminListingRow({ listing, busy, onApprove, onReject, onReview }: { listing: Listing; busy: boolean; onApprove: () => void; onReject: () => void; onReview: () => void }) {
+function AdminListingRow({ listing, busy, onApprove, onReject, onReview, onDelete }: { listing: Listing; busy: boolean; onApprove: () => void; onReject: () => void; onReview: () => void; onDelete: () => void }) {
   return (
     <article className="grid gap-4 rounded-2xl border border-cream-200 bg-white p-4 shadow-sm md:grid-cols-[9rem_1fr_auto] md:items-center">
       <div className="aspect-[4/3] overflow-hidden rounded-xl bg-cream-100">
@@ -550,6 +666,7 @@ function AdminListingRow({ listing, busy, onApprove, onReject, onReview }: { lis
         {listing.status !== 'published' && <button type="button" onClick={onApprove} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"><Check className="h-4 w-4" /> Aprobar</button>}
         {listing.status !== 'rejected' && <button type="button" onClick={onReject} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"><X className="h-4 w-4" /> Rechazar</button>}
         {listing.status === 'rejected' && <button type="button" onClick={onReview} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60"><Clock3 className="h-4 w-4" /> Revisar de nuevo</button>}
+        <button type="button" onClick={onDelete} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"><Trash2 className="h-4 w-4" /> Eliminar</button>
       </div>
     </article>
   );

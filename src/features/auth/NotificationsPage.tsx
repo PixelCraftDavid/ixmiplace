@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Check, Loader2 } from 'lucide-react';
+import { Bell, Check, Loader2, Trash2 } from 'lucide-react';
 import { collection, doc, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from './AuthContext';
@@ -74,8 +74,8 @@ export function NotificationsPage() {
             {notifications.map((notification) => (
               <article key={notification.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${notification.isRead ? 'border-cream-200' : 'border-brand-200 ring-2 ring-brand-500/10'}`}>
                 <div className="flex items-start gap-3">
-                  <div className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${notification.type === 'listing_approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                    {notification.type === 'listing_approved' ? <Check className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+                  <div className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${notification.type === 'listing_approved' ? 'bg-emerald-50 text-emerald-600' : notification.type === 'listing_removed' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}`}>
+                    {notification.type === 'listing_approved' ? <Check className="h-5 w-5" /> : notification.type === 'listing_removed' ? <Trash2 className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -84,7 +84,7 @@ export function NotificationsPage() {
                     </div>
                     <p className="mt-1 text-sm leading-relaxed text-ink-600">{notification.message}</p>
                     <div className="mt-3 flex items-center gap-3">
-                      <Link to={`/listing/${notification.listingId}`} onClick={() => void markAsRead(notification)} className="text-sm font-semibold text-brand-600 hover:text-brand-700">Ver publicación</Link>
+                      {notification.type !== 'listing_removed' && <Link to={`/listing/${notification.listingId}`} onClick={() => void markAsRead(notification)} className="text-sm font-semibold text-brand-600 hover:text-brand-700">Ver publicación</Link>}
                       {!notification.isRead && <button type="button" onClick={() => void markAsRead(notification)} className="text-sm font-medium text-ink-500 hover:text-ink-700">Marcar como leída</button>}
                     </div>
                   </div>

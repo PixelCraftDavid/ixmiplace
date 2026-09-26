@@ -151,7 +151,7 @@ export interface Favorite {
 export interface AppNotification {
   id: string;
   recipientId: string;
-  type: 'listing_approved' | 'listing_rejected';
+  type: 'listing_approved' | 'listing_rejected' | 'listing_removed';
   title: string;
   message: string;
   listingId: string;
@@ -176,7 +176,7 @@ export interface ListingHistoryEntry {
   listingId: string;
   actorId: string;
   actorRole: 'owner' | 'admin';
-  action: 'created' | 'updated' | 'approved' | 'rejected' | 'renewed';
+  action: 'created' | 'updated' | 'approved' | 'rejected' | 'renewed' | 'deleted';
   changedFields: string[];
   summary: string;
   createdAt: number;
