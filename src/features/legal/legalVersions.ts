@@ -1,3 +1,3 @@
-export const TERMS_VERSION = '2026-09-26';
-export const PRIVACY_NOTICE_VERSION = '2026-09-26';
+export const TERMS_VERSION = '2026-09-26-v2';
+export const PRIVACY_NOTICE_VERSION = '2026-09-26-v2';
 export const LISTING_CONSENT_VERSION = '2026-09-26';

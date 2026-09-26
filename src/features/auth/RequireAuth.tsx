@@ -49,6 +49,7 @@ export function RequireAuth({ requireVerified = true }: Props) {
 
   if (
     (profile.termsAcceptedVersion !== TERMS_VERSION ||
+      profile.adultConfirmedVersion !== TERMS_VERSION ||
       profile.privacyConsentVersion !== PRIVACY_NOTICE_VERSION) &&
     loc.pathname !== '/aceptar-terminos'
   ) {

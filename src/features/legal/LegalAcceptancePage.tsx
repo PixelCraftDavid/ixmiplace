@@ -11,6 +11,7 @@ export function LegalAcceptancePage() {
   const navigate = useNavigate();
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [confirmedAdult, setConfirmedAdult] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,13 +22,14 @@ export function LegalAcceptancePage() {
   if (!fbUser) return <Navigate to="/login" replace />;
   if (
     profile?.termsAcceptedVersion === TERMS_VERSION &&
+    profile?.adultConfirmedVersion === TERMS_VERSION &&
     profile?.privacyConsentVersion === PRIVACY_NOTICE_VERSION
   ) {
     return <Navigate to="/" replace />;
   }
 
   async function acceptCurrentTerms() {
-    if (!fbUser || !acceptedTerms || !acceptedPrivacy) return;
+    if (!fbUser || !acceptedTerms || !acceptedPrivacy || !confirmedAdult) return;
     setSaving(true);
     setError('');
     try {
@@ -53,13 +55,15 @@ export function LegalAcceptancePage() {
         <LegalAcceptanceFields
           acceptedTerms={acceptedTerms}
           acceptedPrivacy={acceptedPrivacy}
+          confirmedAdult={confirmedAdult}
           onTermsChange={setAcceptedTerms}
           onPrivacyChange={setAcceptedPrivacy}
+          onAdultChange={setConfirmedAdult}
         />
         {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
         <button
           type="button"
-          disabled={!acceptedTerms || !acceptedPrivacy || saving}
+          disabled={!acceptedTerms || !acceptedPrivacy || !confirmedAdult || saving}
           onClick={() => void acceptCurrentTerms()}
           className="w-full rounded-xl bg-brand-600 px-5 py-3 font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >

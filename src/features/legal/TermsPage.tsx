@@ -21,8 +21,9 @@ export function TermsPage() {
         </header>
 
         <div className="space-y-5">
-          <TermsSection title="1. Aceptación y cuenta">
-            <p>Al crear una cuenta, iniciar sesión tras aceptar la versión vigente o publicar un anuncio, confirmas que leíste y aceptas estos términos y el Aviso de Privacidad. Debes proporcionar información correcta, cuidar tus credenciales y avisar si detectas un uso no autorizado de tu cuenta. Si no aceptas los términos, no uses las funciones que requieren cuenta.</p>
+          <TermsSection title="1. Edad, aceptación y cuenta">
+            <p>IxmiPlace está dirigido exclusivamente a personas de 18 años o más. Al crear una cuenta confirmas que tienes esa edad y capacidad para aceptar estos términos; no permitimos que menores de edad creen cuentas, publiquen anuncios o usen funciones que requieren autenticación. Si detectamos razonablemente una cuenta de una persona menor, podremos restringirla y atender los datos conforme al Aviso de Privacidad y la legislación aplicable.</p>
+            <p>Al crear una cuenta o aceptar una versión nueva, confirmas que leíste y aceptas estos términos y el Aviso de Privacidad. Debes proporcionar información correcta, cuidar tus credenciales y avisar si detectas un uso no autorizado. Si no aceptas los términos, no uses las funciones que requieren cuenta.</p>
           </TermsSection>
 
           <TermsSection title="2. Qué hace IxmiPlace">
@@ -54,12 +55,17 @@ export function TermsPage() {
           </TermsSection>
 
           <TermsSection title="8. Servicios externos y límites">
-            <p>El servicio depende de proveedores externos para autenticación, base de datos, mapas, imágenes y alojamiento. Sus interrupciones o condiciones también pueden afectar algunas funciones. IxmiPlace está en desarrollo y no promete disponibilidad ininterrumpida ni ausencia total de errores.</p>
+            <p>El servicio depende de proveedores externos para autenticación, base de datos, mapas, imágenes y alojamiento. También puede incluir enlaces o integraciones a sitios de terceros. Cada tercero administra sus propios servicios, contenidos, disponibilidad, términos y avisos de privacidad; al salir de IxmiPlace, revísalos directamente. No controlamos esos sitios ni sus cambios, sin excluir responsabilidades que la ley atribuya al responsable de IxmiPlace.</p>
+            <p>IxmiPlace está en desarrollo y no promete disponibilidad ininterrumpida ni ausencia total de errores.</p>
             <p>Estos términos no eliminan los derechos irrenunciables de las personas consumidoras ni excluyen responsabilidades que la ley no permita excluir. Cada persona usuaria sigue siendo responsable de sus declaraciones, contenido y acuerdos con otras personas.</p>
           </TermsSection>
 
-          <TermsSection title="9. Cambios y contacto">
-            <p>Podremos actualizar estos términos cuando cambie el servicio o sus obligaciones. Publicaremos la nueva versión y, si el cambio requiere una aceptación nueva para continuar usando funciones de cuenta, volveremos a solicitarla. Para dudas, reportes o reclamos relacionados con IxmiPlace, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a>.</p>
+          <TermsSection title="9. Ley aplicable y jurisdicción">
+            <p>Estos términos se interpretan conforme a las leyes aplicables de los Estados Unidos Mexicanos. Cuando una controversia corresponda a tribunales, podrán conocer los órganos jurisdiccionales competentes de Hidalgo, incluido Ixmiquilpan cuando legalmente corresponda. Esta cláusula no impide acudir a autoridades administrativas competentes ni limita derechos de consumidores o reglas obligatorias que permitan presentar una reclamación ante otra autoridad o tribunal.</p>
+          </TermsSection>
+
+          <TermsSection title="10. Cambios y contacto">
+            <p>Publicaremos cada versión nueva con su fecha y, de ser posible, avisaremos con al menos 15 días naturales de anticipación por correo o dentro del sitio. Los cambios materiales requerirán una aceptación expresa antes de seguir usando funciones de cuenta. Si un cambio inmediato es necesario por seguridad o por una obligación legal, podremos aplicarlo antes y avisaremos tan pronto como sea razonable. Para dudas, reportes o reclamos relacionados con IxmiPlace, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a>.</p>
             <p>El Aviso de Privacidad está disponible <Link className="font-semibold text-brand-700 underline dark:text-brand-300" to="/aviso-de-privacidad">en esta página</Link>.</p>
           </TermsSection>
         </div>

@@ -15,7 +15,7 @@ export function PrivacyNoticePage() {
           </div>
           <h1 className="text-3xl font-extrabold sm:text-4xl">Aviso de Privacidad Integral</h1>
           <p className="mt-3 text-sm leading-relaxed text-ink-500 dark:text-ink-300">
-            Última actualización: 26 de septiembre de 2026. Este aviso explica cómo se tratan los datos personales al usar IxmiPlace, proyecto independiente en desarrollo para publicar y consultar propiedades en Ixmiquilpan.
+            Última actualización: 26 de septiembre de 2026 (versión 2). Este aviso explica cómo se tratan los datos personales al usar IxmiPlace, proyecto independiente en desarrollo para publicar y consultar propiedades en Ixmiquilpan.
           </p>
         </header>
 
@@ -54,7 +54,8 @@ export function PrivacyNoticePage() {
           </NoticeSection>
 
           <NoticeSection title="6. Conservación y opciones para limitar el uso">
-            <p>Conservamos los datos mientras la cuenta, publicación o interacción siga activa y durante el tiempo adicional que sea necesario para seguridad, moderación, atención de solicitudes o cumplimiento de obligaciones. Puedes editar o retirar tus publicaciones y dejar de usar la cuenta. También puedes solicitar acceso, corrección, cancelación u oposición escribiendo al correo indicado; algunas piezas podrán conservarse bloqueadas cuando exista una obligación o motivo legítimo para ello.</p>
+            <p>Conservamos los datos mientras la cuenta, publicación o interacción siga activa y durante el tiempo adicional que sea necesario para seguridad, moderación, atención de solicitudes o cumplimiento de obligaciones. Puedes editar o retirar tus publicaciones y dejar de usar la cuenta. También puedes solicitar acceso, rectificación, cancelación u oposición escribiendo al correo indicado.</p>
+            <p>Cuando una cancelación proceda, dejaremos de usar los datos para la operación ordinaria y los mantendremos bloqueados, con acceso restringido, únicamente durante el plazo legal aplicable para atender o determinar responsabilidades derivadas de su tratamiento. Durante el bloqueo no se usarán para otros fines. Al terminar ese plazo, se suprimirán, salvo que una obligación legal o una excepción prevista por la ley requiera conservarlos.</p>
           </NoticeSection>
 
           <NoticeSection title="7. Derechos ARCO">

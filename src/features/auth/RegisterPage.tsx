@@ -42,6 +42,7 @@ export function RegisterPage() {
   const [error, setError] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [confirmedAdult, setConfirmedAdult] = useState(false);
 
   const {
     register,
@@ -52,8 +53,8 @@ export function RegisterPage() {
   async function onSubmit(data: FormData) {
     setError('');
 
-    if (!acceptedTerms || !acceptedPrivacy) {
-      setError('Acepta los Términos y confirma el Aviso de Privacidad para crear tu cuenta.');
+    if (!acceptedTerms || !acceptedPrivacy || !confirmedAdult) {
+      setError('Acepta los términos, confirma que eres mayor de edad y revisa el Aviso de Privacidad para crear tu cuenta.');
       return;
     }
 
@@ -81,6 +82,8 @@ export function RegisterPage() {
         isBanned: false,
         termsAcceptedVersion: TERMS_VERSION,
         termsAcceptedAt: acceptedAt,
+        adultConfirmedVersion: TERMS_VERSION,
+        adultConfirmedAt: acceptedAt,
         privacyConsentVersion: PRIVACY_NOTICE_VERSION,
         privacyConsentAt: acceptedAt,
       });
@@ -95,8 +98,8 @@ export function RegisterPage() {
 
   async function handleGoogle() {
     setError('');
-    if (!acceptedTerms || !acceptedPrivacy) {
-      setError('Acepta los Términos y confirma el Aviso de Privacidad para crear tu cuenta.');
+    if (!acceptedTerms || !acceptedPrivacy || !confirmedAdult) {
+      setError('Acepta los términos, confirma que eres mayor de edad y revisa el Aviso de Privacidad para crear tu cuenta.');
       return;
     }
     try {
@@ -129,14 +132,16 @@ export function RegisterPage() {
           <LegalAcceptanceFields
             acceptedTerms={acceptedTerms}
             acceptedPrivacy={acceptedPrivacy}
+            confirmedAdult={confirmedAdult}
             onTermsChange={setAcceptedTerms}
             onPrivacyChange={setAcceptedPrivacy}
+            onAdultChange={setConfirmedAdult}
           />
 
           <button
             onClick={handleGoogle}
             type="button"
-            disabled={!acceptedTerms || !acceptedPrivacy}
+            disabled={!acceptedTerms || !acceptedPrivacy || !confirmedAdult}
             className="flex w-full items-center justify-center gap-3
                        rounded-xl border border-cream-300 py-2.5
                        font-medium text-ink-700 transition hover:bg-cream-50 disabled:cursor-not-allowed disabled:opacity-50"

@@ -9,6 +9,8 @@ export async function recordLegalAcceptance(user: User, acceptedAt = Date.now())
     emailVerified: user.emailVerified,
     termsAcceptedVersion: TERMS_VERSION,
     termsAcceptedAt: acceptedAt,
+    adultConfirmedVersion: TERMS_VERSION,
+    adultConfirmedAt: acceptedAt,
     privacyConsentVersion: PRIVACY_NOTICE_VERSION,
     privacyConsentAt: acceptedAt,
   };

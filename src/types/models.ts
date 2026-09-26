@@ -12,6 +12,8 @@ export interface AppUser {
   isBanned?: boolean;
   termsAcceptedVersion?: string;
   termsAcceptedAt?: number;
+  adultConfirmedVersion?: string;
+  adultConfirmedAt?: number;
   privacyConsentVersion?: string;
   privacyConsentAt?: number;
   phoneConsentVersion?: string;
