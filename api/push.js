@@ -84,9 +84,10 @@ async function findAdminIds(db) {
     .map((userDoc) => userDoc.id);
 }
 
-async function sendToUsers(db, userIds, title, body, url) {
+async function sendToUsers(db, userIds, title, body, url, setFailureStage) {
   const tokenRefs = [];
   for (const userId of [...new Set(userIds.filter(Boolean))]) {
+    setFailureStage('firestore_read_push_tokens');
     const tokens = await db.collection('users').doc(userId).collection('pushTokens').get();
     for (const tokenDoc of tokens.docs) {
       const token = tokenDoc.data().token;
@@ -97,6 +98,7 @@ async function sendToUsers(db, userIds, title, body, url) {
   let sent = 0;
   for (let offset = 0; offset < tokenRefs.length; offset += 500) {
     const chunk = tokenRefs.slice(offset, offset + 500);
+    setFailureStage('firebase_cloud_messaging_send');
     const result = await getMessaging(getFirebaseAdmin()).sendEachForMulticast({
       tokens: chunk.map(({ token }) => token),
       notification: { title, body },
@@ -117,6 +119,7 @@ async function sendToUsers(db, userIds, title, body, url) {
         removals.push(chunk[index].ref.delete());
       }
     });
+    setFailureStage('firestore_remove_invalid_push_tokens');
     await Promise.all(removals);
   }
 
@@ -137,17 +140,20 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return respond(res, 405, { error: 'Método no permitido.' });
 
   let claimedEventRef;
+  let failureStage = 'request_setup';
   try {
     const authorization = req.headers.authorization || '';
     const idToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
     if (!idToken) return respond(res, 401, { error: 'Debes iniciar sesión.' });
 
     const app = getFirebaseAdmin();
+    failureStage = 'firebase_auth_token_lookup';
     const decoded = await verifyFirebaseIdToken(idToken);
     if (!decoded) return respond(res, 401, { error: 'La sesión no es válida; vuelve a iniciar sesión.' });
     if (!decoded.email_verified) return respond(res, 403, { error: 'Verifica tu correo.' });
 
     const db = getFirestore(app);
+    failureStage = 'firestore_read_user_profile';
     const userSnapshot = await db.collection('users').doc(decoded.uid).get();
     const profile = userSnapshot.data();
     if (!profile || profile.isBanned === true) return respond(res, 403, { error: 'Cuenta no autorizada.' });
@@ -164,17 +170,20 @@ export default async function handler(req, res) {
     let targetUrl = `${APP_ORIGIN}/notificaciones`;
 
     if (type === 'listing_created') {
+      failureStage = 'firestore_reserve_listing_event';
       reserved = await reserveEvent(db, 'listings', id, (listing) =>
         listing.ownerId === decoded.uid && listing.status === 'pending'
       );
       if (!reserved) return respond(res, 403, { error: 'Publicación no autorizada.' });
       if (reserved.skipped) return respond(res, 200, { ok: true, skipped: true });
       claimedEventRef = reserved.ref;
+      failureStage = 'firestore_find_admin_recipients';
       recipientIds = await findAdminIds(db);
       title = 'Nueva publicación por revisar';
       body = 'Hay un nuevo anuncio pendiente de moderación.';
       targetUrl = `${APP_ORIGIN}/admin`;
     } else if (type === 'message_created') {
+      failureStage = 'firestore_reserve_message_event';
       reserved = await reserveEvent(db, 'messages', id, (message) =>
         message.senderId === decoded.uid && message.senderId !== message.recipientId && message.status === 'unread'
       );
@@ -187,6 +196,7 @@ export default async function handler(req, res) {
       targetUrl = `${APP_ORIGIN}/mensajes`;
     } else if (type === 'notification_created') {
       if (profile.role !== 'admin') return respond(res, 403, { error: 'Solo administración puede emitir este aviso.' });
+      failureStage = 'firestore_reserve_notification_event';
       reserved = await reserveEvent(db, 'notifications', id, (notification) => typeof notification.recipientId === 'string');
       if (!reserved) return respond(res, 403, { error: 'Aviso no autorizado.' });
       if (reserved.skipped) return respond(res, 200, { ok: true, skipped: true });
@@ -195,17 +205,22 @@ export default async function handler(req, res) {
       title = 'Actualización de tu publicación';
       body = 'Hay una novedad sobre una de tus publicaciones.';
     } else {
+      failureStage = 'firestore_reserve_report_event';
       reserved = await reserveEvent(db, 'reports', id, (report) => report.reporterId === decoded.uid && report.status === 'open');
       if (!reserved) return respond(res, 403, { error: 'Reporte no autorizado.' });
       if (reserved.skipped) return respond(res, 200, { ok: true, skipped: true });
       claimedEventRef = reserved.ref;
+      failureStage = 'firestore_find_admin_recipients';
       recipientIds = await findAdminIds(db);
       title = 'Nuevo reporte recibido';
       body = 'Hay un reporte de publicación pendiente de revisar.';
       targetUrl = `${APP_ORIGIN}/admin`;
     }
 
-    const delivery = await sendToUsers(db, recipientIds, title, body, targetUrl);
+    const delivery = await sendToUsers(db, recipientIds, title, body, targetUrl, (stage) => {
+      failureStage = stage;
+    });
+    failureStage = 'firestore_mark_event_sent';
     await reserved.ref.update({
       _pushSentAt: FieldValue.serverTimestamp(),
       _pushClaimedAt: FieldValue.delete(),
@@ -219,7 +234,11 @@ export default async function handler(req, res) {
         // El bloqueo de reintentos caduca automáticamente a los 60 segundos.
       }
     }
-    console.error('Error en el servicio de push:', error?.message || error);
+    console.error(`Error en el servicio de push [${failureStage}]:`, {
+      code: error?.code || 'unknown',
+      message: error?.message || String(error),
+      details: error?.details || undefined,
+    });
     return respond(res, 500, { error: 'No se pudo procesar la notificación.' });
   }
 }
