@@ -1,5 +1,4 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 
@@ -29,6 +28,34 @@ function getFirebaseAdmin() {
 
 function respond(res, status, body) {
   res.status(status).json(body);
+}
+
+async function verifyFirebaseIdToken(idToken) {
+  const apiKey = process.env.VITE_FB_API_KEY;
+  if (!apiKey) throw new Error('Falta VITE_FB_API_KEY en las variables de entorno de Vercel.');
+
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    },
+  );
+
+  const result = await response.json().catch(() => null);
+  if (!response.ok) {
+    if (response.status === 400 || response.status === 401) return null;
+    throw new Error(`Firebase Auth token lookup failed (${response.status}).`);
+  }
+
+  const user = result?.users?.[0];
+  if (!user || typeof user.localId !== 'string') return null;
+
+  return {
+    uid: user.localId,
+    email_verified: user.emailVerified === true,
+  };
 }
 
 async function reserveEvent(db, collectionName, id, authorize) {
@@ -116,8 +143,8 @@ export default async function handler(req, res) {
     if (!idToken) return respond(res, 401, { error: 'Debes iniciar sesión.' });
 
     const app = getFirebaseAdmin();
-    const adminAuth = getAuth(app);
-    const decoded = await adminAuth.verifyIdToken(idToken);
+    const decoded = await verifyFirebaseIdToken(idToken);
+    if (!decoded) return respond(res, 401, { error: 'La sesión no es válida; vuelve a iniciar sesión.' });
     if (!decoded.email_verified) return respond(res, 403, { error: 'Verifica tu correo.' });
 
     const db = getFirestore(app);
