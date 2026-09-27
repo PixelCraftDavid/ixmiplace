@@ -25,8 +25,39 @@ async function supportedMessaging() {
   return getMessaging(app);
 }
 
-async function getDeviceToken(messaging: ReturnType<typeof getMessaging>) {
-  const registration = await navigator.serviceWorker.ready;
+async function activeServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
+  const serviceWorkerUrl = new URL('/sw.js', window.location.origin);
+  serviceWorkerUrl.searchParams.set('firebaseConfig', JSON.stringify(app.options));
+
+  const registration = await navigator.serviceWorker.register(serviceWorkerUrl, { scope: '/' });
+  let timeoutId: number | undefined;
+  let readyRegistration: ServiceWorkerRegistration;
+
+  try {
+    readyRegistration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error('IxmiPlace todavía está preparando las notificaciones. Cierra y vuelve a abrir la página e inténtalo otra vez.')),
+          15_000
+        );
+      }),
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+
+  if (!readyRegistration.active || readyRegistration.scope !== registration.scope) {
+    throw new Error('No se pudo activar el Service Worker de IxmiPlace. Actualiza la página e inténtalo otra vez.');
+  }
+
+  return readyRegistration;
+}
+
+async function getDeviceToken(
+  messaging: ReturnType<typeof getMessaging>,
+  registration: ServiceWorkerRegistration
+) {
   return getToken(messaging, {
     vapidKey: VAPID_KEY,
     serviceWorkerRegistration: registration,
@@ -45,7 +76,8 @@ export async function getPushSubscriptionState(userId: string): Promise<'unsuppo
 
   try {
     const messaging = await supportedMessaging();
-    const token = await getDeviceToken(messaging);
+    const registration = await activeServiceWorkerRegistration();
+    const token = await getDeviceToken(messaging, registration);
     if (!token) return 'disabled';
     const tokenId = await tokenDocumentId(token);
     const tokenDoc = await getDoc(doc(db, 'users', userId, 'pushTokens', tokenId));
@@ -64,11 +96,12 @@ export async function enablePushNotifications(userId: string) {
     throw new Error('En iPhone o iPad, añade IxmiPlace a la pantalla de inicio y abre la app instalada para activar push.');
   }
 
+  const registration = await activeServiceWorkerRegistration();
   const messaging = await supportedMessaging();
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('No se concedió permiso para mostrar notificaciones.');
 
-  const token = await getDeviceToken(messaging);
+  const token = await getDeviceToken(messaging, registration);
   if (!token) throw new Error('Firebase no pudo registrar este dispositivo. Intenta de nuevo.');
 
   const tokenId = await tokenDocumentId(token);
@@ -85,7 +118,8 @@ export async function enablePushNotifications(userId: string) {
 export async function disablePushNotifications(userId: string) {
   requireBrowserSupport();
   const messaging = await supportedMessaging();
-  const token = Notification.permission === 'granted' ? await getDeviceToken(messaging) : null;
+  const registration = await activeServiceWorkerRegistration();
+  const token = Notification.permission === 'granted' ? await getDeviceToken(messaging, registration) : null;
   if (token) {
     const tokenId = await tokenDocumentId(token);
     await deleteDoc(doc(db, 'users', userId, 'pushTokens', tokenId));

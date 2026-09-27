@@ -39,16 +39,17 @@ export function Navbar() {
       const currentGeneration = ++generation;
       const unsubscribe = await listenForForegroundPush((payload) => {
         if (Notification.permission !== 'granted') return;
-        const notification = new Notification(payload.notification?.title || 'IxmiPlace', {
-          body: payload.notification?.body || 'Tienes una novedad en IxmiPlace.',
-          icon: '/icon-192.png',
-        });
-        notification.onclick = () => {
-          const targetUrl = new URL(payload.data?.url || '/notificaciones', window.location.origin);
-          if (targetUrl.origin !== window.location.origin) return;
-          window.focus();
-          window.location.assign(targetUrl.href);
-        };
+        const targetUrl = new URL(payload.data?.url || '/notificaciones', window.location.origin);
+        if (targetUrl.origin !== window.location.origin) return;
+        void navigator.serviceWorker.ready.then((registration) => registration.showNotification(
+          payload.data?.title || payload.notification?.title || 'IxmiPlace',
+          {
+            body: payload.data?.body || payload.notification?.body || 'Tienes una novedad en IxmiPlace.',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            data: { url: targetUrl.href },
+          }
+        )).catch((error) => console.warn('No se pudo mostrar la notificación en primer plano:', error));
       });
       if (currentGeneration !== generation) unsubscribe();
       else {

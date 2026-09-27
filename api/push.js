@@ -101,14 +101,9 @@ async function sendToUsers(db, userIds, title, body, url, setFailureStage) {
     setFailureStage('firebase_cloud_messaging_send');
     const result = await getMessaging(getFirebaseAdmin()).sendEachForMulticast({
       tokens: chunk.map(({ token }) => token),
-      notification: { title, body },
-      data: { url },
-      webpush: {
-        notification: {
-          icon: `${APP_ORIGIN}/icon-192.png`,
-          badge: `${APP_ORIGIN}/icon-192.png`,
-        },
-      },
+      // Data-only evita que FCM muestre una notificación automática además
+      // de la que presenta el Service Worker.
+      data: { title, body, url },
     });
 
     sent += result.successCount;

@@ -26,9 +26,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    const serviceWorkerUrl = new URL('/sw.js', window.location.origin);
-    serviceWorkerUrl.searchParams.set('firebaseConfig', JSON.stringify(app.options));
-    void navigator.serviceWorker.register(serviceWorkerUrl);
+  const serviceWorkerUrl = new URL('/sw.js', window.location.origin);
+  serviceWorkerUrl.searchParams.set('firebaseConfig', JSON.stringify(app.options));
+  void navigator.serviceWorker.register(serviceWorkerUrl, { scope: '/' }).catch((error) => {
+    console.error('No se pudo registrar el Service Worker de IxmiPlace:', error);
   });
 }

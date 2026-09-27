@@ -8,10 +8,10 @@ if (firebaseConfigParam) {
   firebase.initializeApp(JSON.parse(firebaseConfigParam));
   const messaging = firebase.messaging();
   messaging.onBackgroundMessage((payload) => {
-    const title = payload.notification?.title || 'IxmiPlace';
+    const title = payload.data?.title || payload.notification?.title || 'IxmiPlace';
     const targetUrl = payload.data?.url || '/notificaciones';
     return self.registration.showNotification(title, {
-      body: payload.notification?.body || 'Tienes una novedad en IxmiPlace.',
+      body: payload.data?.body || payload.notification?.body || 'Tienes una novedad en IxmiPlace.',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
       data: { url: targetUrl },
