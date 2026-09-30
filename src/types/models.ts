@@ -159,17 +159,10 @@ export interface Favorite {
   createdAt: number;
 }
 
-// Notificaciones internas.
-// Si agregas un tipo nuevo, hazlo solo aquí: el resto del código lo toma de este union.
-export type NotificationType =
-  | 'listing_approved'
-  | 'listing_rejected'
-  | 'listing_removed';
-
 export interface AppNotification {
   id: string;
   recipientId: string;
-  type: NotificationType;
+  type: 'listing_approved' | 'listing_rejected';
   title: string;
   message: string;
   listingId: string;
