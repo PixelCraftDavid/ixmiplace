@@ -209,7 +209,7 @@ export function AdminPage() {
         message:
           status === 'published'
             ? `Tu publicación "${listing.title}" ya está visible en IxmiPlace.`
-            : `Tu publicación "${listing.title}" necesita cambios: ${updates.rejectionReason}`,
+            : `Motivo para el propietario: ${updates.rejectionReason}`,
         listingId: listing.id,
         isRead: false,
         createdAt: Date.now(),
