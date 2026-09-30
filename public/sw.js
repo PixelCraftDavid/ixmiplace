@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ixmiplace-shell-v2';
+const CACHE_NAME = 'ixmiplace-shell-v3';
 
 const APP_SHELL = [
   '/',
@@ -21,11 +21,11 @@ importScripts(
   'https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js'
 );
 
-const params = new URLSearchParams(self.location.search);
-const firebaseConfigRaw = params.get('firebaseConfig');
+try {
+  const params = new URLSearchParams(self.location.search);
+  const firebaseConfigRaw = params.get('firebaseConfig');
 
-if (firebaseConfigRaw) {
-  try {
+  if (firebaseConfigRaw) {
     const firebaseConfig = JSON.parse(firebaseConfigRaw);
 
     firebase.initializeApp(firebaseConfig);
@@ -35,7 +35,9 @@ if (firebaseConfigRaw) {
     messaging.onBackgroundMessage((payload) => {
       console.log('[IxmiPlace SW] Push recibido:', payload);
 
-      const title = payload.data?.title || 'IxmiPlace';
+      const title =
+        payload.data?.title ||
+        'IxmiPlace';
 
       const body =
         payload.data?.body ||
@@ -52,30 +54,35 @@ if (firebaseConfigRaw) {
         data: {
           url,
         },
-        vibrate: [100, 50, 100],
         tag: 'ixmiplace-notification',
         renotify: true,
       });
     });
-  } catch (error) {
-    console.error(
-      '[IxmiPlace SW] Error inicializando Firebase:',
-      error
-    );
   }
+} catch (error) {
+  console.error(
+    '[IxmiPlace SW] Error inicializando Firebase:',
+    error
+  );
 }
 
 /* =========================================================
-   PWA
+   PWA INSTALL
    ========================================================= */
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(APP_SHELL);
+    })
   );
 
   self.skipWaiting();
 });
+
+/* =========================================================
+   PWA ACTIVATE
+   ========================================================= */
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -117,23 +124,25 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   const targetUrl =
-    event.notification.data?.url || '/notificaciones';
+    event.notification.data?.url ||
+    '/notificaciones';
 
   event.waitUntil(
-    clients.matchAll({
+    self.clients.matchAll({
       type: 'window',
       includeUncontrolled: true,
     }).then((clientList) => {
       for (const client of clientList) {
         if ('focus' in client) {
-          client.navigate(targetUrl);
-          return client.focus();
+          return client.navigate(targetUrl).then(() => client.focus());
         }
       }
 
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
       }
+
+      return undefined;
     })
   );
 });
