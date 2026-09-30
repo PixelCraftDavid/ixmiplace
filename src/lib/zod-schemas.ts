@@ -35,9 +35,9 @@ export const listingSchema = z
     operation: z.enum(['renta', 'venta', 'hospedaje']),
 
     price: z
-    .number({ error: 'El precio debe ser un número' })
-    .positive('El precio debe ser mayor a 0')
-    .max(LISTING_LIMITS.priceMax, 'Precio demasiado alto'),
+      .number({ error: 'El precio debe ser un número' })
+      .positive('El precio debe ser mayor a 0')
+      .max(LISTING_LIMITS.priceMax, 'Precio demasiado alto'),
 
     priceUnit: z.enum(['mes', 'noche', 'total', 'estancia']).optional(),
 
@@ -58,7 +58,7 @@ export const listingSchema = z
 
     address: z.string().trim().max(200).optional().or(z.literal('')),
 
-    // 🆕 Ubicación en el mapa (requerida)
+    // Ubicación en el mapa (requerida)
     lat: z
       .number({ error: 'Marca la ubicación en el mapa' })
       .min(-90, 'Latitud inválida')
@@ -79,12 +79,27 @@ export const listingSchema = z
 
     amenities: z.array(z.string()).optional(),
 
+    // Reglas de la casa (solo aplican a rentas y hospedaje)
+    maxGuests: z
+      .number({ error: 'Indica un número de personas' })
+      .int('Debe ser un número entero')
+      .min(1, 'Mínimo 1 persona')
+      .max(LISTING_LIMITS.maxGuestsMax, `Máximo ${LISTING_LIMITS.maxGuestsMax} personas`)
+      .optional(),
+    childrenAllowed: z.boolean().optional(),
+    petsAllowed: z.boolean().optional(),
+    smokingAllowed: z.boolean().optional(),
+
     showPhone: z.boolean().default(true),
-    publicationConsentAccepted: z.boolean().optional(),
 
     availability: z
       .enum(['available', 'occupied', 'reserved', 'rented', 'sold', 'unavailable', 'unconfirmed'])
       .optional(),
+
+    // Confirmación de autorización para publicar.
+    // Se exige a nivel de UI (ListingForm con requireConfirmation) y de
+    // handleSubmit; aquí solo se tipa para no romper el formulario de edición.
+    publicationConsentAccepted: z.boolean(),
   })
   // Validación condicional: unidad de precio coherente con la operación
   .refine(

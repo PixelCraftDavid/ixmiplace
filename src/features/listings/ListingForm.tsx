@@ -1,6 +1,6 @@
 import { useForm, Controller } from 'react-hook-form';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { useState } from 'react';
+import { forwardRef, useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Loader2,
@@ -13,6 +13,10 @@ import {
   Phone,
   Check,
   AlertTriangle,
+  Users,
+  Baby,
+  PawPrint,
+  Cigarette,
 } from 'lucide-react';
 import { listingSchema, type ListingInput } from '../../lib/zod-schemas';
 import {
@@ -21,7 +25,9 @@ import {
   AMENITIES,
   LODGING_AMENITIES,
   AVAILABILITY,
+  LISTING_LIMITS,
   priceUnitsFor,
+  supportsHouseRules,
 } from '../../lib/constants';
 import { ImageUploader } from './ImageUploader';
 import { LocationPicker } from './LocationPicker';
@@ -39,6 +45,13 @@ interface ListingFormProps {
   requireConfirmation?: boolean;
   onConfirmSubmit?: (data: ListingInput, photos: string[], photoPublicIds: string[]) => void;
 }
+
+/**
+ * Convierte el valor de un <input type="number"> a number | undefined.
+ * Con `valueAsNumber` un campo vacío da NaN y zod lo rechaza sin un mensaje claro.
+ */
+const optionalNumber = (v: unknown): number | undefined =>
+  v === '' || v == null || Number.isNaN(Number(v)) ? undefined : Number(v);
 
 export function ListingForm({
   defaultValues,
@@ -81,6 +94,10 @@ export function ListingForm({
       parkingSpots: 0,
       areaM2: undefined,
       amenities: [],
+      maxGuests: undefined,
+      childrenAllowed: true,
+      petsAllowed: false,
+      smokingAllowed: false,
       showPhone: true,
       publicationConsentAccepted: false,
       availability: 'available',
@@ -104,6 +121,7 @@ export function ListingForm({
   const foodAvailable = watch('foodAvailable');
   const isLodging = category === 'hotel' || category === 'motel';
   const isMotel = category === 'motel';
+  const showHouseRules = supportsHouseRules(category, operation);
   const priceUnits = isMotel
     ? [
         { value: 'estancia' as const, label: 'por estancia' },
@@ -276,7 +294,7 @@ export function ListingForm({
             <select
               {...register('priceUnit')}
               className={inputClass}
-                   disabled={operation === 'venta' || category === 'hotel'}
+              disabled={operation === 'venta' || category === 'hotel'}
             >
               {priceUnits.map((u) => (
                 <option key={u.value} value={u.value}>
@@ -329,7 +347,7 @@ export function ListingForm({
           </p>
         </Field>
 
-        {/* 🆕 Mapa para marcar ubicación exacta */}
+        {/* Mapa para marcar ubicación exacta */}
         <Field
           label="Ubicación en el mapa"
           required
@@ -357,36 +375,36 @@ export function ListingForm({
         subtitle="Características y amenidades"
       >
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Field label="Recámaras">
+          <Field label="Recámaras" error={errors.bedrooms?.message}>
             <input
               type="number"
               min="0"
-              {...register('bedrooms', { valueAsNumber: true })}
+              {...register('bedrooms', { setValueAs: optionalNumber })}
               className={inputClass}
             />
           </Field>
-          <Field label="Baños">
+          <Field label="Baños" error={errors.bathrooms?.message}>
             <input
               type="number"
               min="0"
-              {...register('bathrooms', { valueAsNumber: true })}
+              {...register('bathrooms', { setValueAs: optionalNumber })}
               className={inputClass}
             />
           </Field>
-          <Field label="Estacionamiento">
+          <Field label="Estacionamiento" error={errors.parkingSpots?.message}>
             <input
               type="number"
               min="0"
-              {...register('parkingSpots', { valueAsNumber: true })}
+              {...register('parkingSpots', { setValueAs: optionalNumber })}
               className={inputClass}
             />
           </Field>
-          <Field label="m²">
+          <Field label="m²" error={errors.areaM2?.message}>
             <input
               type="number"
               min="0"
               placeholder="100"
-              {...register('areaM2', { valueAsNumber: true })}
+              {...register('areaM2', { setValueAs: optionalNumber })}
               className={inputClass}
             />
           </Field>
@@ -468,6 +486,47 @@ export function ListingForm({
         </Field>
       </Section>
 
+      {/* ═══════════ Reglas de la casa ═══════════ */}
+      {showHouseRules && (
+        <Section
+          icon={<Users className="h-5 w-5" />}
+          title={isLodging ? 'Ocupación y políticas' : 'Reglas de la casa'}
+          subtitle="Ayuda a los interesados a saber si es para ellos"
+        >
+          <Field
+            label={isLodging ? 'Capacidad máxima por habitación' : 'Número máximo de personas'}
+            error={errors.maxGuests?.message}
+          >
+            <input
+              type="number"
+              min="1"
+              max={LISTING_LIMITS.maxGuestsMax}
+              placeholder="4"
+              {...register('maxGuests', { setValueAs: optionalNumber })}
+              className={inputClass}
+            />
+          </Field>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <RuleToggle
+              icon={<Baby className="h-4 w-4" />}
+              label="Se aceptan niños"
+              {...register('childrenAllowed')}
+            />
+            <RuleToggle
+              icon={<PawPrint className="h-4 w-4" />}
+              label="Pet friendly"
+              {...register('petsAllowed')}
+            />
+            <RuleToggle
+              icon={<Cigarette className="h-4 w-4" />}
+              label="Se permite fumar"
+              {...register('smokingAllowed')}
+            />
+          </div>
+        </Section>
+      )}
+
       {/* ═══════════ Disponibilidad ═══════════ */}
       <Section
         icon={<Check className="h-5 w-5" />}
@@ -532,7 +591,7 @@ export function ListingForm({
         </Field>
       </Section>
 
-      {/* ═══════════ Error general ═══════════ */}
+      {/* ═══════════ Consentimiento ═══════════ */}
       {requireConfirmation && (
         <label className="flex items-start gap-3 rounded-2xl border border-cream-200 bg-white p-4 text-sm leading-relaxed text-ink-600 shadow-sm">
           <input
@@ -546,6 +605,7 @@ export function ListingForm({
         </label>
       )}
 
+      {/* ═══════════ Error general ═══════════ */}
       {submitError && (
         <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0" />
@@ -606,10 +666,10 @@ export function ListingForm({
    ══════════════════════════════════════════════════ */
 
 interface SectionProps {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   subtitle?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 function Section({ icon, title, subtitle, children }: SectionProps) {
@@ -652,7 +712,7 @@ interface FieldProps {
   label: string;
   required?: boolean;
   error?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 function Field({ label, required, error, children }: FieldProps) {
@@ -672,3 +732,33 @@ function Field({ label, required, error, children }: FieldProps) {
     </div>
   );
 }
+
+interface RuleToggleProps extends InputHTMLAttributes<HTMLInputElement> {
+  icon: ReactNode;
+  label: string;
+}
+
+/**
+ * Checkbox con aspecto de "chip". Usa forwardRef para que
+ * `{...register('campo')}` (que incluye `ref`) funcione directamente.
+ * `has-[:checked]` requiere Tailwind >= 3.4.
+ */
+const RuleToggle = forwardRef<HTMLInputElement, RuleToggleProps>(
+  ({ icon, label, ...props }, ref) => (
+    <label
+      className="flex cursor-pointer items-center gap-3 rounded-xl border border-cream-300
+                 bg-cream-50 px-4 py-3 text-sm font-medium text-ink-700 transition
+                 hover:bg-cream-100 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50"
+    >
+      <input
+        type="checkbox"
+        ref={ref}
+        {...props}
+        className="h-4 w-4 accent-brand-600"
+      />
+      <span className="text-brand-600">{icon}</span>
+      {label}
+    </label>
+  )
+);
+RuleToggle.displayName = 'RuleToggle';

@@ -30,6 +30,15 @@ service cloud.firestore {
         || (value is int && value <= request.time.toMillis());
     }
 
+    // Reglas de la casa: cada campo es opcional, pero si viene debe tener el tipo correcto.
+    function validHouseRules(d) {
+      return (!('maxGuests' in d)
+          || (d.maxGuests is int && d.maxGuests >= 1 && d.maxGuests <= 50))
+        && (!('childrenAllowed' in d) || d.childrenAllowed is bool)
+        && (!('petsAllowed' in d) || d.petsAllowed is bool)
+        && (!('smokingAllowed' in d) || d.smokingAllowed is bool);
+    }
+
     match /users/{userId} {
       allow read: if signedIn()
         && (request.auth.uid == userId || isAdmin());
@@ -140,6 +149,11 @@ service cloud.firestore {
         && request.resource.data.publicationConsentVersion == '2026-09-26'
         && validConsentTime(request.resource.data.publicationConsentAt)
         && request.resource.data.status == 'pending'
+        // Los contadores siempre nacen en cero (evita inflar métricas desde la consola).
+        && request.resource.data.reportsCount == 0
+        && request.resource.data.viewsCount == 0
+        && request.resource.data.favoritesCount == 0
+        && request.resource.data.whatsappContactsCount == 0
         && request.resource.data.expiresAt is int
         && request.resource.data.expiresAt > request.time.toMillis()
         && request.resource.data.keys().hasOnly([
@@ -153,8 +167,10 @@ service cloud.firestore {
           'establishmentName', 'roomType', 'stayDurationHours',
           'checkInTime', 'checkOutTime', 'reception24h',
           'foodAvailable', 'foodDescription',
+          'maxGuests', 'childrenAllowed', 'petsAllowed', 'smokingAllowed',
           'whatsappContactsCount', 'favoritesCount', 'createdAt', 'updatedAt'
         ])
+        && validHouseRules(request.resource.data)
         && (request.resource.data.category != 'hotel'
           || (request.resource.data.operation == 'hospedaje'
             && request.resource.data.priceUnit == 'noche'
@@ -212,6 +228,10 @@ service cloud.firestore {
             'parkingSpots',
             'areaM2',
             'amenities',
+            'maxGuests',
+            'childrenAllowed',
+            'petsAllowed',
+            'smokingAllowed',
             'photos',
             'photoPublicIds',
             'ownerEmailVerified',
@@ -222,6 +242,7 @@ service cloud.firestore {
             'updatedAt',
             'favoritesCount'
           ])
+          && validHouseRules(request.resource.data)
         );
 
       // Hoteles y moteles pueden editar sus habitaciones y disponibilidad.
@@ -250,12 +271,14 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'title', 'description', 'price', 'priceUnit',
           'bedrooms', 'bathrooms', 'parkingSpots', 'areaM2', 'amenities',
+          'maxGuests', 'childrenAllowed', 'petsAllowed', 'smokingAllowed',
           'photos', 'photoPublicIds', 'ownerEmailVerified', 'availability',
           'availabilityConfirmedAt', 'showPhone', 'updatedAt',
           'establishmentName', 'roomType', 'stayDurationHours',
           'checkInTime', 'checkOutTime', 'reception24h',
           'foodAvailable', 'foodDescription'
         ])
+        && validHouseRules(request.resource.data)
         && (resource.data.category != 'hotel'
           || request.resource.data.priceUnit == 'noche')
         && (resource.data.category != 'motel'

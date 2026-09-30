@@ -73,6 +73,23 @@ export function priceUnitLabel(unit?: PriceUnit): string {
 }
 
 // ============================================================
+// Reglas de la casa (capacidad, niños, mascotas, fumar)
+// ============================================================
+
+/**
+ * Las reglas de la casa solo aplican a rentas y hospedaje.
+ * No tienen sentido en ventas, terrenos ni locales comerciales.
+ * Se usa tanto en el formulario (mostrar/ocultar la sección) como al
+ * guardar (no enviar campos que no aplican).
+ */
+export function supportsHouseRules(
+  category: ListingCategory,
+  operation: ListingOperation
+): boolean {
+  return operation !== 'venta' && category !== 'terreno' && category !== 'local';
+}
+
+// ============================================================
 // Disponibilidad
 // ============================================================
 
@@ -144,6 +161,7 @@ export const LISTING_LIMITS = {
   photosMin: 1,
   photosMax: 10,
   photoMaxSizeMB: 5,
+  maxGuestsMax: 50,
   activeDays: 30,               // días que dura un anuncio activo
   confirmationGraceDays: 7,     // días antes de expirar que se pide confirmación
 } as const;

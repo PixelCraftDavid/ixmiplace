@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { AlertTriangle, CheckCircle2, PencilLine, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, PencilLine, X } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
-import { LISTING_LIMITS } from '../../lib/constants';
+import { LISTING_LIMITS, supportsHouseRules } from '../../lib/constants';
 import { ListingForm } from './ListingForm';
 import { ListingScenePreview } from './ListingScenePreview';
 import type { ListingInput } from '../../lib/zod-schemas';
@@ -15,6 +15,8 @@ export function CreateListingPage() {
   const nav = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<ListingInput['category']>('casa');
   const [success, setSuccess] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState('');
   const [pendingPublish, setPendingPublish] = useState<{
     data: ListingInput;
     photos: string[];
@@ -44,7 +46,6 @@ export function CreateListingPage() {
       whatsapp: data.whatsapp,
       showPhone: data.showPhone ?? true,
       photos,
-      photoPublicIds: photoPublicIds.length > 0 ? photoPublicIds : undefined,
       status: 'pending',
       availability: data.availability ?? 'available',
       availabilityConfirmedAt: now,
@@ -59,6 +60,8 @@ export function CreateListingPage() {
       publicationConsentAt: serverTimestamp(),
     };
 
+    // Firestore rechaza `undefined`: los opcionales solo se agregan si tienen valor.
+    if (photoPublicIds.length > 0) listing.photoPublicIds = photoPublicIds;
     if (data.priceUnit) listing.priceUnit = data.priceUnit;
     if (data.bedrooms && data.bedrooms > 0) listing.bedrooms = data.bedrooms;
     if (data.bathrooms && data.bathrooms > 0) listing.bathrooms = data.bathrooms;
@@ -67,6 +70,15 @@ export function CreateListingPage() {
     if (data.areaM2 && data.areaM2 > 0) listing.areaM2 = data.areaM2;
     if (data.amenities && data.amenities.length > 0)
       listing.amenities = data.amenities;
+
+    // Reglas de la casa: solo se guardan cuando aplican a la categoría/operación.
+    if (supportsHouseRules(data.category, data.operation)) {
+      listing.childrenAllowed = data.childrenAllowed ?? true;
+      listing.petsAllowed = data.petsAllowed ?? false;
+      listing.smokingAllowed = data.smokingAllowed ?? false;
+      if (data.maxGuests && data.maxGuests > 0) listing.maxGuests = data.maxGuests;
+    }
+
     if (data.category === 'hotel' || data.category === 'motel') {
       if (data.establishmentName?.trim()) listing.establishmentName = data.establishmentName.trim();
       if (data.roomType?.trim()) listing.roomType = data.roomType.trim();
@@ -89,20 +101,40 @@ export function CreateListingPage() {
       });
     }
     await batch.commit();
-    await requestPushDelivery('listing_created', listingRef.id);
+
+    // La publicación ya se creó: un fallo del push no debe mostrarse como error
+    // (el usuario reintentaría y duplicaría el anuncio).
+    try {
+      await requestPushDelivery('listing_created', listingRef.id);
+    } catch (err) {
+      console.warn('No se pudo solicitar la notificación push:', err);
+    }
 
     setSuccess(true);
     setTimeout(() => nav('/mis-publicaciones', { replace: true }), 1500);
   }
 
   const handleConfirmPublish = async () => {
-    if (!pendingPublish) return;
-    setPendingPublish(null);
-    await handleSubmit(
-      pendingPublish.data,
-      pendingPublish.photos,
-      pendingPublish.photoPublicIds
-    );
+    if (!pendingPublish || publishing) return;
+    setPublishing(true);
+    setPublishError('');
+    try {
+      await handleSubmit(
+        pendingPublish.data,
+        pendingPublish.photos,
+        pendingPublish.photoPublicIds
+      );
+    } catch (err) {
+      console.error('Error publicando anuncio:', err);
+      setPublishError(
+        err instanceof Error && err.message === 'Sesión expirada'
+          ? 'Tu sesión expiró. Inicia sesión de nuevo e intenta otra vez.'
+          : 'No se pudo publicar el anuncio. Revisa tus datos e intenta de nuevo.'
+      );
+    } finally {
+      setPublishing(false);
+      setPendingPublish(null);
+    }
   };
 
   if (success) {
@@ -166,6 +198,16 @@ export function CreateListingPage() {
           </p>
         </div>
 
+        {publishError && (
+          <div
+            role="alert"
+            className="mx-auto mb-6 flex max-w-3xl items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+          >
+            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0" />
+            <span>{publishError}</span>
+          </div>
+        )}
+
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
           <div className="min-w-0">
             <ListingForm
@@ -174,6 +216,7 @@ export function CreateListingPage() {
               submitLabel="Publicar propiedad"
               requireConfirmation={true}
               onConfirmSubmit={(data, photos, photoPublicIds) => {
+                setPublishError('');
                 setPendingPublish({ data, photos, photoPublicIds });
               }}
             />
@@ -196,7 +239,8 @@ export function CreateListingPage() {
               <button
                 type="button"
                 onClick={() => setPendingPublish(null)}
-                className="rounded-full p-1.5 text-ink-400 transition hover:bg-cream-100 hover:text-ink-600"
+                disabled={publishing}
+                className="rounded-full p-1.5 text-ink-400 transition hover:bg-cream-100 hover:text-ink-600 disabled:opacity-50"
                 aria-label="Cerrar confirmación"
               >
                 <X className="h-4 w-4" />
@@ -213,7 +257,8 @@ export function CreateListingPage() {
               <button
                 type="button"
                 onClick={() => setPendingPublish(null)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-cream-300 bg-white px-4 py-3 font-semibold text-ink-600 transition hover:bg-cream-100"
+                disabled={publishing}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-cream-300 bg-white px-4 py-3 font-semibold text-ink-600 transition hover:bg-cream-100 disabled:opacity-50"
               >
                 <PencilLine className="h-4 w-4" />
                 Seguir editando
@@ -222,10 +267,15 @@ export function CreateListingPage() {
               <button
                 type="button"
                 onClick={handleConfirmPublish}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-3 font-semibold text-white shadow-lg shadow-brand-500/30 transition hover:brightness-110"
+                disabled={publishing}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-3 font-semibold text-white shadow-lg shadow-brand-500/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <CheckCircle2 className="h-4 w-4" />
-                Sí, crearla
+                {publishing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                {publishing ? 'Publicando…' : 'Sí, crearla'}
               </button>
             </div>
           </div>

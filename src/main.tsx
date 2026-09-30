@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { app } from '@/lib/firebase';
 
 // Fuente
 import '@fontsource/poppins/400.css';
@@ -10,9 +9,17 @@ import '@fontsource/poppins/700.css';
 import '@fontsource/poppins/800.css';
 
 import { AppRouter } from '@/routes/AppRouter';
+import { showConsoleWarning } from '@/lib/consoleWarning';
 import './index.css';
 
-const savedTheme = localStorage.getItem('ixmiplace:theme');
+showConsoleWarning();
+
+let savedTheme: string | null = null;
+try {
+  savedTheme = localStorage.getItem('ixmiplace:theme');
+} catch {
+  // Almacenamiento bloqueado: se usa la preferencia del sistema.
+}
 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 document.documentElement.classList.toggle(
   'dark',
@@ -26,9 +33,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  const serviceWorkerUrl = new URL('/sw.js', window.location.origin);
-  serviceWorkerUrl.searchParams.set('firebaseConfig', JSON.stringify(app.options));
-  void navigator.serviceWorker.register(serviceWorkerUrl, { scope: '/' }).catch((error) => {
-    console.error('No se pudo registrar el Service Worker de IxmiPlace:', error);
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js');
   });
 }

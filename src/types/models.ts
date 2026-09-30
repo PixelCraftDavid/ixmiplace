@@ -12,14 +12,13 @@ export interface AppUser {
   photoURL?: string;
   createdAt: number;
   isBanned?: boolean;
+
+  // Consentimientos legales: versión aceptada por el usuario.
+  // Opcionales: las cuentas anteriores no los tienen y por eso
+  // RequireAuth las redirige a /aceptar-terminos.
   termsAcceptedVersion?: string;
-  termsAcceptedAt?: number | Timestamp | FieldValue;
   adultConfirmedVersion?: string;
-  adultConfirmedAt?: number | Timestamp | FieldValue;
   privacyConsentVersion?: string;
-  privacyConsentAt?: number | Timestamp | FieldValue;
-  phoneConsentVersion?: string;
-  phoneConsentAt?: number | Timestamp | FieldValue;
 }
 
 export type ListingCategory =
@@ -67,7 +66,7 @@ export interface Listing {
 
   // Ubicación
   colonia: string;
-  address?: string;   // detalle privado; se carga desde listingPrivateDetails al editar
+  address?: string;   // opcional: dirección exacta, solo visible al dueño y admin
   lat?: number;
   lng?: number;
 
@@ -77,6 +76,14 @@ export interface Listing {
   parkingSpots?: number;
   areaM2?: number;
   amenities?: string[];   // ej. ["agua", "luz", "internet", "amueblado"]
+
+  // Reglas de la casa (solo rentas y hospedaje).
+  // Opcionales: los anuncios anteriores no las tienen.
+  // En la UI trátalas como `listing.petsAllowed ?? false`, etc.
+  maxGuests?: number;
+  childrenAllowed?: boolean;
+  petsAllowed?: boolean;
+  smokingAllowed?: boolean;
 
   // Datos adicionales para anuncios de habitaciones de hotel o motel
   establishmentName?: string;
@@ -92,7 +99,7 @@ export interface Listing {
   status: ListingStatus;
   availability: AvailabilityStatus;
   availabilityConfirmedAt: number;   // timestamp
-  expiresAt: number | { toMillis: () => number }; // milisegundos o Timestamp legado
+  expiresAt: number;                 // timestamp
 
   // Fotos: URLs completas de Cloudinary y opcionalmente IDs públicos para borrado seguro
   photos: string[];
@@ -111,15 +118,19 @@ export interface Listing {
   approvedAt?: number;
   rejectionReason?: string;
 
-  // 🆕 Favoritos: opcional porque publicaciones antiguas no lo tienen.
+  // Favoritos: opcional porque publicaciones antiguas no lo tienen.
   // Trátalo siempre como `listing.favoritesCount ?? 0` en la UI.
   favoritesCount?: number;
+
+  // Consentimiento de publicación (auditable).
+  // Opcionales: los anuncios anteriores no los tienen.
+  // Al escribir se usa serverTimestamp() (FieldValue); al leer llega un Timestamp.
+  publicationConsentVersion?: string;
+  publicationConsentAt?: Timestamp | FieldValue;
 
   // Timestamps
   createdAt: number;
   updatedAt: number;
-  publicationConsentVersion?: string;
-  publicationConsentAt?: number | Timestamp | FieldValue;
 }
 
 // Reportes
@@ -151,7 +162,7 @@ export interface Favorite {
 export interface AppNotification {
   id: string;
   recipientId: string;
-  type: 'listing_approved' | 'listing_rejected' | 'listing_removed';
+  type: 'listing_approved' | 'listing_rejected';
   title: string;
   message: string;
   listingId: string;
@@ -176,7 +187,7 @@ export interface ListingHistoryEntry {
   listingId: string;
   actorId: string;
   actorRole: 'owner' | 'admin';
-  action: 'created' | 'updated' | 'approved' | 'rejected' | 'renewed' | 'deleted';
+  action: 'created' | 'updated' | 'approved' | 'rejected' | 'renewed';
   changedFields: string[];
   summary: string;
   createdAt: number;
