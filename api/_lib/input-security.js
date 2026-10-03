@@ -20,6 +20,7 @@ export const requestSchemas = {
     listingId: documentIdSchema,
     subject: plainText(3, 100),
     message: plainText(10, 1000),
+    website: z.string().trim().max(200).optional().default(''),
     visitRequestedAt: z.number().int().positive().optional(),
     openHouseRsvp: z.boolean().optional(),
   }).strict(),
@@ -27,6 +28,7 @@ export const requestSchemas = {
     listingId: documentIdSchema,
     reason: z.enum(['spam', 'fraude', 'no_existe', 'duplicado', 'otro']),
     comment: plainText(0, 500).optional().default(''),
+    website: z.string().trim().max(200).optional().default(''),
   }).strict(),
   metric: z.object({ listingId: documentIdSchema, metric: z.literal('viewsCount') }).strict(),
   push: z.object({

@@ -23,6 +23,7 @@ import {
 import type { Listing } from '../../types/models';
 import { LISTING_LIMITS } from '../../lib/constants';
 import { isListingExpired } from '../../lib/listing-expiration';
+import { optimizedUrl } from '../../lib/cloudinary';
 
 interface Props {
   listing: Listing;
@@ -130,7 +131,7 @@ export function ListingCardMine({ listing }: Props) {
     }
   }
 
-  const coverPhoto = listing.photos[0];
+  const coverPhoto = listing.photos[0] ? optimizedUrl(listing.photos[0], 800, 600) : '';
 
   return (
     <>
@@ -148,6 +149,7 @@ export function ListingCardMine({ listing }: Props) {
               className="h-full w-full object-cover transition duration-500
                          group-hover:scale-105"
               loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-ink-400">

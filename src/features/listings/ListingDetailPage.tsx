@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import {
@@ -45,6 +45,9 @@ import { requestPushDelivery } from '../../lib/push-notifications';
 import { WhatsAppContactButton } from './WhatsAppContactButton';
 import { postAuthenticatedApi, postProtectedApi } from '../../lib/protected-api';
 import { isSafeDocumentId } from '../../lib/document-id';
+import { optimizedUrl } from '../../lib/cloudinary';
+import { usePageMeta, SITE_ORIGIN } from '../../components/seo/PageMeta';
+import { HoneypotField } from '../../components/ui/HoneypotField';
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -65,6 +68,44 @@ export function ListingDetailPage() {
   const [contactSent, setContactSent] = useState(false);
   const [contactError, setContactError] = useState('');
   const [contacting, setContacting] = useState(false);
+
+  const pageTitle = listing
+    ? `${listing.title} | ${listing.colonia}, Ixmiquilpan | IxmiPlace`
+    : 'Publicación de vivienda en Ixmiquilpan | IxmiPlace';
+  const pageDescription = listing
+    ? `${listing.operation === 'venta' ? 'En venta' : listing.operation === 'hospedaje' ? 'Hospedaje' : 'En renta'}: ${listing.title}. ${listing.colonia}, Ixmiquilpan, Hidalgo. Precio: ${formatPrice(listing.price)} ${priceUnitLabel(listing.priceUnit)}.`.slice(0, 300)
+    : 'Consulta los detalles de esta opción de renta, venta o hospedaje en Ixmiquilpan, Hidalgo.';
+  const listingStructuredData = useMemo(() => listing?.status === 'published' ? {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateListing',
+    name: listing.title,
+    description: pageDescription,
+    ...(listing.photos[0] ? { image: optimizedUrl(listing.photos[0], 1200, 900) } : {}),
+    category: listing.category,
+    datePosted: Number.isFinite(listing.createdAt) ? new Date(listing.createdAt).toISOString() : undefined,
+    offers: {
+      '@type': listing.operation === 'venta' ? 'OfferForPurchase' : 'OfferForLease',
+      url: `${SITE_ORIGIN}/listing/${listing.id}`,
+      price: listing.price,
+      priceCurrency: 'MXN',
+      availability: 'https://schema.org/InStock',
+      itemOffered: {
+        '@type': 'Place',
+        name: listing.title,
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Ixmiquilpan',
+          addressRegion: 'Hidalgo',
+          addressCountry: 'MX',
+        },
+      },
+    },
+  } : null, [listing, pageDescription]);
+  usePageMeta(pageTitle, pageDescription, {
+    image: listing?.photos[0] ? optimizedUrl(listing.photos[0], 1200, 900) : '/icon-512.png',
+    noIndex: !listing || listing.status !== 'published' || Boolean(error),
+    structuredData: listingStructuredData,
+  });
 
   useEffect(() => {
     if (!isSafeDocumentId(id)) {
@@ -134,7 +175,7 @@ export function ListingDetailPage() {
     }
   }
 
-  async function submitReport(data: ReportInput) {
+  async function submitReport(data: ReportInput & { website?: string }) {
     if (!fbUser || !auth.currentUser || !listing) {
       setReportError('Debes iniciar sesión para reportar una publicación.');
       return;
@@ -153,6 +194,7 @@ export function ListingDetailPage() {
       const result = await postProtectedApi<{ reportId: string }>('/api/report', {
         listingId: listing.id,
         reason: parsed.data.reason,
+        ...(data.website ? { website: data.website } : {}),
         ...(parsed.data.comment ? { comment: parsed.data.comment } : {}),
       });
       await requestPushDelivery('report_created', result.reportId);
@@ -165,7 +207,7 @@ export function ListingDetailPage() {
     }
   }
 
-  async function submitContact(data: InternalMessageInput) {
+  async function submitContact(data: InternalMessageInput & { website?: string }) {
     if (!fbUser || !listing || !profile) {
       setContactError('Inicia sesión y verifica tu correo para enviar mensajes.');
       return;
@@ -184,6 +226,7 @@ export function ListingDetailPage() {
         listingId: listing.id,
         subject: parsed.data.subject,
         message: parsed.data.message,
+        ...(data.website ? { website: data.website } : {}),
         ...(parsed.data.visitRequestedAt ? { visitRequestedAt: parsed.data.visitRequestedAt } : {}),
         ...(parsed.data.openHouseRsvp ? { openHouseRsvp: true } : {}),
       });
@@ -833,11 +876,12 @@ function ContactDialog({
   openHouseStartAt?: number;
   openHouseEndAt?: number;
   onClose: () => void;
-  onSubmit: (data: InternalMessageInput) => Promise<void>;
+  onSubmit: (data: InternalMessageInput & { website?: string }) => Promise<void>;
 }) {
   const [subject, setSubject] = useState('Me interesa tu propiedad');
   const [message, setMessage] = useState('');
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [website, setWebsite] = useState('');
   const [visitAt, setVisitAt] = useState('');
   const [rsvpOpenHouse, setRsvpOpenHouse] = useState(false);
 
@@ -865,6 +909,7 @@ function ContactDialog({
             ) : (
               <>
                 <div className="mt-5"><PrivacyNoticeInline kind="contact" /></div>
+                <HoneypotField value={website} onChange={setWebsite} />
                 <label className="mt-5 block text-sm font-semibold text-ink-700">
                   Asunto
                   <input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={100} className="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5 font-normal text-ink outline-none focus:border-brand-500" />
@@ -893,7 +938,7 @@ function ContactDialog({
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
                 <div className="mt-5 flex gap-3">
                   <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-cream-300 px-4 py-3 font-semibold text-ink-600 hover:bg-cream-100">Cancelar</button>
-                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ subject: rsvpOpenHouse && !subject.trim() ? 'Solicitud para casa abierta' : subject, message: rsvpOpenHouse && !message.trim() ? 'Me gustaría asistir a la casa abierta, ¿puedes confirmar mi lugar?' : message, ...(visitAt ? { visitRequestedAt: new Date(visitAt).getTime() } : {}), ...(rsvpOpenHouse ? { openHouseRsvp: true } : {}) })} className="flex-1 rounded-xl bg-brand-500 px-4 py-3 font-semibold text-white hover:bg-brand-600 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar mensaje'}</button>
+                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ subject: rsvpOpenHouse && !subject.trim() ? 'Solicitud para casa abierta' : subject, message: rsvpOpenHouse && !message.trim() ? 'Me gustaría asistir a la casa abierta, ¿puedes confirmar mi lugar?' : message, website, ...(visitAt ? { visitRequestedAt: new Date(visitAt).getTime() } : {}), ...(rsvpOpenHouse ? { openHouseRsvp: true } : {}) })} className="flex-1 rounded-xl bg-brand-500 px-4 py-3 font-semibold text-white hover:bg-brand-600 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar mensaje'}</button>
                 </div>
               </>
             )}
@@ -917,11 +962,12 @@ function ReportDialog({
   submitting: boolean;
   isSignedIn: boolean;
   onClose: () => void;
-  onSubmit: (data: ReportInput) => Promise<void>;
+  onSubmit: (data: ReportInput & { website?: string }) => Promise<void>;
 }) {
   const [reason, setReason] = useState<ReportInput['reason']>('spam');
   const [comment, setComment] = useState('');
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [website, setWebsite] = useState('');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm">
@@ -949,6 +995,7 @@ function ReportDialog({
             ) : (
               <>
                 <div className="mt-5"><PrivacyNoticeInline kind="report" /></div>
+                <HoneypotField value={website} onChange={setWebsite} />
                 <label className="mt-5 block text-sm font-semibold text-ink-700">
                   Motivo
                   <select value={reason} onChange={(event) => setReason(event.target.value as ReportInput['reason'])} className="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5 font-normal text-ink outline-none focus:border-brand-500">
@@ -970,7 +1017,7 @@ function ReportDialog({
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
                 <div className="mt-5 flex gap-3">
                   <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-cream-300 px-4 py-3 font-semibold text-ink-600 hover:bg-cream-100">Cancelar</button>
-                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ reason, comment })} className="flex-1 rounded-xl bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar reporte'}</button>
+                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ reason, comment, website })} className="flex-1 rounded-xl bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar reporte'}</button>
                 </div>
               </>
             )}
@@ -1006,8 +1053,11 @@ function Gallery({
       {/* Imagen principal */}
       <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-cream-200 shadow-sm">
         <img
-          src={photos[current]}
+          src={optimizedUrl(photos[current], 1600, 1000)}
           alt={title}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
           className="h-full w-full object-cover"
         />
         {photos.length > 1 && (
@@ -1028,6 +1078,7 @@ function Gallery({
               key={url}
               type="button"
               onClick={() => onChange(i)}
+              aria-label={`Mostrar foto ${i + 1} de ${title}`}
               className={`
                 relative h-20 w-24 flex-shrink-0 overflow-hidden rounded-xl
                 transition-all duration-200
@@ -1038,7 +1089,7 @@ function Gallery({
                 }
               `}
             >
-              <img src={url} alt="" className="h-full w-full object-cover" />
+              <img src={optimizedUrl(url, 240, 160)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             </button>
           ))}
         </div>

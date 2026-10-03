@@ -38,6 +38,7 @@ import { ImageUploader } from './ImageUploader';
 import { LocationPicker } from './LocationPicker';
 import { useAuth } from '../auth/AuthContext';
 import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline';
+import { HoneypotField } from '../../components/ui/HoneypotField';
 
 interface ListingFormProps {
   defaultValues?: Partial<ListingInput> & { photos?: string[]; photoPublicIds?: string[] };
@@ -74,6 +75,7 @@ export function ListingForm({
   const [photoPublicIds, setPhotoPublicIds] = useState<string[]>(defaultValues?.photoPublicIds ?? []);
   const [photosError, setPhotosError] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [website, setWebsite] = useState('');
 
   const {
     register,
@@ -177,6 +179,8 @@ export function ListingForm({
     setSubmitError('');
     setPhotosError('');
 
+    if (website.trim()) return;
+
     if (requireConfirmation && data.publicationConsentAccepted !== true) {
       setSubmitError('Confirma que tienes autorización para publicar y que la información puede mostrarse públicamente.');
       return;
@@ -215,6 +219,7 @@ export function ListingForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      <HoneypotField value={website} onChange={setWebsite} />
       <PrivacyNoticeInline kind="listing" />
       {lockFixedFields && immutableFieldsMessage && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">

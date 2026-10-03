@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /listing/
+Allow: /propietario/
+Allow: /aviso-de-privacidad
+Allow: /terminos
+Allow: /apoyar
+Disallow: /login
+Disallow: /register
+Disallow: /recuperar-contrasena
+Disallow: /verify-email
+Disallow: /complete-profile
+Disallow: /perfil
+Disallow: /publicar
+Disallow: /editar/
+Disallow: /mis-publicaciones
+Disallow: /favoritos
+Disallow: /notificaciones
+Disallow: /mensajes
+Disallow: /historial/
+Disallow: /admin
+Disallow: /aceptacion-legal
+
+Sitemap: https://ixmiplace.vercel.app/sitemap.xml

@@ -8,6 +8,7 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { Link } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { formatPrice } from '../../lib/utils';
+import { optimizedUrl } from '../../lib/cloudinary';
 import { categoryEmoji, priceUnitLabel } from '../../lib/constants';
 import type { Listing } from '../../types/models';
 
@@ -69,8 +70,10 @@ export function ListingsMap({ listings }: ListingsMapProps) {
                   <div className="min-w-44">
                     {listing.photos[0] && (
                       <img
-                        src={listing.photos[0]}
-                        alt=""
+                        src={optimizedUrl(listing.photos[0], 360, 200)}
+                        alt={`Fotografía de ${listing.title}`}
+                        loading="lazy"
+                        decoding="async"
                         className="mb-2 h-20 w-full rounded-lg object-cover"
                       />
                     )}

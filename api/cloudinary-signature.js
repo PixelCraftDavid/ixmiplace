@@ -75,7 +75,7 @@ export default async function handler(req, res) {
     const profile = profileSnap.data();
     if (!profile || profile.isBanned === true || profile.termsAcceptedVersion !== '2026-10-03-v5'
       || profile.adultConfirmedVersion !== '2026-10-03-v5'
-      || profile.privacyConsentVersion !== '2026-10-03-v8') {
+      || profile.privacyConsentVersion !== '2026-10-03-v9') {
       return respond(res, 403, { error: 'Cuenta no autorizada para subir imágenes.' });
     }
 

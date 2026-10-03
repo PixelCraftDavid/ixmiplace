@@ -54,6 +54,10 @@ export default async function handler(req, res) {
       logSecurityEvent(req, 'invalid_message_request', user.uid);
       return respond(res, 400, { error: 'Asunto o mensaje inválido.' });
     }
+    if (input.website) {
+      logSecurityEvent(req, 'message_honeypot_filled', user.uid);
+      return respond(res, 400, { error: 'No se pudo procesar el formulario.' });
+    }
     const { listingId, subject, message, visitRequestedAt, openHouseRsvp } = input;
 
     const db = getFirestore(app);
@@ -64,7 +68,7 @@ export default async function handler(req, res) {
     ]);
     const profile = userSnap.data();
     const listing = listingSnap.data();
-    if (!profile || profile.isBanned === true || profile.privacyConsentVersion !== '2026-10-03-v8') {
+    if (!profile || profile.isBanned === true || profile.privacyConsentVersion !== '2026-10-03-v9') {
       return respond(res, 403, { error: 'Cuenta no autorizada.' });
     }
     if (!listingSnap.exists || listing.status !== 'published' || !Number.isSafeInteger(listing.expiresAt) || listing.expiresAt <= Date.now()) return respond(res, 404, { error: 'Anuncio no disponible.' });
@@ -127,7 +131,7 @@ export default async function handler(req, res) {
         } : {}),
         status: 'unread',
         createdAt: now.toMillis(),
-        privacyConsentVersion: '2026-10-03-v8',
+        privacyConsentVersion: '2026-10-03-v9',
         privacyConsentAt: now,
       });
       return true;

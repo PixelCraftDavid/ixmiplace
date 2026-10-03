@@ -19,6 +19,7 @@ import { LegalAcceptanceFields } from '@/components/legal/LegalAcceptanceFields'
 import { recordLegalAcceptance } from '@/features/legal/recordLegalAcceptance';
 import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '@/features/legal/legalVersions';
 import { displayNameSchema } from '@/lib/zod-schemas';
+import { HoneypotField } from '@/components/ui/HoneypotField';
 
 const schema = z.object({
   displayName: displayNameSchema,
@@ -44,6 +45,7 @@ export function RegisterPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [confirmedAdult, setConfirmedAdult] = useState(false);
+  const [website, setWebsite] = useState('');
 
   const {
     register,
@@ -53,6 +55,8 @@ export function RegisterPage() {
 
   async function onSubmit(data: FormData) {
     setError('');
+
+    if (website.trim()) return;
 
     if (!acceptedTerms || !acceptedPrivacy || !confirmedAdult) {
       setError('Acepta los términos, confirma que eres mayor de edad y revisa el Aviso de Privacidad para crear tu cuenta.');
@@ -157,6 +161,7 @@ export function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <HoneypotField value={website} onChange={setWebsite} />
             <div>
               <label className="block space-y-1.5 text-xs font-medium text-ink-600 dark:text-ink-200">
                 Nombre completo

@@ -57,12 +57,16 @@ export default async function handler(req, res) {
       logSecurityEvent(req, 'invalid_report_request', user.uid);
       return respond(res, 400, { error: 'Datos del reporte inválidos.' });
     }
+    if (input.website) {
+      logSecurityEvent(req, 'report_honeypot_filled', user.uid);
+      return respond(res, 400, { error: 'No se pudo procesar el formulario.' });
+    }
     const { listingId, reason, comment } = input;
 
     const db = getFirestore(app);
     const profileSnap = await db.collection('users').doc(user.uid).get();
     const profile = profileSnap.data();
-    if (!profile || profile.isBanned === true || profile.privacyConsentVersion !== '2026-10-03-v8') {
+    if (!profile || profile.isBanned === true || profile.privacyConsentVersion !== '2026-10-03-v9') {
       return respond(res, 403, { error: 'Cuenta no autorizada.' });
     }
     const date = day();
@@ -103,7 +107,7 @@ export default async function handler(req, res) {
         ...(comment.trim() ? { comment: comment.trim() } : {}),
         status: 'open',
         createdAt: now.toMillis(),
-        privacyConsentVersion: '2026-10-03-v8',
+        privacyConsentVersion: '2026-10-03-v9',
         privacyConsentAt: now,
       });
       transaction.update(listingRef, { reportsCount: FieldValue.increment(1) });

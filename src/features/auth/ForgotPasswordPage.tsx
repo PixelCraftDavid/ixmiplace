@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle2, Loader2, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { auth } from '../../lib/firebase';
 import { AuthLayout } from '../../components/layout/AuthLayout';
+import { HoneypotField } from '../../components/ui/HoneypotField';
 
 const schema = z.object({
   email: z.string().trim().toLowerCase().email('Escribe un correo válido.').max(254),
@@ -16,6 +17,7 @@ type FormData = z.infer<typeof schema>;
 export function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const [website, setWebsite] = useState('');
   const {
     register,
     handleSubmit,
@@ -24,6 +26,7 @@ export function ForgotPasswordPage() {
 
   async function onSubmit({ email }: FormData) {
     setError('');
+    if (website.trim()) return;
     try {
       auth.languageCode = 'es';
       await sendPasswordResetEmail(auth, email);
@@ -61,6 +64,7 @@ export function ForgotPasswordPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <HoneypotField value={website} onChange={setWebsite} />
           <label className="block space-y-1.5 text-xs font-medium text-ink-600 dark:text-ink-200">
             Correo electrónico de tu cuenta
             <span className="relative block">

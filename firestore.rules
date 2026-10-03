@@ -253,7 +253,7 @@ service cloud.firestore {
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'phone', 'phoneConsentVersion', 'phoneConsentAt'
           ])
-            || (request.resource.data.phoneConsentVersion == '2026-10-03-v8'
+            || (request.resource.data.phoneConsentVersion == '2026-10-03-v9'
               && validConsentTime(request.resource.data.phoneConsentAt)))
           && request.resource.data.role == resource.data.role
           && request.resource.data.isBanned == resource.data.isBanned
@@ -276,7 +276,7 @@ service cloud.firestore {
         allow read: if signedIn() && request.auth.uid == userId;
         allow create, update: if verified()
           && request.auth.uid == userId
-            && get(/databases/$(database)/documents/users/$(userId)).data.privacyConsentVersion == '2026-10-03-v8'
+            && get(/databases/$(database)/documents/users/$(userId)).data.privacyConsentVersion == '2026-10-03-v9'
           && request.resource.data.keys().hasOnly([
             'token', 'createdAt', 'updatedAt', 'privacyConsentVersion', 'privacyConsentAt'
           ])
@@ -286,7 +286,7 @@ service cloud.firestore {
           && request.resource.data.token is string
           && request.resource.data.token.size() >= 20
           && request.resource.data.token.size() <= 4096
-          && request.resource.data.privacyConsentVersion == '2026-10-03-v8'
+          && request.resource.data.privacyConsentVersion == '2026-10-03-v9'
           && request.resource.data.privacyConsentAt == request.time
           && request.resource.data.createdAt == request.time
           && request.resource.data.updatedAt == request.time;
@@ -341,7 +341,7 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/listingPrivateDetails/$(listingId)).data.whatsapp.matches('^[0-9]{10}$')
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.termsAcceptedVersion == '2026-10-03-v5'
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adultConfirmedVersion == '2026-10-03-v5'
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.privacyConsentVersion == '2026-10-03-v8'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.privacyConsentVersion == '2026-10-03-v9'
         && request.resource.data.publicationConsentVersion == '2026-09-26'
         && validConsentTime(request.resource.data.publicationConsentAt)
         && request.resource.data.status == 'pending'

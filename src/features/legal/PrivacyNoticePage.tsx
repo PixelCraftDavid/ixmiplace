@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { PRIVACY_NOTICE_VERSION } from './legalVersions';
+import { AnalyticsPreferencesButton } from '../../components/seo/AnalyticsConsent';
 
 export function PrivacyNoticePage() {
   return (
@@ -37,6 +38,7 @@ export function PrivacyNoticePage() {
               <li><strong>Elecciones y consentimientos:</strong> versiones de los documentos aceptados y marcas de tiempo de aceptación o de consentimientos específicos.</li>
               <li><strong>Soporte:</strong> contenido y dirección de correo de los mensajes que envías al contacto de IxmiPlace.</li>
               <li><strong>Datos técnicos y de seguridad:</strong> registros de solicitudes y errores, datos técnicos de conexión y un identificador derivado mediante hash de la dirección IP para limitar abusos. Los registros de seguridad propios no incluyen el contenido de mensajes, credenciales ni la IP en claro; el proveedor de alojamiento puede procesar datos de conexión conforme a su servicio.</li>
+              <li><strong>Analítica opcional:</strong> si el responsable configura Google Analytics y aceptas expresamente, se registran datos de uso como las páginas visitadas, su título y datos técnicos básicos del navegador. Si lo rechazas, el script de analítica no se carga.</li>
               <li>Cuando App Check esté configurado, se procesa temporalmente un token de verificación para validar que la solicitud proviene de una instancia autorizada de la aplicación.</li>
               <li><strong>Identificadores temporales de límites:</strong> se usan para frenar automatización y consultas masivas, y se eliminan mediante el proceso de limpieza, con un periodo previsto de hasta ocho días.</li>
             </ul>
@@ -44,13 +46,14 @@ export function PrivacyNoticePage() {
           </NoticeSection>
 
           <NoticeSection title="3. Almacenamiento local y tecnologías similares">
-            <p>El sitio usa <code>localStorage</code> para la preferencia de tema y marcas técnicas que evitan registrar repetidamente algunos contadores. El flujo de verificación de correo usa <code>sessionStorage</code> para conservar temporalmente el momento del último envío. Firebase Authentication mantiene la sesión mediante persistencia local compatible con el navegador, como IndexedDB o <code>localStorage</code>.</p>
-            <p>El código propio no configura cookies publicitarias ni web beacons/píxeles de perfilamiento. Google/Firebase, Cloudinary, Vercel, OpenStreetMap/Nominatim, WhatsApp y Mercado Pago pueden recibir identificadores o datos de conexión cuando se usan sus funciones; cada proveedor puede emplear cookies, almacenamiento o tecnologías propias según su servicio y aviso. Puedes borrar el almacenamiento del navegador y administrar sus permisos, aunque eso puede cerrar tu sesión o desactivar funciones.</p>
+            <p>El sitio usa <code>localStorage</code> para la preferencia de tema, la elección sobre analítica opcional y marcas técnicas que evitan registrar repetidamente algunos contadores. El flujo de verificación de correo usa <code>sessionStorage</code> para conservar temporalmente el momento del último envío. Firebase Authentication mantiene la sesión mediante persistencia local compatible con el navegador, como IndexedDB o <code>localStorage</code>.</p>
+            <p>Google Analytics permanece apagado hasta que el responsable lo configure y tú lo aceptes. Puedes rechazarlo o cambiar tu elección aquí; la decisión no bloquea las funciones principales. IxmiPlace no configura publicidad dirigida ni píxeles publicitarios. Google/Firebase, Cloudinary, Vercel, OpenStreetMap/Nominatim, WhatsApp y Mercado Pago pueden recibir identificadores o datos de conexión cuando se usan sus funciones; cada proveedor puede emplear cookies, almacenamiento o tecnologías propias según su servicio y aviso. Puedes borrar el almacenamiento del navegador y administrar sus permisos, aunque eso puede cerrar tu sesión o desactivar funciones.</p>
+            <AnalyticsPreferencesButton />
           </NoticeSection>
 
           <NoticeSection title="4. Finalidades y consentimiento">
             <p><strong>Finalidades primarias, necesarias para operar las funciones que solicitas:</strong> crear, autenticar, recuperar y proteger cuentas; verificar correo; mantener el perfil; crear, mostrar, actualizar y moderar publicaciones; mostrar públicamente la información que el anunciante elige publicar; facilitar mensajes o contacto solicitados entre usuarios; gestionar favoritos, reportes, notificaciones elegidas, soporte y eliminación de cuenta; prevenir fraude, abuso y spam; mantener registros de seguridad; y atender obligaciones legales y solicitudes ARCO.</p>
-            <p><strong>Finalidades secundarias:</strong> actualmente IxmiPlace no usa datos para publicidad dirigida, venta de bases de datos ni perfilamiento comercial. Si se incorporan comunicaciones promocionales u otra finalidad secundaria que requiera consentimiento, se informará por separado y podrás negarte sin perder las funciones principales.</p>
+            <p><strong>Finalidades secundarias:</strong> la analítica opcional se usa únicamente para conocer el uso general del sitio y mejorarlo; solo se activa después de tu aceptación y puedes rechazarla sin perder funciones. IxmiPlace no usa datos para publicidad dirigida, venta de bases de datos ni perfilamiento comercial. Si se incorporan comunicaciones promocionales u otra finalidad secundaria que requiera consentimiento, se informará por separado.</p>
             <p>La publicación de un anuncio y la comunicación de datos de contacto a otro usuario ocurren conforme a las opciones y acciones que eliges; no constituyen permiso general para divulgar todos los datos de tu cuenta. Las casillas de aceptación deben permanecer desmarcadas hasta que las marques.</p>
           </NoticeSection>
 
@@ -60,7 +63,7 @@ export function PrivacyNoticePage() {
           </NoticeSection>
 
           <NoticeSection title="6. Proveedores, destinatarios y transferencias">
-            <p><strong>Proveedores técnicos:</strong> Google/Firebase procesa autenticación, perfiles, base de datos, App Check y, si las activas, notificaciones push; Vercel aloja la aplicación y ejecuta endpoints; Cloudinary almacena y entrega fotografías; OpenStreetMap/Nominatim presta mapas y geocodificación. Reciben las categorías necesarias para prestar esas funciones, como identificadores de cuenta, solicitudes, imágenes o ubicación consultada. Pueden operar infraestructura fuera de México y tratar datos conforme a sus términos y avisos.</p>
+            <p><strong>Proveedores técnicos:</strong> Google/Firebase procesa autenticación, perfiles, base de datos, App Check y, si las activas, notificaciones push; si habilitas la analítica, Google Analytics recibe datos de navegación y métricas de uso. Vercel aloja la aplicación y ejecuta endpoints; Cloudinary almacena y entrega fotografías; OpenStreetMap/Nominatim presta mapas y geocodificación. Reciben las categorías necesarias para prestar esas funciones, como identificadores de cuenta, solicitudes, imágenes o ubicación consultada. Pueden operar infraestructura fuera de México y tratar datos conforme a sus términos y avisos.</p>
             <p><strong>Comunicación a otras personas:</strong> al publicar, los datos que seleccionas se muestran a visitantes. Los mensajes internos se almacenan para que el destinatario pueda leerlos desde su cuenta y responderte. Si activa las notificaciones push, Firebase Cloud Messaging recibe el token del dispositivo y una alerta genérica, sin el contenido del mensaje. Si abre WhatsApp, Meta/WhatsApp recibe la información que la función transfiere y la que usted envía. Estos destinatarios pueden tratar datos para sus propios fines conforme a sus avisos.</p>
             <p>La página de apoyo muestra una CLABE de Mercado Pago para transferencias voluntarias externas. IxmiPlace no inicia ni procesa la transferencia ni recibe los datos bancarios de quien aporta; Mercado Pago y la institución bancaria tratan los datos de esa operación. El responsable no ofrece recibos deducibles de impuestos.</p>
           </NoticeSection>

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import { AuthProvider } from '../features/auth/AuthContext';
 import { RequireAuth } from '../features/auth/RequireAuth';
@@ -34,6 +34,9 @@ import { SupportPage } from '../features/support/SupportPage';
 import { Navbar } from '../components/layout/Navbar';
 import { Hero } from '../components/layout/Hero';
 import { SiteFooter } from '../components/layout/SiteFooter';
+import { NotFoundPage } from '../components/layout/NotFoundPage';
+import { RouteMetadata } from '../components/seo/PageMeta';
+import { AnalyticsConsent } from '../components/seo/AnalyticsConsent';
 
 function HomePage() {
   return (
@@ -51,6 +54,8 @@ export function AppRouter() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <RouteMetadata />
+        <AnalyticsConsent />
         <a
           href="#main-content"
           className="sr-only z-50 rounded-lg bg-white px-4 py-3 text-ink focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
@@ -146,10 +151,7 @@ export function AppRouter() {
                 404
             ========================== */}
 
-            <Route
-              path="*"
-              element={<Navigate to="/" replace />}
-            />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>
 

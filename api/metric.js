@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     const [userSnap, listingSnap] = await Promise.all([userRef.get(), listingRef.get()]);
     const user = userSnap.data();
     const listing = listingSnap.data();
-    if (!user || user.isBanned === true || user.privacyConsentVersion !== '2026-10-03-v8') return respond(res, 403, { error: 'Cuenta no autorizada.' });
+    if (!user || user.isBanned === true || user.privacyConsentVersion !== '2026-10-03-v9') return respond(res, 403, { error: 'Cuenta no autorizada.' });
     if (!listingSnap.exists || listing.status !== 'published' || !Number.isSafeInteger(listing.expiresAt) || listing.expiresAt <= Date.now()) {
       return respond(res, 404, { error: 'Anuncio no disponible.' });
     }

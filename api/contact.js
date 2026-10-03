@@ -118,7 +118,7 @@ export default async function handler(req, res) {
     const db = getFirestore(app);
     const userSnap = await db.collection('users').doc(decoded.uid).get();
     const user = userSnap.data();
-    if (!user || user.isBanned === true || user.privacyConsentVersion !== '2026-10-03-v8') {
+    if (!user || user.isBanned === true || user.privacyConsentVersion !== '2026-10-03-v9') {
       return respond(res, 403, { error: 'Cuenta no autorizada.' });
     }
 

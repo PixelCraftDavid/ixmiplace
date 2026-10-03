@@ -11,6 +11,7 @@ import type { Listing } from '../../types/models';
 import { LISTING_CONSENT_VERSION } from '../legal/legalVersions';
 import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline';
 import { ImageUploader } from './ImageUploader';
+import { HoneypotField } from '../../components/ui/HoneypotField';
 
 const inputClass = 'w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-ink placeholder-ink-300 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/15';
 
@@ -20,6 +21,7 @@ export function CreateRoommateListingPage() {
   const [photoPublicIds, setPhotoPublicIds] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [website, setWebsite] = useState('');
   const { register, handleSubmit, watch, control, formState: { errors, isSubmitting } } = useForm<RoommateListingInput>({
     resolver: standardSchemaResolver(roommateListingSchema),
     defaultValues: {
@@ -38,6 +40,7 @@ export function CreateRoommateListingPage() {
 
   async function submit(data: RoommateListingInput) {
     setSubmitError('');
+    if (website.trim()) return;
     if (!auth.currentUser) {
       setSubmitError('Tu sesión expiró. Inicia sesión de nuevo.');
       return;
@@ -138,6 +141,7 @@ export function CreateRoommateListingPage() {
         <PrivacyNoticeInline kind="listing" />
 
         <form onSubmit={handleSubmit(submit)} className="mt-6 space-y-6">
+          <HoneypotField value={website} onChange={setWebsite} />
           <section className="space-y-4 rounded-2xl border border-ink-700/10 bg-white p-5 shadow-sm sm:p-7">
             <h2 className="flex items-center gap-2 text-lg font-bold text-ink"><BedDouble className="h-5 w-5 text-brand-700" /> El espacio</h2>
             <Field label="Título" error={errors.title?.message}><input maxLength={80} className={inputClass} placeholder="Ej.: Busco roomie para departamento compartido" {...register('title')} /></Field>
