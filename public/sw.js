@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ixmiplace-shell-v3';
+const CACHE_NAME = 'ixmiplace-shell-v4';
 
 const APP_SHELL = [
   '/',
@@ -202,7 +202,23 @@ self.addEventListener(
 
     event.respondWith(
       fetch(event.request).catch(
-        () => caches.match(event.request),
+        async () => {
+          const cached = await caches.match(event.request);
+          if (cached) return cached;
+
+          // Offline navigations need the SPA shell; returning undefined here
+          // makes the browser reject respondWith() because it requires a Response.
+          if (event.request.mode === 'navigate') {
+            const shell = await caches.match('/index.html');
+            if (shell) return shell;
+          }
+
+          return new Response('Network unavailable.', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          });
+        },
       ),
     );
   },

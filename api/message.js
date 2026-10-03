@@ -21,7 +21,8 @@ function adminApp() {
 }
 function day() { return new Date().toISOString().slice(0, 10); }
 function ipHash(req, date) {
-  const ip = req.headers['x-real-ip']?.trim();
+  const header = req.headers['x-real-ip'];
+  const ip = typeof header === 'string' ? header.trim() : '';
   return ip ? createHash('sha256').update(`${date}:${ip}`).digest('hex') : null;
 }
 
@@ -36,6 +37,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') { logSecurityEvent(req, 'blocked_method'); return respond(res, 405, { error: 'Método no permitido.' }); }
 
+  let failureStage = 'verify_identity_token';
   try {
     const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
     if (!token) {
@@ -46,6 +48,7 @@ export default async function handler(req, res) {
     const user = await getAuth(app).verifyIdToken(token, true);
     if (!user.email_verified) return respond(res, 403, { error: 'Verifica tu correo.' });
 
+    failureStage = 'validate_message';
     const input = parseBody(requestSchemas.message, req.body);
     if (!input) {
       logSecurityEvent(req, 'invalid_message_request', user.uid);
@@ -54,6 +57,7 @@ export default async function handler(req, res) {
     const { listingId, subject, message } = input;
 
     const db = getFirestore(app);
+    failureStage = 'read_profile_and_listing';
     const [userSnap, listingSnap] = await Promise.all([
       db.collection('users').doc(user.uid).get(),
       db.collection('listings').doc(listingId).get(),
@@ -77,6 +81,7 @@ export default async function handler(req, res) {
     const expiresAt = Timestamp.fromMillis(Date.now() + RETENTION_MS);
     const listingRef = db.collection('listings').doc(listingId);
 
+    failureStage = 'save_message_transaction';
     const result = await db.runTransaction(async (transaction) => {
       const refs = [userQuota, listingQuota, ...(ipQuota ? [ipQuota] : []), listingRef];
       const snapshots = await Promise.all(refs.map((ref) => transaction.get(ref)));
@@ -111,7 +116,7 @@ export default async function handler(req, res) {
     if (!result) return respond(res, 429, { error: 'Límite diario de mensajes alcanzado.' });
     return respond(res, 201, { ok: true, messageId: messageRef.id });
   } catch (error) {
-    logApiFailure(req, 'message', 'request', error);
+    logApiFailure(req, 'message', failureStage, error);
     return respond(res, 500, { error: 'No se pudo enviar el mensaje.' });
   }
 }
