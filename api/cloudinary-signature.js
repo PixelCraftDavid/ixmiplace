@@ -1,6 +1,5 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getAppCheck } from 'firebase-admin/app-check';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore';
 import { v2 as cloudinary } from 'cloudinary';
@@ -52,22 +51,18 @@ export default async function handler(req, res) {
   if (origin && origin !== APP_ORIGIN) { logSecurityEvent(req, 'blocked_origin'); return respond(res, 403, { error: 'Origen no permitido.' }); }
   if (origin) res.setHeader('Access-Control-Allow-Origin', APP_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Firebase-AppCheck');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') { logSecurityEvent(req, 'blocked_method'); return respond(res, 405, { error: 'Método no permitido.' }); }
 
   try {
     const idToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    const appCheckToken = req.headers['x-firebase-appcheck'];
-    if (!idToken || typeof appCheckToken !== 'string') {
-      logSecurityEvent(req, 'missing_auth_or_app_check');
-      return respond(res, 401, { error: 'Sesión y App Check requeridos.' });
+    if (!idToken) {
+      logSecurityEvent(req, 'missing_auth');
+      return respond(res, 401, { error: 'Inicia sesión para subir imágenes.' });
     }
     const app = adminApp();
-    const [user] = await Promise.all([
-      getAuth(app).verifyIdToken(idToken, true),
-      getAppCheck(app).verifyToken(appCheckToken),
-    ]);
+    const user = await getAuth(app).verifyIdToken(idToken, true);
     if (user.email_verified !== true) return respond(res, 403, { error: 'Verifica tu correo para subir imágenes.' });
 
     const db = getFirestore(app);

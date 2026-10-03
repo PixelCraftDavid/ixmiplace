@@ -1,6 +1,5 @@
 import { LISTING_LIMITS } from './constants';
-import { getToken as getAppCheckToken } from 'firebase/app-check';
-import { appCheck, auth } from './firebase';
+import { auth } from './firebase';
 
 // URL base de la API de subida de Cloudinary
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -97,17 +96,11 @@ async function getSignedUploadParameters(): Promise<SignedUploadParameters> {
   if (!user || !user.emailVerified) {
     throw new Error('Inicia sesión y verifica tu correo antes de subir imágenes.');
   }
-  if (!appCheck) throw new Error('La protección de subida aún no está configurada.');
-
-  const [idToken, appCheckResult] = await Promise.all([
-    user.getIdToken(),
-    getAppCheckToken(appCheck),
-  ]);
+  const idToken = await user.getIdToken();
   const response = await fetch('/api/cloudinary-signature', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${idToken}`,
-      'X-Firebase-AppCheck': appCheckResult.token,
       'Content-Type': 'application/json',
     },
     body: '{}',
