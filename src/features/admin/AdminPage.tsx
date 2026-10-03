@@ -33,6 +33,8 @@ import { categoryEmoji, operationLabel, priceUnitLabel } from '../../lib/constan
 import { formatPrice } from '../../lib/utils';
 import type { AppUser, Listing, ListingStatus, Report } from '../../types/models';
 import { requestPushDelivery } from '../../lib/push-notifications';
+import { migratePrivateContacts } from '../../lib/contact-migration';
+import { postProtectedApi } from '../../lib/protected-api';
 
 type AdminFilter = 'all' | 'pending' | 'published' | 'rejected' | 'archived';
 
@@ -78,6 +80,8 @@ export function AdminPage() {
   const [deletionBusy, setDeletionBusy] = useState(false);
   const [migrationRunning, setMigrationRunning] = useState(false);
   const [migrationSummary, setMigrationSummary] = useState('');
+  const [cleanupRunning, setCleanupRunning] = useState(false);
+  const [cleanupSummary, setCleanupSummary] = useState('');
 
   useEffect(() => {
     if (!profile || profile.role !== 'admin') return;
@@ -257,8 +261,19 @@ export function AdminPage() {
     if (user.uid === adminUid) return;
     try {
       const isBanned = !user.isBanned;
-      await updateDoc(doc(db, 'users', user.uid), { isBanned });
-      await updateDoc(doc(db, 'publicProfiles', user.uid), { isBanned });
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'users', user.uid), { isBanned });
+      const publicProfileRef = doc(db, 'publicProfiles', user.uid);
+      if (isBanned) {
+        batch.delete(publicProfileRef);
+      } else {
+        batch.set(publicProfileRef, {
+          uid: user.uid,
+          displayName: user.displayName,
+          ...(user.photoURL ? { photoURL: user.photoURL } : {}),
+        });
+      }
+      await batch.commit();
     } catch (userError) {
       console.error('Error actualizando suspensión:', userError);
       setError('No se pudo actualizar el estado del usuario.');
@@ -315,11 +330,45 @@ export function AdminPage() {
     setMigrationSummary('');
     setError('');
     try {
+      const privateMigration = await migratePrivateContacts();
       const snapshot = await getDocs(collection(db, 'listings'));
+      const publicProfilesSnapshot = await getDocs(collection(db, 'publicProfiles'));
       const now = Date.now();
       let addressesMoved = 0;
       let expirationsNormalized = 0;
       let expiredArchived = 0;
+      let publicProfilesReduced = 0;
+
+      for (let offset = 0; offset < publicProfilesSnapshot.docs.length; offset += 200) {
+        const batch = writeBatch(db);
+        let hasWrites = false;
+        for (const profileDoc of publicProfilesSnapshot.docs.slice(offset, offset + 200)) {
+          const data = profileDoc.data();
+          const photoURL = typeof data.photoURL === 'string'
+            && data.photoURL.startsWith('https://lh3.googleusercontent.com/')
+            ? data.photoURL.slice(0, 2048)
+            : undefined;
+          const allowedKeys = ['uid', 'displayName', ...(photoURL ? ['photoURL'] : [])].sort();
+          const currentKeys = Object.keys(data).sort();
+          const normalizedName = typeof data.displayName === 'string'
+            ? data.displayName.normalize('NFC').replace(/[<>]/g, '').trim().slice(0, 60)
+            : '';
+          const displayName = normalizedName.length >= 2 ? normalizedName : 'Usuario';
+          if (currentKeys.join('|') !== allowedKeys.join('|')
+            || data.uid !== profileDoc.id
+            || data.displayName !== displayName
+            || data.photoURL !== photoURL) {
+            batch.set(profileDoc.ref, {
+              uid: profileDoc.id,
+              displayName,
+              ...(photoURL ? { photoURL } : {}),
+            });
+            publicProfilesReduced += 1;
+            hasWrites = true;
+          }
+        }
+        if (hasWrites) await batch.commit();
+      }
 
       for (let offset = 0; offset < snapshot.docs.length; offset += 200) {
         const batch = writeBatch(db);
@@ -334,10 +383,14 @@ export function AdminPage() {
           if (address) {
             batch.set(
               doc(db, 'listingPrivateDetails', listingDoc.id),
-              { ownerId: listing.ownerId, address, updatedAt: now },
+              {
+                ownerId: listing.ownerId,
+                ...(address ? { address } : {}),
+                updatedAt: now,
+              },
               { merge: true }
             );
-            addressesMoved += 1;
+            if (address) addressesMoved += 1;
             hasWrites = true;
           }
           if ('address' in listing) updates.address = deleteField();
@@ -372,13 +425,33 @@ export function AdminPage() {
       }
 
       setMigrationSummary(
-        `Listo: ${snapshot.size} anuncios revisados, ${addressesMoved} direcciones protegidas, ${expirationsNormalized} fechas normalizadas y ${expiredArchived} anuncios vencidos archivados.`
+        `Listo: ${privateMigration.scanned} anuncios escaneados, ${privateMigration.phonesMoved} teléfonos trasladados a privado (${privateMigration.invalidPhones} requieren corregirse), ${privateMigration.addressesMoved + addressesMoved} direcciones protegidas, ${publicProfilesReduced} perfiles públicos reducidos a nombre y foto, ${expirationsNormalized} fechas normalizadas y ${expiredArchived} anuncios vencidos archivados.`
       );
     } catch (migrationError) {
       console.error('Error migrando los datos privados de anuncios:', migrationError);
       setError('No se pudieron migrar los datos. Verifica que las reglas de Firestore estén publicadas y vuelve a intentarlo.');
     } finally {
       setMigrationRunning(false);
+    }
+  }
+
+  async function cleanExpiredRateLimits() {
+    setCleanupRunning(true);
+    setCleanupSummary('');
+    setError('');
+    try {
+      const result = await postProtectedApi<{
+        deleted: number;
+        hasMore: boolean;
+      }>('/api/cleanup-rate-limits', {});
+      setCleanupSummary(
+        `${result.deleted} registros vencidos eliminados.${result.hasMore ? ' Quedan más; vuelve a pulsar para continuar.' : ''}`,
+      );
+    } catch (cleanupError) {
+      console.error('Error limpiando límites vencidos:', cleanupError);
+      setError(cleanupError instanceof Error ? cleanupError.message : 'No se pudieron limpiar los límites vencidos.');
+    } finally {
+      setCleanupRunning(false);
     }
   }
 
@@ -410,7 +483,7 @@ export function AdminPage() {
           <div>
             <h2 className="font-bold text-amber-950">Preparar anuncios existentes</h2>
             <p className="mt-1 max-w-3xl text-sm text-amber-900/80">
-              Esta acción no usa Cloud Functions ni activa cobros. Migra direcciones antiguas y archiva anuncios vencidos cuando la ejecutes; el feed los oculta al vencer aunque todavía no pulses el botón.
+              Antes de publicar las reglas nuevas de contacto, ejecuta esta migración para mover WhatsApp y direcciones antiguas a documentos privados. También normaliza fechas y archiva anuncios vencidos. No usa Cloud Functions ni activa cobros.
             </p>
             {migrationSummary && <p className="mt-2 text-sm font-semibold text-emerald-800">{migrationSummary}</p>}
           </div>
@@ -422,6 +495,25 @@ export function AdminPage() {
           >
             {migrationRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
             {migrationRunning ? 'Revisando…' : 'Migrar y archivar vencidos'}
+          </button>
+        </section>
+
+        <section className="mb-8 flex flex-col gap-3 rounded-2xl border border-cream-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-bold text-ink-800">Limpiar límites de abuso vencidos</h2>
+            <p className="mt-1 max-w-3xl text-sm text-ink-500">
+              Limpieza manual de contadores expirados. No configura TTL ni tareas programadas; solo se ejecuta cuando la solicitas y puede tomar varias pasadas.
+            </p>
+            {cleanupSummary && <p role="status" className="mt-2 text-sm font-semibold text-emerald-800">{cleanupSummary}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={() => void cleanExpiredRateLimits()}
+            disabled={cleanupRunning}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-cream-300 px-4 py-3 text-sm font-semibold text-ink-700 hover:bg-cream-50 disabled:opacity-60"
+          >
+            {cleanupRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            {cleanupRunning ? 'Limpiando…' : 'Limpiar registros vencidos'}
           </button>
         </section>
 

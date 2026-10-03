@@ -15,7 +15,7 @@ export function PrivacyNoticePage() {
           </div>
           <h1 className="text-3xl font-extrabold sm:text-4xl">Aviso de Privacidad Integral</h1>
           <p className="mt-3 text-sm leading-relaxed text-ink-500 dark:text-ink-300">
-            Última actualización: 26 de septiembre de 2026 (versión 3). Este aviso explica cómo se tratan los datos personales al usar IxmiPlace, proyecto independiente en desarrollo para publicar y consultar propiedades en Ixmiquilpan.
+            Última actualización: 30 de septiembre de 2026 (versión 4). Este aviso explica cómo se tratan los datos personales al usar IxmiPlace, proyecto independiente en desarrollo para publicar y consultar propiedades en Ixmiquilpan.
           </p>
         </header>
 
@@ -28,13 +28,14 @@ export function PrivacyNoticePage() {
             <ul className="list-disc space-y-2 pl-5">
               <li>Identificación y cuenta: nombre, correo electrónico, identificadores de cuenta y estado de verificación. La autenticación puede gestionarse con Firebase Authentication o Google si eliges ese acceso; IxmiPlace no recibe ni guarda tu contraseña de Google.</li>
               <li>Contacto y perfil: teléfono/WhatsApp, foto de perfil y nombre visible.</li>
-              <li>Publicaciones: título, descripción, categoría, precio, zona y ubicación que aparece en el mapa, fotografías, servicios, teléfono si decides mostrarlo y disponibilidad.</li>
+              <li>Publicaciones: título, descripción, categoría, precio, zona y ubicación que aparece en el mapa, fotografías, servicios y disponibilidad. El teléfono de WhatsApp se conserva aparte del anuncio público.</li>
               <li>Uso de la plataforma: favoritos, mensajes, reportes, notificaciones, historial de publicaciones y contadores de visitas/contactos.</li>
               <li>Notificaciones push: si las activas, se guarda un token técnico de este dispositivo o navegador para enviarte avisos sobre mensajes, publicaciones y moderación. El token no incluye el contenido de tus mensajes. Puedes desactivarlas desde la página de Notificaciones o en los ajustes de tu dispositivo/navegador.</li>
               <li>Constancias de elección: versiones y fechas de aceptación de los Términos y de los avisos/consentimientos mostrados al crear una cuenta, publicar, completar el perfil, enviar mensajes o reportes.</li>
               <li>Apoyo voluntario: la página de apoyo muestra públicamente la CLABE de Mercado Pago del responsable para recibir transferencias. IxmiPlace no solicita ni guarda los datos bancarios de quien envía el apoyo.</li>
               <li>Si escribes al correo de contacto, el contenido del mensaje y la dirección desde la que lo envías para responder tu consulta o coordinar un apoyo voluntario.</li>
               <li>Datos técnicos del navegador: preferencia de tema y marcas locales que ayudan a evitar registrar repetidamente ciertos contadores de visitas y contactos, además del estado de sesión administrado por Firebase Authentication.</li>
+              <li>Seguridad y prevención de abuso: Firebase App Check y límites de uso pueden tratar tokens de integridad de la app y una versión seudonimizada de la dirección IP. Los identificadores de límite se conservan temporalmente, hasta ocho días, para frenar automatización y consultas masivas; no se usan para mostrar publicidad.</li>
             </ul>
             <p className="mt-3">IxmiPlace no solicita intencionalmente datos personales sensibles. Evita incluirlos en mensajes, reportes o publicaciones.</p>
             <p>El sitio guarda la preferencia de tema y esas marcas técnicas en <code>localStorage</code>. Firebase Authentication conserva el estado de inicio de sesión mediante persistencia local, usando el mecanismo compatible con el navegador, como IndexedDB o <code>localStorage</code>. El código propio revisado no usa <code>sessionStorage</code> ni configura cookies de publicidad o perfilamiento; los proveedores externos pueden utilizar tecnologías propias necesarias para sus servicios conforme a sus avisos y condiciones.</p>
@@ -46,12 +47,12 @@ export function PrivacyNoticePage() {
           </NoticeSection>
 
           <NoticeSection title="4. Información visible y contacto entre usuarios">
-            <p>Los anuncios publicados, sus fotografías, descripción, precio, zona y ubicación mostrada en el mapa pueden ser consultados por visitantes. Si activas la opción para mostrar tu teléfono, tu número de WhatsApp también será visible para facilitar el contacto. Los mensajes internos se comparten con el propietario del anuncio al que escribes y con el equipo administrador cuando sea necesario para atender reportes o seguridad.</p>
-            <p>La dirección exacta que proporciones se usa para gestionar el anuncio y, en la versión actual, se guarda aparte de la ficha pública. Los anuncios creados antes de esta separación pueden conservar el dato en su ficha hasta que el administrador complete la migración. No incluyas en la descripción información que no quieras hacer visible públicamente.</p>
+            <p>Los anuncios publicados, sus fotografías, descripción, precio, zona y ubicación mostrada en el mapa pueden ser consultados por visitantes. El número de WhatsApp no forma parte del documento público: si el propietario autoriza mostrarlo, el servidor lo entrega bajo demanda a una cuenta con correo verificado y App Check, con límites de consultas. Al abrir WhatsApp, el número se comparte con WhatsApp y la persona que inicia el contacto.</p>
+            <p>La dirección exacta y el número se guardan en documentos separados, accesibles directamente solo al propietario verificado y a la administración; el endpoint de contacto aplica límites adicionales. Los anuncios antiguos deben migrarse desde el panel administrador antes de publicar las reglas que retiran el teléfono de la ficha pública. No incluyas en la descripción información que no quieras hacer visible públicamente.</p>
           </NoticeSection>
 
           <NoticeSection title="5. Proveedores de tecnología">
-            <p>Para operar el servicio se utilizan proveedores tecnológicos que pueden tratar información por cuenta del responsable: Firebase/Google para autenticación, base de datos y, solo si las activas, notificaciones push; Cloudinary para almacenar y entregar imágenes; Vercel para alojamiento y funciones de envío; y OpenStreetMap/Nominatim para mostrar mapas y buscar ubicaciones. El apoyo voluntario se realiza fuera de IxmiPlace mediante una transferencia iniciada desde el banco o Mercado Pago de quien aporta; esas instituciones procesan la operación según sus propios avisos y condiciones. También puede haber comunicación directa por correo o WhatsApp si tú eliges esos canales. Estos proveedores pueden operar infraestructura fuera de México conforme a sus servicios y condiciones.</p>
+            <p>Para operar el servicio se utilizan proveedores tecnológicos que pueden tratar información por cuenta del responsable: Firebase/Google para autenticación, base de datos, App Check y, solo si las activas, notificaciones push; Cloudinary para almacenar y entregar imágenes; Vercel para alojamiento y endpoints privados de contacto, métricas y subida firmada; y OpenStreetMap/Nominatim para mapas y búsqueda. El apoyo voluntario se realiza fuera de IxmiPlace mediante una transferencia iniciada desde el banco o Mercado Pago de quien aporta; esas instituciones procesan la operación según sus propios avisos y condiciones. Estos proveedores pueden operar infraestructura fuera de México conforme a sus servicios y condiciones.</p>
           </NoticeSection>
 
           <NoticeSection title="6. Conservación y opciones para limitar el uso">
@@ -65,7 +66,7 @@ export function PrivacyNoticePage() {
           </NoticeSection>
 
           <NoticeSection title="8. Seguridad, cambios y proyecto en desarrollo">
-            <p>Se aplican controles técnicos y de acceso para reducir riesgos, pero ningún servicio conectado a Internet puede prometer seguridad absoluta. IxmiPlace sigue en desarrollo: puedes probar sus funciones y con el tiempo se incorporarán mejoras. Si una actualización cambia de forma relevante el tratamiento de datos, se publicará la versión actualizada en esta página y se comunicará por los medios disponibles.</p>
+            <p>Se aplican reglas de acceso, autenticación, App Check, límites de consultas, validación de contenido y controles de subida para reducir riesgos. Ningún servicio conectado a Internet puede prometer seguridad absoluta ni inmunidad frente a ataques de denegación de servicio. IxmiPlace sigue en desarrollo; si una actualización cambia de forma relevante el tratamiento de datos, se publicará la versión actualizada y se solicitará aceptación cuando corresponda.</p>
           </NoticeSection>
         </div>
       </article>

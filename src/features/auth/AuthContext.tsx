@@ -6,8 +6,9 @@ import {
   type ReactNode,
 } from 'react';
 import { onAuthStateChanged, type User as FbUser } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { deleteField, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
+import { googleProfilePhotoUrl } from '../../lib/google-profile-photo';
 import type { AppUser, PublicProfile } from '../../types/models';
 
 interface AuthContextValue {
@@ -38,6 +39,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (snap.exists()) {
         const data = snap.data() as AppUser;
+        const googlePhotoURL = googleProfilePhotoUrl(user);
+        if (googlePhotoURL && data.photoURL !== googlePhotoURL) {
+          try {
+            await updateDoc(ref, { photoURL: googlePhotoURL });
+            data.photoURL = googlePhotoURL;
+          } catch (err) {
+            console.error('Error sincronizando la foto de Google:', err);
+          }
+        }
         if (data.emailVerified !== user.emailVerified) {
           try {
             await updateDoc(ref, { emailVerified: user.emailVerified });
@@ -46,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error('Error sincronizando verificación de correo:', err);
           }
         }
-        await syncPublicProfile(user, data);
+        if (data.isBanned !== true) await syncPublicProfile(user, data);
         setProfile(data);
         return data;
       }
@@ -63,11 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isBanned: false,
       };
       if (user.phoneNumber) newProfile.phone = user.phoneNumber;
-      if (user.photoURL) newProfile.photoURL = user.photoURL;
+      const googlePhotoURL = googleProfilePhotoUrl(user);
+      if (googlePhotoURL) newProfile.photoURL = googlePhotoURL;
 
       try {
         await setDoc(ref, newProfile, { merge: true });
-        await syncPublicProfile(user, newProfile);
+        if (newProfile.isBanned !== true) await syncPublicProfile(user, newProfile);
         setProfile(newProfile);
         return newProfile;
       } catch (err) {
@@ -85,13 +96,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const publicProfile: PublicProfile = {
       uid: user.uid,
       displayName: profileData.displayName,
-      emailVerified: user.emailVerified,
-      createdAt: profileData.createdAt,
-      isBanned: profileData.isBanned ?? false,
     };
     if (profileData.photoURL) publicProfile.photoURL = profileData.photoURL;
     try {
-      await setDoc(doc(db, 'publicProfiles', user.uid), publicProfile, { merge: true });
+      await setDoc(doc(db, 'publicProfiles', user.uid), {
+        ...publicProfile,
+        emailVerified: deleteField(),
+        createdAt: deleteField(),
+        isBanned: deleteField(),
+      }, { merge: true });
     } catch (err) {
       console.error('Error sincronizando perfil público:', err);
     }

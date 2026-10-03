@@ -1,18 +1,25 @@
 import { useMemo, useState } from 'react';
 import {
   EmailAuthProvider,
+  GoogleAuthProvider,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  deleteUser,
+  signOut,
   updatePassword,
 } from 'firebase/auth';
+import { getToken as getAppCheckToken } from 'firebase/app-check';
 import { doc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, KeyRound, Save, UserRound } from 'lucide-react';
-import { auth, db } from '../../lib/firebase';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, KeyRound, Save, Trash2, UserRound } from 'lucide-react';
+import { appCheck, auth, db } from '../../lib/firebase';
 import { useAuth } from './AuthContext';
 import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline';
 import { PRIVACY_NOTICE_VERSION } from '../legal/legalVersions';
+import { displayNameSchema } from '../../lib/zod-schemas';
 
 export function EditProfilePage() {
+  const navigate = useNavigate();
   const { fbUser, profile, refreshProfile } = useAuth();
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
@@ -26,8 +33,13 @@ export function EditProfilePage() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const phoneChanged = phone.trim() !== (profile?.phone ?? '').trim();
+  const needsPhoneConsent = phoneChanged || profile?.phoneConsentVersion !== PRIVACY_NOTICE_VERSION;
   const hasPasswordProvider = useMemo(
     () => fbUser?.providerData.some((provider) => provider.providerId === 'password') ?? false,
     [fbUser],
@@ -37,10 +49,11 @@ export function EditProfilePage() {
     if (!fbUser || !auth.currentUser) return;
     setProfileError('');
     setProfileSuccess('');
-    const nextName = displayName.trim();
+    const nameResult = displayNameSchema.safeParse(displayName);
+    const nextName = nameResult.success ? nameResult.data : '';
     const nextPhone = phone.replace(/\D/g, '');
 
-    if (nextName.length < 2 || nextName.length > 60) {
+    if (!nameResult.success) {
       setProfileError('El nombre debe tener entre 2 y 60 caracteres.');
       return;
     }
@@ -48,8 +61,8 @@ export function EditProfilePage() {
       setProfileError('Ingresa un teléfono de 10 dígitos.');
       return;
     }
-    if (phoneChanged && !acceptedPhoneUse) {
-      setProfileError('Confirma el uso de tu teléfono para guardar el cambio.');
+    if (needsPhoneConsent && !acceptedPhoneUse) {
+      setProfileError('Confirma el uso privado de tu teléfono para guardar el perfil.');
       return;
     }
 
@@ -60,7 +73,7 @@ export function EditProfilePage() {
         displayName: nextName,
         phone: nextPhone,
         emailVerified: auth.currentUser.emailVerified,
-        ...(phoneChanged
+        ...(needsPhoneConsent
           ? { phoneConsentVersion: PRIVACY_NOTICE_VERSION, phoneConsentAt: serverTimestamp() }
           : {}),
       });
@@ -128,6 +141,75 @@ export function EditProfilePage() {
     }
   }
 
+  async function deleteAccount() {
+    const user = auth.currentUser;
+    setDeleteError('');
+    if (!user || !user.email) {
+      setDeleteError('Inicia sesión de nuevo para confirmar el borrado de la cuenta.');
+      return;
+    }
+    if (deleteConfirmation !== 'ELIMINAR') {
+      setDeleteError('Escribe ELIMINAR exactamente para confirmar.');
+      return;
+    }
+    if (!appCheck) {
+      setDeleteError('App Check no está configurado en esta versión. No se borró ningún dato.');
+      return;
+    }
+
+    setDeletingAccount(true);
+    try {
+      const providers = user.providerData.map((provider) => provider.providerId);
+      if (providers.includes('password')) {
+        if (!deletePassword) throw new Error('Ingresa tu contraseña actual para confirmar tu identidad.');
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, deletePassword));
+      } else if (providers.includes('google.com')) {
+        await reauthenticateWithPopup(user, new GoogleAuthProvider());
+      } else {
+        throw new Error('Vuelve a iniciar sesión con tu proveedor para poder confirmar el borrado.');
+      }
+
+      const [idToken, appCheckResult] = await Promise.all([
+        user.getIdToken(true),
+        getAppCheckToken(appCheck),
+      ]);
+      const response = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          'X-Firebase-AppCheck': appCheckResult.token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ confirm: 'ELIMINAR' }),
+        cache: 'no-store',
+      });
+      const result = await response.json().catch(() => null) as { error?: string } | null;
+      if (!response.ok) throw new Error(result?.error ?? 'No se pudo completar el borrado.');
+
+      // Delete the signed-in account from the client after server-side data cleanup;
+      // this avoids granting the Vercel service account Firebase Auth delete privileges.
+      await deleteUser(user);
+      await signOut(auth);
+      navigate('/login', { replace: true, state: { accountDeleted: true } });
+    } catch (error) {
+      console.error('Error borrando la cuenta:', error);
+      const code = (error as { code?: string })?.code;
+      setDeleteError(
+        error instanceof Error && !code
+          ? error.message
+          : code === 'auth/wrong-password' || code === 'auth/invalid-credential'
+            ? 'La contraseña actual no es correcta.'
+            : code === 'auth/popup-closed-by-user'
+              ? 'Cerraste la ventana de confirmación de Google.'
+              : code === 'auth/requires-recent-login'
+                ? 'No se pudo confirmar el inicio de sesión reciente. Vuelve a iniciar sesión e inténtalo otra vez.'
+                : error instanceof Error ? error.message : 'No se pudo borrar la cuenta. Inténtalo de nuevo.',
+      );
+    } finally {
+      setDeletingAccount(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-cream px-4 pb-16 pt-24 dark:bg-[#1c211a]">
       <div className="mx-auto max-w-3xl space-y-6 py-8">
@@ -157,16 +239,16 @@ export function EditProfilePage() {
             Número de WhatsApp
             <input type="tel" inputMode="numeric" value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="7711234567" maxLength={10} autoComplete="tel-national" className="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 font-normal text-ink outline-none focus:border-brand-500 dark:border-[#4b5847] dark:bg-[#20251f] dark:text-ink-50" />
           </label>
-          {phoneChanged && (
+          {needsPhoneConsent && (
             <label className="flex items-start gap-2.5 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
               <input type="checkbox" checked={acceptedPhoneUse} onChange={(event) => setAcceptedPhoneUse(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-brand-600" />
-              <span>Consiento que IxmiPlace use este número para completar mi perfil y facilitar los contactos que yo elija. <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline dark:text-brand-300">Aviso de Privacidad</Link>.</span>
+              <span>Consiento que IxmiPlace guarde este número de forma privada y lo entregue mediante un enlace de WhatsApp a usuarios con correo verificado cuando autorice mostrarlo en un anuncio. Las consultas tienen límites antiabuso. <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline dark:text-brand-300">Aviso de Privacidad</Link>.</span>
             </label>
           )}
           <PrivacyNoticeInline kind="profile" />
           {profileError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{profileError}</p>}
           {profileSuccess && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{profileSuccess}</p>}
-          <button type="button" onClick={() => void saveProfile()} disabled={profileSaving || (phoneChanged && !acceptedPhoneUse)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={() => void saveProfile()} disabled={profileSaving || (needsPhoneConsent && !acceptedPhoneUse)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50">
             <Save className="h-4 w-4" /> {profileSaving ? 'Guardando…' : 'Guardar perfil'}
           </button>
         </section>
@@ -204,6 +286,32 @@ export function EditProfilePage() {
               Tu cuenta inicia sesión con Google; esa contraseña se administra desde tu cuenta de Google y no puede cambiarse aquí.
             </p>
           )}
+        </section>
+
+        <section className="space-y-4 rounded-2xl border border-red-200 bg-white p-6 shadow-sm dark:border-red-900/70 dark:bg-[#293027]">
+          <div className="flex items-start gap-3">
+            <Trash2 className="mt-1 h-5 w-5 shrink-0 text-red-600" />
+            <div>
+              <h2 className="text-lg font-bold text-red-800 dark:text-red-300">Eliminar mi cuenta</h2>
+              <p className="mt-1 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+                Esta acción es permanente. Se borrarán tu perfil, publicaciones, imágenes de tus anuncios, mensajes asociados, favoritos, reportes enviados, notificaciones e historial. Primero volverás a confirmar tu identidad.
+              </p>
+            </div>
+          </div>
+          {hasPasswordProvider && (
+            <label className="block text-sm font-semibold text-ink-700 dark:text-ink-200">
+              Contraseña actual
+              <input type="password" value={deletePassword} onChange={(event) => setDeletePassword(event.target.value)} autoComplete="current-password" className="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 font-normal text-ink outline-none focus:border-red-500 dark:border-[#4b5847] dark:bg-[#20251f] dark:text-ink-50" />
+            </label>
+          )}
+          <label className="block text-sm font-semibold text-ink-700 dark:text-ink-200">
+            Escribe ELIMINAR para confirmar
+            <input value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} autoComplete="off" maxLength={20} className="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 font-normal text-ink outline-none focus:border-red-500 dark:border-[#4b5847] dark:bg-[#20251f] dark:text-ink-50" />
+          </label>
+          {deleteError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{deleteError}</p>}
+          <button type="button" onClick={() => void deleteAccount()} disabled={deletingAccount || deleteConfirmation !== 'ELIMINAR' || (hasPasswordProvider && !deletePassword)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">
+            <Trash2 className="h-4 w-4" /> {deletingAccount ? 'Borrando cuenta y datos…' : 'Borrar permanentemente mi cuenta'}
+          </button>
         </section>
       </div>
     </main>

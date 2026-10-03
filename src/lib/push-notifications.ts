@@ -6,6 +6,7 @@ import {
   onMessage,
   type MessagePayload,
 } from 'firebase/messaging';
+import { getToken as getAppCheckToken } from 'firebase/app-check';
 import {
   deleteDoc,
   doc,
@@ -13,7 +14,7 @@ import {
   serverTimestamp,
   setDoc,
 } from 'firebase/firestore';
-import { app, auth, db } from './firebase';
+import { app, appCheck, auth, db } from './firebase';
 
 const VAPID_KEY = import.meta.env
   .VITE_FB_VAPID_KEY as string | undefined;
@@ -278,7 +279,7 @@ export async function enablePushNotifications(
         serverTimestamp(),
 
       privacyConsentVersion:
-        '2026-09-26-v3',
+        '2026-09-30-v4',
 
       privacyConsentAt:
         serverTimestamp(),
@@ -382,9 +383,16 @@ export async function requestPushDelivery(
     return;
   }
 
+  if (!appCheck) {
+    console.warn('App Check no está configurado; se omitió la llamada de push.');
+    return;
+  }
+
   try {
-    const idToken =
-      await currentUser.getIdToken();
+    const [idToken, appCheckResult] = await Promise.all([
+      currentUser.getIdToken(),
+      getAppCheckToken(appCheck),
+    ]);
 
     const response = await fetch(
       '/api/push',
@@ -394,6 +402,9 @@ export async function requestPushDelivery(
         headers: {
           Authorization:
             `Bearer ${idToken}`,
+
+          'X-Firebase-AppCheck':
+            appCheckResult.token,
 
           'Content-Type':
             'application/json',

@@ -62,13 +62,13 @@ export function CompleteProfilePage() {
           <div className="text-5xl">📱</div>
           <h1 className="text-2xl font-bold">Completa tu perfil</h1>
           <p className="text-sm text-gray-500">
-            Necesitamos tu WhatsApp para que los interesados te contacten.
+            Guarda tu WhatsApp de forma privada; solo se entrega a usuarios con correo verificado si autorizas el contacto.
           </p>
         </div>
 
         <label className="flex items-start gap-2.5 text-sm leading-relaxed text-ink-600">
           <input type="checkbox" checked={phoneConsent} onChange={(event) => setPhoneConsent(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-brand-600" />
-          <span>Consiento que IxmiPlace use este teléfono para completar mi perfil y facilitar el contacto por las funciones que yo elija. <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline">Ver Aviso de Privacidad</Link>.</span>
+          <span>Consiento que IxmiPlace guarde este teléfono de forma privada y lo entregue a usuarios con correo verificado cuando yo autorice mostrarlo en un anuncio. <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline">Ver Aviso de Privacidad</Link>.</span>
         </label>
 
         <PrivacyNoticeInline kind="profile" />

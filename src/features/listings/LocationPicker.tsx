@@ -49,7 +49,8 @@ export function LocationPicker({ initialPosition, onChange }: LocationPickerProp
   // 🔧 Ya no es un onSubmit de <form>, es una función normal
   // que se llama desde el botón (onClick) y desde el input (onKeyDown → Enter)
   const handleSearch = useCallback(async () => {
-    if (!query.trim() || searching) return;
+    const searchTerm = query.trim().normalize('NFC').slice(0, 120);
+    if (searchTerm.length < 2 || searching) return;
 
     setSearching(true);
     setSearchError('');
@@ -58,7 +59,7 @@ export function LocationPicker({ initialPosition, onChange }: LocationPickerProp
     try {
       const params = new URLSearchParams({
         format: 'json',
-        q: query,
+        q: searchTerm,
         countrycodes: 'mx',
         limit: '5',
         viewbox: '-99.4,20.65,-99.0,20.3',
@@ -133,7 +134,8 @@ export function LocationPicker({ initialPosition, onChange }: LocationPickerProp
           <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => setQuery(e.target.value.slice(0, 120))}
+            maxLength={120}
             onKeyDown={handleKeyDown}
             placeholder="Busca una calle, colonia o referencia…"
             className="w-full rounded-xl border border-cream-300 bg-cream-50 py-2.5 pl-9 pr-3

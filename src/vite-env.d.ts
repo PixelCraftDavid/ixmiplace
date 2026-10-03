@@ -9,10 +9,10 @@ interface ImportMetaEnv {
   readonly VITE_FB_SENDER_ID: string;
   readonly VITE_FB_APP_ID: string;
   readonly VITE_FB_VAPID_KEY: string;
+  readonly VITE_FB_APPCHECK_SITE_KEY?: string;
 
   // Cloudinary
   readonly VITE_CLOUDINARY_CLOUD_NAME: string;
-  readonly VITE_CLOUDINARY_UPLOAD_PRESET: string;
 }
 
 interface ImportMeta {

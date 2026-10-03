@@ -23,20 +23,6 @@ export function formatPrice(price: number): string {
 }
 
 // ============================================================
-// Link de WhatsApp
-// ============================================================
-
-export function whatsappLink(
-  phone: string,
-  message = 'Hola, vi tu anuncio en IxmiPlace. ¿Sigue disponible?'
-): string {
-  const cleanPhone = phone.replace(/\D/g, '');
-  // México requiere el prefijo 52
-  const fullPhone = cleanPhone.length === 10 ? `52${cleanPhone}` : cleanPhone;
-  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
-}
-
-// ============================================================
 // Fechas relativas
 // ============================================================
 

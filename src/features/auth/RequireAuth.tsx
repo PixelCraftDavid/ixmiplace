@@ -10,6 +10,7 @@ interface Props {
 export function RequireAuth({ requireVerified = true }: Props) {
   const { fbUser, profile, loading } = useAuth();
   const loc = useLocation();
+  const isAccountSettings = loc.pathname === '/perfil';
 
   // 1. Cargando sesión — primera vez de la app
   if (loading) {
@@ -30,12 +31,12 @@ export function RequireAuth({ requireVerified = true }: Props) {
   }
 
   // 3. Correo no verificado
-  if (requireVerified && !fbUser.emailVerified) {
+  if (requireVerified && !fbUser.emailVerified && !isAccountSettings) {
     return <Navigate to="/verify-email" replace />;
   }
 
   // 4. Perfil aún no cargado
-  if (!profile) {
+  if (!profile && !isAccountSettings) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
         <HouseLoader variant="line" size="md" message="Cargando perfil…" />
@@ -43,12 +44,12 @@ export function RequireAuth({ requireVerified = true }: Props) {
     );
   }
 
-  if (profile.isBanned && loc.pathname !== '/cuenta-suspendida') {
+  if (!isAccountSettings && profile?.isBanned && loc.pathname !== '/cuenta-suspendida') {
     return <Navigate to="/cuenta-suspendida" replace />;
   }
 
   if (
-    (profile.termsAcceptedVersion !== TERMS_VERSION ||
+    !isAccountSettings && profile && (profile.termsAcceptedVersion !== TERMS_VERSION ||
       profile.adultConfirmedVersion !== TERMS_VERSION ||
       profile.privacyConsentVersion !== PRIVACY_NOTICE_VERSION) &&
     loc.pathname !== '/aceptar-terminos'
@@ -57,7 +58,7 @@ export function RequireAuth({ requireVerified = true }: Props) {
   }
 
   // 5. Sin teléfono → completar perfil
-  if (!profile.phone && loc.pathname !== '/complete-profile') {
+  if (!isAccountSettings && profile && !profile.phone && loc.pathname !== '/complete-profile') {
     return <Navigate to="/complete-profile" replace />;
   }
 

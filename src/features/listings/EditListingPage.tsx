@@ -6,6 +6,7 @@ import { db, auth } from '../../lib/firebase';
 import { ListingForm } from './ListingForm';
 import type { ListingInput } from '../../lib/zod-schemas';
 import type { Listing } from '../../types/models';
+import { isSafeDocumentId } from '../../lib/document-id';
 
 type LoadState = 'loading' | 'ready' | 'not-found' | 'forbidden' | 'error';
 
@@ -19,7 +20,7 @@ export function EditListingPage() {
 
   useEffect(() => {
     async function load() {
-      if (!id || !auth.currentUser) {
+      if (!isSafeDocumentId(id) || !auth.currentUser) {
         setState('not-found');
         return;
       }
@@ -44,6 +45,7 @@ export function EditListingPage() {
         const privateDetailsSnap = await getDoc(doc(db, 'listingPrivateDetails', id));
         setListing({
           ...data,
+          whatsapp: privateDetailsSnap.data()?.whatsapp ?? data.whatsapp,
           address:
             privateDetailsSnap.data()?.address ??
             data.address ??
@@ -93,7 +95,6 @@ export function EditListingPage() {
       colonia: data.colonia.trim(),
       lat: data.lat,
       lng: data.lng,
-      whatsapp: data.whatsapp,
       showPhone: data.showPhone ?? true,
       availability: data.availability ?? listing.availability,
       availabilityConfirmedAt: Date.now(),
@@ -139,6 +140,7 @@ export function EditListingPage() {
       {
         ownerId: auth.currentUser.uid,
         address: data.address?.trim() ?? '',
+        whatsapp: data.whatsapp,
         updatedAt: Date.now(),
       },
       { merge: true }

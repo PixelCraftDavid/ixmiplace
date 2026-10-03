@@ -18,7 +18,7 @@ Para las credenciales privadas, crea una cuenta de servicio dedicada en Google C
 
 ## Publicar y activar
 
-1. Publica en Firebase Console el contenido actualizado de `firestore.rules`; permite que cada cuenta gestione solo sus propios tokens push y actualiza la versión del Aviso de Privacidad a `2026-09-26-v3`.
+1. Publica en Firebase Console el contenido actualizado de `firestore.rules`; permite que cada cuenta gestione solo sus propios tokens push y actualiza la versión del Aviso de Privacidad a `2026-09-30-v4`.
 2. Guarda las variables de Vercel y vuelve a desplegar la rama de producción.
 3. Cada usuario debe entrar, aceptar la versión nueva del aviso, abrir **Notificaciones** y pulsar **Activar notificaciones**. También debe aceptar el permiso del navegador.
 4. En iPhone/iPad, instala IxmiPlace desde **Compartir → Añadir a pantalla de inicio** y activa push desde la PWA instalada (iOS/iPadOS 16.4 o posterior).

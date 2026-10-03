@@ -152,16 +152,17 @@ export function useFavoriteListings() {
 
         try {
           const listingPromises = listingIds.map((id) =>
-            getDoc(doc(db, 'listings', id))
+            getDoc(doc(db, 'listings', id)).catch(() => null)
           );
           const listingSnaps = await Promise.all(listingPromises);
 
-          const data: Listing[] = listingSnaps
-            .filter((s) => s.exists())
-            .map((s) => ({
-              id: s.id,
-              ...(s.data() as Omit<Listing, 'id'>),
-            }));
+          const data: Listing[] = listingSnaps.flatMap((snapshot) => {
+            if (!snapshot?.exists() || snapshot.data()?.status !== 'published') return [];
+            return [{
+              id: snapshot.id,
+              ...(snapshot.data() as Omit<Listing, 'id'>),
+            }];
+          });
 
           setListings(data);
         } catch (err) {

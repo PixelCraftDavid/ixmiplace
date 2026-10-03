@@ -5,6 +5,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthContext';
 import type { ListingHistoryEntry } from '../../types/models';
+import { isSafeDocumentId } from '../../lib/document-id';
 
 export function ListingHistoryPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,7 +14,10 @@ export function ListingHistoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id || !fbUser) return;
+    if (!isSafeDocumentId(id) || !fbUser) {
+      setLoading(false);
+      return;
+    }
     const historyQuery = query(
       collection(db, 'listingHistory'),
       where('listingId', '==', id)

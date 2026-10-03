@@ -34,7 +34,7 @@ export function TermsPage() {
           <TermsSection title="3. Reglas para publicar">
             <p>Al publicar, declaras que tienes autorización para ofrecer el inmueble o habitación y que los datos, precios, disponibilidad, fotografías y demás contenido son correctos y están actualizados. También declaras que tienes derecho a usar las fotografías y materiales que subas.</p>
             <p>No publiques anuncios falsos, engañosos, duplicados, fraudulentos, ilegales, que vulneren derechos de terceros o que incluyan datos personales de otra persona sin autorización. No suplantes identidades ni uses IxmiPlace para hostigar, discriminar ilegalmente, enviar spam o intentar obtener pagos mediante engaño.</p>
-            <p>La zona, ubicación del mapa, descripción, precio y fotografías de anuncios aprobados pueden quedar visibles públicamente. El teléfono se muestra de acuerdo con la opción seleccionada al publicar. La dirección exacta se guarda separada del anuncio en las publicaciones nuevas; algunas publicaciones antiguas pueden conservarla en su ficha hasta que el administrador complete su migración. Evita escribirla en la descripción.</p>
+            <p>La zona, ubicación del mapa, descripción, precio y fotografías de anuncios aprobados pueden quedar visibles públicamente. El teléfono de WhatsApp se guarda separado del anuncio y, si el propietario autorizó mostrarlo, se entrega bajo demanda a cuentas verificadas con medidas antiabuso; al continuar a WhatsApp, el número queda visible para quien contacta. La dirección exacta también se guarda aparte. Evita incluir datos privados en la descripción.</p>
           </TermsSection>
 
           <TermsSection title="4. Trato entre usuarios y seguridad">

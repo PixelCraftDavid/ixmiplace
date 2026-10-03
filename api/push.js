@@ -1,6 +1,8 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getAppCheck } from 'firebase-admin/app-check';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
+import { logApiFailure, logSecurityEvent, parseBody, requestSchemas } from './_lib/input-security.js';
 
 const APP_ORIGIN = process.env.APP_ORIGIN || 'https://ixmiplace.vercel.app';
 
@@ -250,6 +252,7 @@ export default async function handler(req, res) {
   const origin = req.headers.origin;
 
   if (origin && origin !== APP_ORIGIN) {
+    logSecurityEvent(req, 'blocked_origin');
     return respond(res, 403, {
       error: 'Origen no permitido.',
     });
@@ -276,7 +279,7 @@ export default async function handler(req, res) {
 
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Authorization, Content-Type',
+    'Authorization, Content-Type, X-Firebase-AppCheck',
   );
 
   if (req.method === 'OPTIONS') {
@@ -284,6 +287,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'POST') {
+    logSecurityEvent(req, 'blocked_method');
     return respond(res, 405, {
       error: 'Método no permitido.',
     });
@@ -308,13 +312,22 @@ export default async function handler(req, res) {
       });
     }
 
+    const appCheckToken = req.headers['x-firebase-appcheck'];
+    if (typeof appCheckToken !== 'string') {
+      return respond(res, 401, {
+        error: 'La aplicación no pasó la verificación App Check.',
+      });
+    }
+
     const app = getFirebaseAdmin();
 
     failureStage =
       'firebase_auth_token_lookup';
 
-    const decoded =
-      await verifyFirebaseIdToken(idToken);
+    const [decoded] = await Promise.all([
+      verifyFirebaseIdToken(idToken),
+      getAppCheck(app).verifyToken(appCheckToken),
+    ]);
 
     if (!decoded) {
       return respond(res, 401, {
@@ -350,18 +363,14 @@ export default async function handler(req, res) {
       });
     }
 
-    const { type, id } = req.body || {};
-
-    if (
-      !VALID_EVENTS.has(type) ||
-      typeof id !== 'string' ||
-      id.length < 1 ||
-      id.length > 180
-    ) {
+    const input = parseBody(requestSchemas.push, req.body);
+    if (!input || !VALID_EVENTS.has(input.type)) {
+      logSecurityEvent(req, 'invalid_push_event', decoded.uid);
       return respond(res, 400, {
         error: 'Evento no válido.',
       });
     }
+    const { type, id } = input;
 
     let reserved;
     let recipientIds = [];
@@ -654,21 +663,7 @@ export default async function handler(req, res) {
       }
     }
 
-    console.error(
-      `Error en el servicio de push [${failureStage}]:`,
-      {
-        code:
-          error?.code || 'unknown',
-
-        message:
-          error?.message ||
-          String(error),
-
-        details:
-          error?.details ||
-          undefined,
-      },
-    );
+    logApiFailure(req, 'push', failureStage, error);
 
     return respond(res, 500, {
       error:

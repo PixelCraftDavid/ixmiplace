@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { collection, doc, getDoc, increment, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import {
   ArrowLeft,
   MapPin,
-  MessageCircle,
   Bed,
   Bath,
   Car,
@@ -21,7 +20,6 @@ import { useAuth } from '../auth/AuthContext';
 import { internalMessageSchema, reportSchema, type InternalMessageInput, type ReportInput } from '../../lib/zod-schemas';
 import {
   formatPrice,
-  whatsappLink,
   timeAgo,
   availabilityColor,
 } from '../../lib/utils';
@@ -35,12 +33,14 @@ import {
 import { HouseLoader } from '../../components/ui/HouseLoader';
 import { FavoriteButton } from '../favorites/FavoriteButton';
 import { LocationView } from './LocationView';
-import type { Listing, AppUser } from '../../types/models';
+import type { Listing, PublicProfile } from '../../types/models';
 import { trackListingMetric } from '../../lib/listing-metrics';
 import { isListingExpired } from '../../lib/listing-expiration';
 import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline';
-import { PRIVACY_NOTICE_VERSION } from '../legal/legalVersions';
 import { requestPushDelivery } from '../../lib/push-notifications';
+import { WhatsAppContactButton } from './WhatsAppContactButton';
+import { postProtectedApi } from '../../lib/protected-api';
+import { isSafeDocumentId } from '../../lib/document-id';
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -48,7 +48,7 @@ export function ListingDetailPage() {
   const { fbUser, profile } = useAuth();
 
   const [listing, setListing] = useState<Listing | null>(null);
-  const [owner, setOwner] = useState<AppUser | null>(null);
+  const [owner, setOwner] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentPhoto, setCurrentPhoto] = useState(0);
@@ -63,7 +63,11 @@ export function ListingDetailPage() {
   const [contacting, setContacting] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
+    if (!isSafeDocumentId(id)) {
+      setError('La publicación no existe o fue eliminada.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
 
@@ -90,9 +94,9 @@ export function ListingDetailPage() {
 
         // 🆕 Traer el perfil del dueño para mostrar su nombre real
         try {
-          const ownerSnap = await getDoc(doc(db, 'users', data.ownerId));
+          const ownerSnap = await getDoc(doc(db, 'publicProfiles', data.ownerId));
           if (ownerSnap.exists()) {
-            setOwner(ownerSnap.data() as AppUser);
+            setOwner(ownerSnap.data() as PublicProfile);
           }
         } catch (err) {
           console.error('Error cargando perfil del propietario:', err);
@@ -142,23 +146,12 @@ export function ListingDetailPage() {
     setReportError('');
 
     try {
-      const reportId = `${fbUser.uid}_${listing.id}`;
-      const batch = writeBatch(db);
-      batch.set(doc(db, 'reports', reportId), {
+      const result = await postProtectedApi<{ reportId: string }>('/api/report', {
         listingId: listing.id,
-        reporterId: fbUser.uid,
         reason: parsed.data.reason,
         ...(parsed.data.comment ? { comment: parsed.data.comment } : {}),
-        status: 'open',
-        createdAt: Date.now(),
-        privacyConsentVersion: PRIVACY_NOTICE_VERSION,
-        privacyConsentAt: serverTimestamp(),
       });
-      batch.update(doc(db, 'listings', listing.id), {
-        reportsCount: increment(1),
-      });
-      await batch.commit();
-      await requestPushDelivery('report_created', reportId);
+      await requestPushDelivery('report_created', result.reportId);
       setReportSent(true);
     } catch (err) {
       console.error('Error enviando reporte:', err);
@@ -183,20 +176,12 @@ export function ListingDetailPage() {
     setContacting(true);
     setContactError('');
     try {
-      const messageRef = doc(collection(db, 'messages'));
-      await setDoc(messageRef, {
+      const result = await postProtectedApi<{ messageId: string }>('/api/message', {
         listingId: listing.id,
-        senderId: fbUser.uid,
-        recipientId: listing.ownerId,
-        senderName: profile.displayName,
         subject: parsed.data.subject,
         message: parsed.data.message,
-        status: 'unread',
-        createdAt: Date.now(),
-        privacyConsentVersion: PRIVACY_NOTICE_VERSION,
-        privacyConsentAt: serverTimestamp(),
       });
-      await requestPushDelivery('message_created', messageRef.id);
+      await requestPushDelivery('message_created', result.messageId);
       setContactSent(true);
     } catch (error) {
       console.error('Error enviando mensaje:', error);
@@ -242,11 +227,6 @@ export function ListingDetailPage() {
   }
 
   const meta = availabilityMeta(listing.availability);
-  const wa = whatsappLink(
-    listing.whatsapp,
-    `Hola, vi tu anuncio "${listing.title}" en IxmiPlace. ¿Sigue disponible?`
-  );
-
   const hasDetails =
     listing.bedrooms ||
     listing.bathrooms ||
@@ -480,23 +460,25 @@ export function ListingDetailPage() {
 
               {/* CTA WHATSAPP */}
               <div className="rounded-2xl border border-cream-200 bg-white p-5 shadow-sm">
-                <a
-                  href={wa}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackListingMetric(listing.id, 'whatsappContactsCount')}
-                  className="group flex w-full items-center justify-center gap-2
-                             rounded-xl bg-gradient-to-r from-green-500 to-green-600
-                             py-3.5 font-semibold text-white
-                             shadow-lg shadow-green-500/30 transition
-                             hover:shadow-xl hover:shadow-green-500/40 hover:brightness-110"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  Contactar por WhatsApp
-                </a>
-                <p className="mt-3 text-center text-xs text-ink-400">
-                  Respuesta directa con el propietario
-                </p>
+                {fbUser?.emailVerified && fbUser.uid !== listing.ownerId ? (
+                  <>
+                    <WhatsAppContactButton
+                      listingId={listing.id}
+                      className="group flex w-full items-center justify-center gap-2
+                                 rounded-xl bg-gradient-to-r from-green-500 to-green-600
+                                 py-3.5 font-semibold text-white
+                                 shadow-lg shadow-green-500/30 transition
+                                 hover:shadow-xl hover:shadow-green-500/40 hover:brightness-110"
+                    />
+                    <p className="mt-3 text-center text-xs text-ink-400">Contacto protegido para cuentas verificadas</p>
+                  </>
+                ) : fbUser?.uid === listing.ownerId ? (
+                  <p className="text-center text-sm text-ink-500">Este es tu anuncio.</p>
+                ) : (
+                  <Link to="/login" className="flex w-full items-center justify-center rounded-xl bg-green-700 py-3.5 font-semibold text-white hover:bg-green-800">
+                    Inicia sesión para contactar
+                  </Link>
+                )}
                 {fbUser?.uid !== listing.ownerId && (
                   <button
                     type="button"
@@ -587,19 +569,16 @@ export function ListingDetailPage() {
       </div>
 
       {/* BOTÓN FLOTANTE WHATSAPP (móvil) */}
-      <a
-        href={wa}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => trackListingMetric(listing.id, 'whatsappContactsCount')}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center
-                   rounded-full bg-gradient-to-br from-green-500 to-green-600
-                   text-white shadow-2xl shadow-green-500/40
-                   transition hover:scale-110 lg:hidden"
-        aria-label="Contactar por WhatsApp"
-      >
-        <MessageCircle className="h-6 w-6" />
-      </a>
+      {fbUser?.emailVerified && fbUser.uid !== listing.ownerId && (
+        <WhatsAppContactButton
+          listingId={listing.id}
+          iconOnly
+          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center
+                     rounded-full bg-gradient-to-br from-green-500 to-green-600
+                     text-white shadow-2xl shadow-green-500/40
+                     transition hover:scale-110 lg:hidden"
+        />
+      )}
 
       {/* Toast copiado */}
       {copied && (

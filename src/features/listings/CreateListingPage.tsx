@@ -43,7 +43,6 @@ export function CreateListingPage() {
       colonia: data.colonia.trim(),
       lat: data.lat,
       lng: data.lng,
-      whatsapp: data.whatsapp,
       showPhone: data.showPhone ?? true,
       photos,
       status: 'pending',
@@ -93,10 +92,11 @@ export function CreateListingPage() {
     const listingRef = doc(collection(db, 'listings'));
     const batch = writeBatch(db);
     batch.set(listingRef, listing);
-    if (data.address?.trim()) {
+    if (data.address?.trim() || data.whatsapp) {
       batch.set(doc(db, 'listingPrivateDetails', listingRef.id), {
         ownerId: auth.currentUser.uid,
-        address: data.address.trim(),
+        ...(data.address?.trim() ? { address: data.address.trim() } : {}),
+        whatsapp: data.whatsapp,
         updatedAt: now,
       });
     }

@@ -1,26 +1,28 @@
 import { z } from 'zod';
 import { LISTING_LIMITS } from './constants';
 
+const stripUnsafeControls = (value: string) => value
+  .normalize('NFC')
+  .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+const plainText = (min: number, max: number) => z.string()
+  .trim()
+  .transform(stripUnsafeControls)
+  .pipe(z.string().min(min).max(max).refine((value) => !/<\s*\/?\s*[a-z][^>]*>/i.test(value)));
+
+export const displayNameSchema = z.string()
+  .trim()
+  .transform(stripUnsafeControls)
+  .pipe(z.string().min(2).max(60).refine((value) => !/[<>]/.test(value)));
+
 // ============================================================
 // Crear/editar una publicación
 // ============================================================
 
 export const listingSchema = z
   .object({
-    title: z
-      .string()
-      .trim()
-      .min(LISTING_LIMITS.titleMin, `Mínimo ${LISTING_LIMITS.titleMin} caracteres`)
-      .max(LISTING_LIMITS.titleMax, `Máximo ${LISTING_LIMITS.titleMax} caracteres`),
+    title: plainText(LISTING_LIMITS.titleMin, LISTING_LIMITS.titleMax),
 
-    description: z
-      .string()
-      .trim()
-      .min(
-        LISTING_LIMITS.descriptionMin,
-        `Describe tu propiedad (mínimo ${LISTING_LIMITS.descriptionMin} caracteres)`
-      )
-      .max(LISTING_LIMITS.descriptionMax, `Máximo ${LISTING_LIMITS.descriptionMax} caracteres`),
+    description: plainText(LISTING_LIMITS.descriptionMin, LISTING_LIMITS.descriptionMax),
 
     category: z.enum([
       'casa',
@@ -41,22 +43,18 @@ export const listingSchema = z
 
     priceUnit: z.enum(['mes', 'noche', 'total', 'estancia']).optional(),
 
-    establishmentName: z.string().trim().max(100).optional().or(z.literal('')),
-    roomType: z.string().trim().max(80).optional().or(z.literal('')),
+    establishmentName: plainText(0, 100).optional().or(z.literal('')),
+    roomType: plainText(0, 80).optional().or(z.literal('')),
     stayDurationHours: z.number().int().min(1).max(24).optional(),
-    checkInTime: z.string().optional().or(z.literal('')),
-    checkOutTime: z.string().optional().or(z.literal('')),
+    checkInTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional().or(z.literal('')),
+    checkOutTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional().or(z.literal('')),
     reception24h: z.boolean().optional(),
     foodAvailable: z.boolean().optional(),
-    foodDescription: z.string().trim().max(300).optional().or(z.literal('')),
+    foodDescription: plainText(0, 300).optional().or(z.literal('')),
 
-    colonia: z
-      .string()
-      .trim()
-      .min(2, 'Indica la colonia o zona')
-      .max(80, 'Máximo 80 caracteres'),
+    colonia: plainText(2, 80),
 
-    address: z.string().trim().max(200).optional().or(z.literal('')),
+    address: plainText(0, 200).optional().or(z.literal('')),
 
     // Ubicación en el mapa (requerida)
     lat: z
@@ -77,7 +75,7 @@ export const listingSchema = z
     parkingSpots: z.number().int().min(0).max(50).optional(),
     areaM2: z.number().positive().max(100_000).optional(),
 
-    amenities: z.array(z.string()).optional(),
+    amenities: z.array(plainText(1, 40)).max(30).optional(),
 
     // Reglas de la casa (solo aplican a rentas y hospedaje)
     maxGuests: z
@@ -100,7 +98,7 @@ export const listingSchema = z
     // Se exige a nivel de UI (ListingForm con requireConfirmation) y de
     // handleSubmit; aquí solo se tipa para no romper el formulario de edición.
     publicationConsentAccepted: z.boolean(),
-  })
+  }).strict()
   // Validación condicional: unidad de precio coherente con la operación
   .refine(
     (data) => {
@@ -141,14 +139,14 @@ export type ListingInput = z.infer<typeof listingSchema>;
 
 export const reportSchema = z.object({
   reason: z.enum(['spam', 'fraude', 'no_existe', 'duplicado', 'otro']),
-  comment: z.string().trim().max(500).optional().or(z.literal('')),
-});
+  comment: plainText(0, 500).optional().or(z.literal('')),
+}).strict();
 
 export type ReportInput = z.infer<typeof reportSchema>;
 
 export const internalMessageSchema = z.object({
-  subject: z.string().trim().min(3, 'Escribe un asunto').max(100, 'Máximo 100 caracteres'),
-  message: z.string().trim().min(10, 'Escribe al menos 10 caracteres').max(1000, 'Máximo 1000 caracteres'),
-});
+  subject: plainText(3, 100),
+  message: plainText(10, 1000),
+}).strict();
 
 export type InternalMessageInput = z.infer<typeof internalMessageSchema>;

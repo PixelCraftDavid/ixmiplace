@@ -18,12 +18,13 @@ import { PrivacyNoticeInline } from '@/components/legal/PrivacyNoticeInline';
 import { LegalAcceptanceFields } from '@/components/legal/LegalAcceptanceFields';
 import { recordLegalAcceptance } from '@/features/legal/recordLegalAcceptance';
 import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '@/features/legal/legalVersions';
+import { displayNameSchema } from '@/lib/zod-schemas';
 
 const schema = z.object({
-  displayName: z.string().min(2, 'Mínimo 2 caracteres').max(60),
-  email: z.string().email('Correo inválido'),
+  displayName: displayNameSchema,
+  email: z.string().trim().toLowerCase().email('Correo inválido').max(254),
   password: z.string().min(8, 'Mínimo 8 caracteres'),
-});
+}).strict();
 type FormData = z.infer<typeof schema>;
 
 function traducirError(code: string): string {
@@ -88,6 +89,7 @@ export function RegisterPage() {
       });
 
       await sendEmailVerification(cred.user);
+      window.sessionStorage.setItem('ixmiplace:verification-email-sent-at', String(Date.now()));
       nav('/verify-email');
     } catch (e: unknown) {
       const code = (e as { code?: string })?.code ?? '';

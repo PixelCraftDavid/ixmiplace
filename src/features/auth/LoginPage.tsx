@@ -7,19 +7,21 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { auth } from '@/lib/firebase';
 import { HouseScene } from '@/components/three/HouseScene';
 import { PrivacyNoticeInline } from '@/components/legal/PrivacyNoticeInline';
 
 const schema = z.object({
-  email: z.string().email('Correo inválido'),
+  email: z.string().trim().toLowerCase().email('Correo inválido').max(254),
   password: z.string().min(1, 'Requerido'),
-});
+}).strict();
 type FormData = z.infer<typeof schema>;
 
 export function LoginPage() {
   const nav = useNavigate();
+  const location = useLocation();
+  const accountDeleted = (location.state as { accountDeleted?: boolean } | null)?.accountDeleted === true;
   const [error, setError] = useState('');
 
   const {
@@ -33,8 +35,13 @@ export function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
       nav('/');
-    } catch {
-      setError('No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.');
+    } catch (loginError) {
+      const code = (loginError as { code?: string })?.code;
+      setError(code === 'auth/too-many-requests'
+        ? 'Firebase limitó temporalmente los intentos por actividad inusual. Espera un poco y vuelve a intentarlo; tu cuenta no se suspendió.'
+        : code === 'auth/network-request-failed'
+          ? 'No hay conexión con el servicio de acceso. Comprueba tu internet e inténtalo de nuevo.'
+          : 'No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.');
     }
   }
 
@@ -43,8 +50,13 @@ export function LoginPage() {
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
       nav('/');
-    } catch {
-      setError('No se pudo iniciar con Google. Inténtalo de nuevo.');
+    } catch (loginError) {
+      const code = (loginError as { code?: string })?.code;
+      setError(code === 'auth/too-many-requests'
+        ? 'Firebase limitó temporalmente los intentos por actividad inusual. Espera un poco y vuelve a intentarlo; tu cuenta no se suspendió.'
+        : code === 'auth/popup-closed-by-user'
+          ? 'Cerraste la ventana de Google antes de terminar el acceso.'
+          : 'No se pudo iniciar con Google. Inténtalo de nuevo.');
     }
   }
 
@@ -61,6 +73,12 @@ export function LoginPage() {
           </div>
 
           <PrivacyNoticeInline kind="account" />
+
+          {accountDeleted && (
+            <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              Tu cuenta y los datos asociados se eliminaron correctamente.
+            </p>
+          )}
 
           <button
             onClick={handleGoogle}

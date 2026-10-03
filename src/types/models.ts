@@ -19,6 +19,7 @@ export interface AppUser {
   termsAcceptedVersion?: string;
   adultConfirmedVersion?: string;
   privacyConsentVersion?: string;
+  phoneConsentVersion?: string;
 }
 
 export type ListingCategory =
@@ -107,7 +108,7 @@ export interface Listing {
   ownerEmailVerified?: boolean;
 
   // Contacto
-  whatsapp: string;      // solo visible cuando status === 'published'
+  whatsapp?: string;     // legado; mover a listingPrivateDetails y no exponer en lecturas públicas
   showPhone: boolean;
 
   // Moderación
@@ -204,7 +205,4 @@ export interface PublicProfile {
   uid: string;
   displayName: string;
   photoURL?: string;
-  emailVerified: boolean;
-  createdAt: number;
-  isBanned?: boolean;
 }

@@ -11,6 +11,7 @@ import { NotificationsPage } from '../features/auth/NotificationsPage';
 import { MessagesPage } from '../features/auth/MessagesPage';
 import { PublicProfilePage } from '../features/auth/PublicProfilePage';
 import { SuspendedPage } from '../features/auth/SuspendedPage';
+import { EditProfilePage } from '../features/auth/EditProfilePage';
 
 import { CreateListingPage } from '../features/listings/CreateListingPage';
 import { EditListingPage } from '../features/listings/EditListingPage';
@@ -107,6 +108,8 @@ export function AppRouter() {
 
             <Route element={<RequireAuth />}>
               <Route path="/" element={<HomePage />} />
+
+              <Route path="/perfil" element={<EditProfilePage />} />
 
               <Route path="/publicar" element={<CreateListingPage />} />
 

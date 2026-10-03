@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { MapPin, MessageCircle, Bed, Bath } from 'lucide-react';
-import { whatsappLink, formatPrice, availabilityColor } from '../../lib/utils';
+import { MapPin, Bed, Bath } from 'lucide-react';
+import { formatPrice, availabilityColor } from '../../lib/utils';
 import {
   categoryEmoji,
   priceUnitLabel,
@@ -9,7 +9,7 @@ import {
 import { optimizedUrl } from '../../lib/cloudinary';
 import { FavoriteButton } from '../favorites/FavoriteButton';
 import type { Listing } from '../../types/models';
-import { trackListingMetric } from '../../lib/listing-metrics';
+import { WhatsAppContactButton } from './WhatsAppContactButton';
 
 interface Props {
   listing: Listing;
@@ -18,11 +18,6 @@ interface Props {
 export function ListingCard({ listing }: Props) {
   const meta = availabilityMeta(listing.availability);
   const cover = optimizedUrl(listing.photos[0], 800, 600);
-
-  const wa = whatsappLink(
-    listing.whatsapp,
-    `Hola, vi tu anuncio "${listing.title}" en IxmiPlace. ¿Sigue disponible?`
-  );
 
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-cream-200
@@ -109,21 +104,15 @@ export function ListingCard({ listing }: Props) {
           </div>
         )}
 
-        <a
-          href={wa}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={() => trackListingMetric(listing.id, 'whatsappContactsCount')}
+        <WhatsAppContactButton
+          listingId={listing.id}
           className="flex w-full items-center justify-center gap-2 rounded-xl
                      bg-gradient-to-r from-green-500 to-green-600 py-2.5
                      text-sm font-semibold text-white shadow-md
                      shadow-green-500/25 transition
                      hover:shadow-lg hover:shadow-green-500/40 hover:brightness-110"
-        >
-          <MessageCircle className="h-4 w-4" />
-          Contactar
-        </a>
+          label="Contactar por WhatsApp"
+        />
       </div>
     </article>
   );

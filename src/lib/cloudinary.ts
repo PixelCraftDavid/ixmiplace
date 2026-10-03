@@ -1,9 +1,9 @@
 import { LISTING_LIMITS } from './constants';
+import { getToken as getAppCheckToken } from 'firebase/app-check';
+import { appCheck, auth } from './firebase';
 
 // URL base de la API de subida de Cloudinary
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
 // ============================================================
 // Tipos
@@ -61,7 +61,7 @@ export interface UploadProgress {
       canvas.height = height;
       const context = canvas.getContext('2d');
 
-      if (!context) return file;
+      if (!context) throw new Error('Este navegador no pudo rasterizar la imagen.');
 
       context.drawImage(image, 0, 0, width, height);
       const blob = await new Promise<Blob | null>((resolve) =>
@@ -80,6 +80,48 @@ export interface UploadProgress {
   }
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+
+interface SignedUploadParameters {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  upload_preset: string;
+  folder: string;
+  public_id: string;
+  overwrite: boolean;
+  signature: string;
+}
+
+async function getSignedUploadParameters(): Promise<SignedUploadParameters> {
+  const user = auth.currentUser;
+  if (!user || !user.emailVerified) {
+    throw new Error('Inicia sesión y verifica tu correo antes de subir imágenes.');
+  }
+  if (!appCheck) throw new Error('La protección de subida aún no está configurada.');
+
+  const [idToken, appCheckResult] = await Promise.all([
+    user.getIdToken(),
+    getAppCheckToken(appCheck),
+  ]);
+  const response = await fetch('/api/cloudinary-signature', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      'X-Firebase-AppCheck': appCheckResult.token,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+    cache: 'no-store',
+  });
+  const params = await response.json().catch(() => null) as SignedUploadParameters | { error?: string } | null;
+  if (!response.ok || !params || !('signature' in params)) {
+    throw new Error(params && 'error' in params && params.error ? params.error : 'No se pudo autorizar la subida.');
+  }
+  if (params.cloudName !== CLOUD_NAME) {
+    throw new Error('La cuenta de Cloudinary no coincide con la configuración.');
+  }
+  return params;
+}
 
 export function validateImageFile(file: File): { ok: true } | { ok: false; error: string } {
   // 1. Tipo MIME
@@ -117,6 +159,17 @@ export function validateImageFile(file: File): { ok: true } | { ok: false; error
   return { ok: true };
 }
 
+async function hasValidImageSignature(file: File): Promise<boolean> {
+  const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+  const isWebp = String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF'
+    && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP';
+  return (file.type === 'image/jpeg' && isJpeg)
+    || (file.type === 'image/png' && isPng)
+    || (file.type === 'image/webp' && isWebp);
+}
+
 // ============================================================
 // Subida individual (con progreso)
 // ============================================================
@@ -125,23 +178,38 @@ export async function uploadImage(
   file: File,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<CloudinaryResponse> {
+  if (!CLOUD_NAME) {
+    throw new Error('La subida de imágenes no está configurada.');
+  }
+
   // Validar antes de subir
   const validation = validateImageFile(file);
   if (!validation.ok) {
     throw new Error(validation.error);
   }
 
-  const uploadFile = await compressImage(file);
+  if (!(await hasValidImageSignature(file))) {
+    throw new Error(`${file.name}: el contenido no coincide con un JPG, PNG o WebP válido.`);
+  }
 
-  // FormData con el preset unsigned
+  const [uploadFile, signedParams] = await Promise.all([
+    compressImage(file),
+    getSignedUploadParameters(),
+  ]);
+
   const formData = new FormData();
   formData.append('file', uploadFile);
-  formData.append('upload_preset', UPLOAD_PRESET);
-  formData.append('folder', 'ixmiplace/listings');
+  formData.append('api_key', signedParams.apiKey);
+  formData.append('timestamp', String(signedParams.timestamp));
+  formData.append('upload_preset', signedParams.upload_preset);
+  formData.append('folder', signedParams.folder);
+  formData.append('public_id', signedParams.public_id);
+  formData.append('overwrite', String(signedParams.overwrite));
+  formData.append('signature', signedParams.signature);
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', UPLOAD_URL);
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${signedParams.cloudName}/image/upload`);
 
     // Progreso de subida
     if (onProgress) {
@@ -161,6 +229,18 @@ export async function uploadImage(
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const data = JSON.parse(xhr.responseText) as CloudinaryResponse;
+          const expectedPrefix = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/`;
+          if (
+            typeof data.secure_url !== 'string'
+            || !data.secure_url.startsWith(expectedPrefix)
+            || typeof data.public_id !== 'string'
+            || !data.public_id.includes(signedParams.public_id)
+            || data.bytes > LISTING_LIMITS.photoMaxSizeMB * 1024 * 1024
+            || data.format !== 'jpg'
+          ) {
+            reject(new Error('Cloudinary devolvió una respuesta fuera de la configuración esperada.'));
+            return;
+          }
           resolve(data);
         } catch {
           reject(new Error('Respuesta inválida de Cloudinary'));
