@@ -20,6 +20,8 @@ export const requestSchemas = {
     listingId: documentIdSchema,
     subject: plainText(3, 100),
     message: plainText(10, 1000),
+    visitRequestedAt: z.number().int().positive().optional(),
+    openHouseRsvp: z.boolean().optional(),
   }).strict(),
   report: z.object({
     listingId: documentIdSchema,

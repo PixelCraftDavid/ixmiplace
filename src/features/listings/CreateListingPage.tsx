@@ -87,6 +87,38 @@ export function CreateListingPage() {
       listing.smokingAllowed = data.smokingAllowed ?? false;
       if (data.maxGuests && data.maxGuests > 0) listing.maxGuests = data.maxGuests;
     }
+    if (data.operation === 'renta' && (supportsHouseRules(data.category, data.operation) || data.category === 'local')) {
+      listing.alcoholConsumptionAllowed = data.alcoholConsumptionAllowed ?? false;
+      listing.alcoholSalesAllowed = data.alcoholSalesAllowed ?? false;
+    }
+
+    const optionalListingFields: (keyof ListingInput)[] = [
+      'securityDepositMonths', 'guarantorRequired', 'proofIncomeRequired', 'minimumLeaseMonths',
+      'waterBilling', 'waterMonthlyCost', 'electricityBilling', 'electricityMonthlyCost',
+      'internetBilling', 'internetMonthlyCost', 'stepFreeAccess', 'rampAccess',
+      'accessibleBathroom', 'elevatorAccess', 'openHouseStartAt', 'openHouseEndAt',
+      'openHouseCapacity', 'roommateWanted',
+    ];
+    const rentalOnlyFields: (keyof ListingInput)[] = [
+      'securityDepositMonths', 'guarantorRequired', 'proofIncomeRequired', 'minimumLeaseMonths',
+      'waterBilling', 'waterMonthlyCost', 'electricityBilling', 'electricityMonthlyCost',
+      'internetBilling', 'internetMonthlyCost', 'rentalRequirementsNotes',
+    ];
+    for (const key of optionalListingFields) {
+      if (rentalOnlyFields.includes(key) && data.operation === 'venta') continue;
+      const value = data[key];
+      if (value !== undefined) Object.assign(listing, { [key]: value });
+    }
+    if (data.rentalRequirementsNotes?.trim()) listing.rentalRequirementsNotes = data.rentalRequirementsNotes.trim();
+    if (data.visitAvailability?.trim()) listing.visitAvailability = data.visitAvailability.trim();
+    if (data.openHouseNotes?.trim()) listing.openHouseNotes = data.openHouseNotes.trim();
+    if (data.roommateWanted && data.roommatePreferences?.trim()) listing.roommatePreferences = data.roommatePreferences.trim();
+    if (data.category !== 'hotel' && data.category !== 'motel') {
+      listing.stepFreeAccess = data.stepFreeAccess ?? false;
+      listing.rampAccess = data.rampAccess ?? false;
+      listing.accessibleBathroom = data.accessibleBathroom ?? false;
+      listing.elevatorAccess = data.elevatorAccess ?? false;
+    }
 
     if (data.category === 'hotel' || data.category === 'motel') {
       if (data.establishmentName?.trim()) listing.establishmentName = data.establishmentName.trim();

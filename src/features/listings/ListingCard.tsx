@@ -43,6 +43,8 @@ export function ListingCard({ listing }: Props) {
         </span>
         <FavoriteButton listingId={listing.id} />
 
+        {listing.roommateWanted && <span className="absolute right-3 top-14 rounded-full border border-white/30 bg-brand-700/90 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">Busca roomie</span>}
+
         <span className="absolute bottom-3 left-3 rounded-lg border border-white/20 bg-ink-900/75 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
           {categoryEmoji(listing.category)} <span className="capitalize">{listing.operation}</span>
         </span>

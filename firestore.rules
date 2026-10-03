@@ -64,7 +64,40 @@ service cloud.firestore {
           || (d.maxGuests is int && d.maxGuests >= 1 && d.maxGuests <= 50))
         && (!('childrenAllowed' in d) || d.childrenAllowed is bool)
         && (!('petsAllowed' in d) || d.petsAllowed is bool)
-        && (!('smokingAllowed' in d) || d.smokingAllowed is bool);
+        && (!('smokingAllowed' in d) || d.smokingAllowed is bool)
+        && (!('alcoholConsumptionAllowed' in d) || d.alcoholConsumptionAllowed is bool)
+        && (!('alcoholSalesAllowed' in d) || d.alcoholSalesAllowed is bool)
+        && (!('alcoholSalesAllowed' in d) || d.alcoholSalesAllowed != true || d.category == 'local');
+    }
+
+    function validListingExtras(d) {
+      return (!('securityDepositMonths' in d) || (d.securityDepositMonths is int && d.securityDepositMonths >= 0 && d.securityDepositMonths <= 12))
+        && (!('minimumLeaseMonths' in d) || (d.minimumLeaseMonths is int && d.minimumLeaseMonths >= 1 && d.minimumLeaseMonths <= 120))
+        && (!('guarantorRequired' in d) || d.guarantorRequired is bool)
+        && (!('proofIncomeRequired' in d) || d.proofIncomeRequired is bool)
+        && (!('rentalRequirementsNotes' in d) || (d.rentalRequirementsNotes is string && d.rentalRequirementsNotes.size() <= 300 && !d.rentalRequirementsNotes.matches('.*[<>].*')))
+        && (!('waterBilling' in d) || d.waterBilling in ['included', 'extra', 'unknown'])
+        && (!('electricityBilling' in d) || d.electricityBilling in ['included', 'extra', 'unknown'])
+        && (!('internetBilling' in d) || d.internetBilling in ['included', 'extra', 'unknown'])
+        && (!('waterMonthlyCost' in d) || (d.waterMonthlyCost is number && d.waterMonthlyCost >= 0 && d.waterMonthlyCost <= 100000))
+        && (!('waterBilling' in d) || d.waterBilling != 'extra' || ('waterMonthlyCost' in d))
+        && (!('electricityMonthlyCost' in d) || (d.electricityMonthlyCost is number && d.electricityMonthlyCost >= 0 && d.electricityMonthlyCost <= 100000))
+        && (!('electricityBilling' in d) || d.electricityBilling != 'extra' || ('electricityMonthlyCost' in d))
+        && (!('internetMonthlyCost' in d) || (d.internetMonthlyCost is number && d.internetMonthlyCost >= 0 && d.internetMonthlyCost <= 100000))
+        && (!('internetBilling' in d) || d.internetBilling != 'extra' || ('internetMonthlyCost' in d))
+        && (!('stepFreeAccess' in d) || d.stepFreeAccess is bool)
+        && (!('rampAccess' in d) || d.rampAccess is bool)
+        && (!('accessibleBathroom' in d) || d.accessibleBathroom is bool)
+        && (!('elevatorAccess' in d) || d.elevatorAccess is bool)
+        && (!('visitAvailability' in d) || (d.visitAvailability is string && d.visitAvailability.size() <= 160 && !d.visitAvailability.matches('.*[<>].*')))
+        && (!('openHouseStartAt' in d) || (d.openHouseStartAt is int && d.openHouseStartAt > 0))
+        && (!('openHouseEndAt' in d) || (d.openHouseEndAt is int && d.openHouseEndAt > 0))
+        && (('openHouseStartAt' in d) == ('openHouseEndAt' in d))
+        && (!('openHouseStartAt' in d) || !('openHouseEndAt' in d) || d.openHouseEndAt > d.openHouseStartAt)
+        && (!('openHouseCapacity' in d) || (d.openHouseCapacity is int && d.openHouseCapacity >= 1 && d.openHouseCapacity <= 500))
+        && (!('openHouseNotes' in d) || (d.openHouseNotes is string && d.openHouseNotes.size() <= 240 && !d.openHouseNotes.matches('.*[<>].*')))
+        && (!('roommateWanted' in d) || d.roommateWanted is bool)
+        && (!('roommatePreferences' in d) || (d.roommatePreferences is string && d.roommatePreferences.size() <= 300 && !d.roommatePreferences.matches('.*[<>].*')));
     }
 
     // Entorno declarado por la persona que publica. Opcional para mantener
@@ -311,7 +344,15 @@ service cloud.firestore {
           'checkInTime', 'checkOutTime', 'reception24h',
           'foodAvailable', 'foodDescription',
           'maxGuests', 'childrenAllowed', 'petsAllowed', 'smokingAllowed',
-          'whatsappContactsCount', 'favoritesCount', 'createdAt', 'updatedAt'
+          'whatsappContactsCount', 'favoritesCount', 'createdAt', 'updatedAt',
+          'alcoholConsumptionAllowed', 'alcoholSalesAllowed',
+          'securityDepositMonths', 'guarantorRequired', 'proofIncomeRequired',
+          'minimumLeaseMonths', 'rentalRequirementsNotes',
+          'waterBilling', 'waterMonthlyCost', 'electricityBilling', 'electricityMonthlyCost',
+          'internetBilling', 'internetMonthlyCost', 'stepFreeAccess', 'rampAccess',
+          'accessibleBathroom', 'elevatorAccess', 'visitAvailability',
+          'openHouseStartAt', 'openHouseEndAt', 'openHouseCapacity', 'openHouseNotes',
+          'roommateWanted', 'roommatePreferences'
         ])
         && request.resource.data.title is string
         && request.resource.data.title.size() >= 8
@@ -336,6 +377,7 @@ service cloud.firestore {
         && validCloudinaryPhotos(request.resource.data)
         && request.resource.data.availability in ['available', 'occupied', 'reserved', 'rented', 'sold', 'unavailable', 'unconfirmed']
         && validHouseRules(request.resource.data)
+        && validListingExtras(request.resource.data)
         && validNearbyInformation(request.resource.data)
         && (request.resource.data.category != 'hotel'
           || (request.resource.data.operation == 'hospedaje'
@@ -406,6 +448,15 @@ service cloud.firestore {
             'childrenAllowed',
             'petsAllowed',
             'smokingAllowed',
+            'alcoholConsumptionAllowed',
+            'alcoholSalesAllowed',
+            'securityDepositMonths', 'guarantorRequired', 'proofIncomeRequired',
+            'minimumLeaseMonths', 'rentalRequirementsNotes',
+            'waterBilling', 'waterMonthlyCost', 'electricityBilling', 'electricityMonthlyCost',
+            'internetBilling', 'internetMonthlyCost', 'stepFreeAccess', 'rampAccess',
+            'accessibleBathroom', 'elevatorAccess', 'visitAvailability',
+            'openHouseStartAt', 'openHouseEndAt', 'openHouseCapacity', 'openHouseNotes',
+            'roommateWanted', 'roommatePreferences',
             'photos',
             'photoPublicIds',
             'ownerEmailVerified',
@@ -418,6 +469,7 @@ service cloud.firestore {
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['photos'])
             || validCloudinaryPhotos(request.resource.data))
           && validHouseRules(request.resource.data)
+          && validListingExtras(request.resource.data)
           && validNearbyInformation(request.resource.data)
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['title', 'description'])
             || validListingText(request.resource.data))
@@ -457,6 +509,14 @@ service cloud.firestore {
           'safetyLevel', 'safetyDetails', 'waterIssueLevel', 'waterIssueDetails',
           'transportAvailability', 'transportDestinations',
           'maxGuests', 'childrenAllowed', 'petsAllowed', 'smokingAllowed',
+          'alcoholConsumptionAllowed', 'alcoholSalesAllowed',
+          'securityDepositMonths', 'guarantorRequired', 'proofIncomeRequired',
+          'minimumLeaseMonths', 'rentalRequirementsNotes',
+          'waterBilling', 'waterMonthlyCost', 'electricityBilling', 'electricityMonthlyCost',
+          'internetBilling', 'internetMonthlyCost', 'stepFreeAccess', 'rampAccess',
+          'accessibleBathroom', 'elevatorAccess', 'visitAvailability',
+          'openHouseStartAt', 'openHouseEndAt', 'openHouseCapacity', 'openHouseNotes',
+          'roommateWanted', 'roommatePreferences',
           'photos', 'photoPublicIds', 'ownerEmailVerified', 'availability',
           'availabilityConfirmedAt', 'showPhone', 'updatedAt',
           'establishmentName', 'roomType', 'stayDurationHours',
@@ -466,6 +526,7 @@ service cloud.firestore {
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['photos'])
           || validCloudinaryPhotos(request.resource.data))
         && validHouseRules(request.resource.data)
+        && validListingExtras(request.resource.data)
         && validNearbyInformation(request.resource.data)
         && (resource.data.category != 'hotel'
           || request.resource.data.priceUnit == 'noche')

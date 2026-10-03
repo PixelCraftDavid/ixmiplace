@@ -1,4 +1,5 @@
 import { useForm, Controller } from 'react-hook-form';
+import type { UseFormRegister } from 'react-hook-form';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { forwardRef, useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
@@ -18,6 +19,9 @@ import {
   PawPrint,
   Cigarette,
   Landmark,
+  Accessibility,
+  CalendarDays,
+  Droplets,
 } from 'lucide-react';
 import { listingSchema, type ListingInput } from '../../lib/zod-schemas';
 import {
@@ -108,6 +112,18 @@ export function ListingForm({
       childrenAllowed: true,
       petsAllowed: false,
       smokingAllowed: false,
+      alcoholConsumptionAllowed: false,
+      alcoholSalesAllowed: false,
+      guarantorRequired: false,
+      proofIncomeRequired: false,
+      waterBilling: 'unknown',
+      electricityBilling: 'unknown',
+      internetBilling: 'unknown',
+      stepFreeAccess: false,
+      rampAccess: false,
+      accessibleBathroom: false,
+      elevatorAccess: false,
+      roommateWanted: false,
       showPhone: true,
       publicationConsentAccepted: false,
       availability: 'available',
@@ -131,6 +147,10 @@ export function ListingForm({
   const foodAvailable = watch('foodAvailable');
   const safetyLevel = watch('safetyLevel');
   const waterIssueLevel = watch('waterIssueLevel');
+  const alcoholSalesAllowed = watch('alcoholSalesAllowed');
+  const roommateWanted = watch('roommateWanted');
+  const openHouseStartAt = watch('openHouseStartAt');
+  const openHouseEndAt = watch('openHouseEndAt');
   const isLodging = category === 'hotel' || category === 'motel';
   const isMotel = category === 'motel';
   const showHouseRules = supportsHouseRules(category, operation);
@@ -654,6 +674,63 @@ export function ListingForm({
         </Section>
       )}
 
+      {operation === 'renta' && (supportsHouseRules(category, operation) || category === 'local') && (
+        <Section icon={<Info className="h-5 w-5" />} title="Política de bebidas alcohólicas" subtitle="Para venta de alcohol selecciona Local comercial y verifica las licencias aplicables">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <RuleToggle label="Se permite consumir bebidas alcohólicas" {...register('alcoholConsumptionAllowed')} />
+            <RuleToggle label="Se permite vender bebidas alcohólicas" {...register('alcoholSalesAllowed')} />
+          </div>
+        </Section>
+      )}
+
+      {/* ═══════════ Condiciones, servicios y accesibilidad ═══════════ */}
+      {(operation === 'renta' || operation === 'hospedaje') && (
+        <Section icon={<Droplets className="h-5 w-5" />} title="Costos y requisitos" subtitle="Aclara qué incluye la renta y qué necesita el interesado">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Depósito (meses)"><input type="number" min="0" max="12" {...register('securityDepositMonths', { setValueAs: optionalNumber })} className={inputClass} /></Field>
+            <Field label="Plazo mínimo (meses)"><input type="number" min="1" max="120" {...register('minimumLeaseMonths', { setValueAs: optionalNumber })} className={inputClass} /></Field>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <RuleToggle label="Se requiere aval" {...register('guarantorRequired')} />
+            <RuleToggle label="Se comprueban ingresos" {...register('proofIncomeRequired')} />
+          </div>
+          <Field label="Otros requisitos"><textarea rows={2} maxLength={300} {...register('rentalRequirementsNotes')} className={`${inputClass} resize-y`} placeholder="Ej.: identificación y referencias" /></Field>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <UtilityField label="Agua" billingName="waterBilling" costName="waterMonthlyCost" register={register} inputClass={inputClass} optionalNumber={optionalNumber} />
+            <UtilityField label="Luz" billingName="electricityBilling" costName="electricityMonthlyCost" register={register} inputClass={inputClass} optionalNumber={optionalNumber} />
+            <UtilityField label="Internet" billingName="internetBilling" costName="internetMonthlyCost" register={register} inputClass={inputClass} optionalNumber={optionalNumber} />
+          </div>
+          <p className="text-xs text-ink-400">Los montos son estimados declarados por quien publica; confirma el importe y la forma de cobro directamente.</p>
+        </Section>
+      )}
+
+      <Section icon={<Accessibility className="h-5 w-5" />} title="Accesibilidad" subtitle="Marca solo las características que realmente existen">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <RuleToggle label="Acceso sin escalones" {...register('stepFreeAccess')} />
+          <RuleToggle label="Cuenta con rampa" {...register('rampAccess')} />
+          <RuleToggle label="Baño accesible" {...register('accessibleBathroom')} />
+          <RuleToggle label="Elevador" {...register('elevatorAccess')} />
+        </div>
+      </Section>
+
+      {/* ═══════════ Visitas, roomies e inspección ═══════════ */}
+      <Section icon={<CalendarDays className="h-5 w-5" />} title="Visitas y convivencia" subtitle="Coordina una visita y aclara si buscas compartir el espacio">
+        <Field label="Horarios habituales para visitar"><input maxLength={160} {...register('visitAvailability')} className={inputClass} placeholder="Ej.: lunes a sábado, de 10:00 a 17:00; con cita" /></Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Casa abierta: inicio"><input type="datetime-local" value={toLocalDateTime(openHouseStartAt)} onChange={(e) => setValue('openHouseStartAt', e.target.value ? new Date(e.target.value).getTime() : undefined, { shouldValidate: true })} className={inputClass} /></Field>
+          <Field label="Casa abierta: término" error={errors.openHouseEndAt?.message}><input type="datetime-local" value={toLocalDateTime(openHouseEndAt)} onChange={(e) => setValue('openHouseEndAt', e.target.value ? new Date(e.target.value).getTime() : undefined, { shouldValidate: true })} className={inputClass} /></Field>
+        </div>
+        {openHouseStartAt && openHouseEndAt && <Field label="Aforo aproximado"><input type="number" min="1" max="500" {...register('openHouseCapacity', { setValueAs: optionalNumber })} className={inputClass} /></Field>}
+        <Field label="Indicaciones de la visita"><input maxLength={240} {...register('openHouseNotes')} className={inputClass} placeholder="Ej.: confirmar asistencia; punto de encuentro" /></Field>
+        <p className="text-xs text-ink-400">Enviar una solicitud no reserva una visita ni un lugar; el propietario debe confirmarla.</p>
+        {operation === 'renta' && (category === 'cuarto' || category === 'departamento' || category === 'casa') && (
+          <>
+            <RuleToggle label="Busco compartir este espacio con un roomie" {...register('roommateWanted')} />
+            {roommateWanted && <Field label="Preferencias de convivencia (opcional)"><textarea rows={2} maxLength={300} {...register('roommatePreferences')} className={`${inputClass} resize-y`} placeholder="Horarios, áreas compartidas o dinámica deseada; no incluyas datos sensibles" /></Field>}
+          </>
+        )}
+      </Section>
+
       {/* ═══════════ Disponibilidad ═══════════ */}
       <Section
         icon={<Check className="h-5 w-5" />}
@@ -835,6 +912,37 @@ function Section({ icon, title, subtitle, children }: SectionProps) {
   );
 }
 
+function toLocalDateTime(value?: number) {
+  if (!value) return '';
+  const date = new Date(value);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+function UtilityField({
+  label, billingName, costName, register, inputClass, optionalNumber,
+}: {
+  label: string;
+  billingName: 'waterBilling' | 'electricityBilling' | 'internetBilling';
+  costName: 'waterMonthlyCost' | 'electricityMonthlyCost' | 'internetMonthlyCost';
+  register: UseFormRegister<ListingInput>;
+  inputClass: string;
+  optionalNumber: (value: unknown) => number | undefined;
+}) {
+  const billing = register(billingName);
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-ink-700">{label}</label>
+      <select {...billing} className={inputClass}>
+        <option value="unknown">Sin información</option>
+        <option value="included">Incluido</option>
+        <option value="extra">Se paga aparte</option>
+      </select>
+      <input type="number" min="0" max="100000" placeholder="Costo mensual estimado (MXN)" {...register(costName, { setValueAs: optionalNumber })} className={inputClass} />
+    </div>
+  );
+}
+
 interface FieldProps {
   label: string;
   required?: boolean;
@@ -861,7 +969,7 @@ function Field({ label, required, error, children }: FieldProps) {
 }
 
 interface RuleToggleProps extends InputHTMLAttributes<HTMLInputElement> {
-  icon: ReactNode;
+  icon?: ReactNode;
   label: string;
 }
 
@@ -883,7 +991,7 @@ const RuleToggle = forwardRef<HTMLInputElement, RuleToggleProps>(
         {...props}
         className="h-4 w-4 accent-brand-600"
       />
-      <span className="text-brand-600">{icon}</span>
+      {icon && <span className="text-brand-600">{icon}</span>}
       {label}
     </label>
   )

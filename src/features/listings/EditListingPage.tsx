@@ -4,6 +4,7 @@ import { collection, doc, getDoc, deleteField, writeBatch } from 'firebase/fires
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
 import { ListingForm } from './ListingForm';
+import { supportsHouseRules } from '../../lib/constants';
 import type { ListingInput } from '../../lib/zod-schemas';
 import type { Listing } from '../../types/models';
 import { isSafeDocumentId } from '../../lib/document-id';
@@ -123,6 +124,32 @@ export function EditListingPage() {
     updates.waterIssueDetails = ['occasional', 'frequent', 'severe', 'other'].includes(data.waterIssueLevel ?? '') ? (data.waterIssueDetails?.trim() || deleteField()) : deleteField();
     updates.transportAvailability = data.transportAvailability || deleteField();
     updates.transportDestinations = data.transportDestinations?.trim() || deleteField();
+    for (const key of [
+      'securityDepositMonths', 'guarantorRequired', 'proofIncomeRequired', 'minimumLeaseMonths',
+      'waterBilling', 'waterMonthlyCost', 'electricityBilling', 'electricityMonthlyCost',
+      'internetBilling', 'internetMonthlyCost', 'stepFreeAccess', 'rampAccess',
+      'accessibleBathroom', 'elevatorAccess', 'visitAvailability', 'openHouseStartAt',
+      'openHouseEndAt', 'openHouseCapacity', 'openHouseNotes', 'roommateWanted',
+      'roommatePreferences', 'alcoholConsumptionAllowed', 'alcoholSalesAllowed',
+    ] as const) {
+      const value = data[key];
+      if (!(data.operation === 'renta' && (supportsHouseRules(data.category, data.operation) || data.category === 'local'))
+        && (key === 'alcoholConsumptionAllowed' || key === 'alcoholSalesAllowed')) {
+        updates[key] = deleteField();
+        continue;
+      }
+      if (data.operation === 'venta' && [
+        'securityDepositMonths', 'guarantorRequired', 'proofIncomeRequired', 'minimumLeaseMonths',
+        'waterBilling', 'waterMonthlyCost', 'electricityBilling', 'electricityMonthlyCost',
+        'internetBilling', 'internetMonthlyCost', 'roommateWanted', 'roommatePreferences',
+        'alcoholConsumptionAllowed', 'alcoholSalesAllowed',
+      ].includes(key)) {
+        updates[key] = deleteField();
+        continue;
+      }
+      updates[key] = value === undefined || value === '' ? deleteField() : value;
+    }
+    updates.rentalRequirementsNotes = data.rentalRequirementsNotes?.trim() || deleteField();
     if (listing.category === 'hotel' || listing.category === 'motel') {
       updates.price = data.price;
       updates.establishmentName = data.establishmentName?.trim() || deleteField();
@@ -286,6 +313,34 @@ export function EditListingPage() {
             reception24h: listing!.reception24h ?? false,
             foodAvailable: listing!.foodAvailable ?? false,
             foodDescription: listing!.foodDescription ?? '',
+            maxGuests: listing!.maxGuests,
+            childrenAllowed: listing!.childrenAllowed ?? true,
+            petsAllowed: listing!.petsAllowed ?? false,
+            smokingAllowed: listing!.smokingAllowed ?? false,
+            alcoholConsumptionAllowed: listing!.alcoholConsumptionAllowed ?? false,
+            alcoholSalesAllowed: listing!.alcoholSalesAllowed ?? false,
+            securityDepositMonths: listing!.securityDepositMonths,
+            guarantorRequired: listing!.guarantorRequired ?? false,
+            proofIncomeRequired: listing!.proofIncomeRequired ?? false,
+            minimumLeaseMonths: listing!.minimumLeaseMonths,
+            rentalRequirementsNotes: listing!.rentalRequirementsNotes ?? '',
+            waterBilling: listing!.waterBilling ?? 'unknown',
+            waterMonthlyCost: listing!.waterMonthlyCost,
+            electricityBilling: listing!.electricityBilling ?? 'unknown',
+            electricityMonthlyCost: listing!.electricityMonthlyCost,
+            internetBilling: listing!.internetBilling ?? 'unknown',
+            internetMonthlyCost: listing!.internetMonthlyCost,
+            stepFreeAccess: listing!.stepFreeAccess ?? false,
+            rampAccess: listing!.rampAccess ?? false,
+            accessibleBathroom: listing!.accessibleBathroom ?? false,
+            elevatorAccess: listing!.elevatorAccess ?? false,
+            visitAvailability: listing!.visitAvailability ?? '',
+            openHouseStartAt: listing!.openHouseStartAt,
+            openHouseEndAt: listing!.openHouseEndAt,
+            openHouseCapacity: listing!.openHouseCapacity,
+            openHouseNotes: listing!.openHouseNotes ?? '',
+            roommateWanted: listing!.roommateWanted ?? false,
+            roommatePreferences: listing!.roommatePreferences ?? '',
             lat: listing!.lat ?? 20.4833,
             lng: listing!.lng ?? -99.2167,
             photos: listing!.photos,

@@ -101,6 +101,34 @@ export const listingSchema = z
     childrenAllowed: z.boolean().optional(),
     petsAllowed: z.boolean().optional(),
     smokingAllowed: z.boolean().optional(),
+    alcoholConsumptionAllowed: z.boolean().optional(),
+    alcoholSalesAllowed: z.boolean().optional(),
+
+    securityDepositMonths: z.number().int().min(0).max(12).optional(),
+    guarantorRequired: z.boolean().optional(),
+    proofIncomeRequired: z.boolean().optional(),
+    minimumLeaseMonths: z.number().int().min(1).max(120).optional(),
+    rentalRequirementsNotes: plainText(0, 300).optional().or(z.literal('')),
+    waterBilling: z.enum(['included', 'extra', 'unknown']).optional(),
+    waterMonthlyCost: z.number().min(0).max(100000).optional(),
+    electricityBilling: z.enum(['included', 'extra', 'unknown']).optional(),
+    electricityMonthlyCost: z.number().min(0).max(100000).optional(),
+    internetBilling: z.enum(['included', 'extra', 'unknown']).optional(),
+    internetMonthlyCost: z.number().min(0).max(100000).optional(),
+
+    stepFreeAccess: z.boolean().optional(),
+    rampAccess: z.boolean().optional(),
+    accessibleBathroom: z.boolean().optional(),
+    elevatorAccess: z.boolean().optional(),
+
+    visitAvailability: plainText(0, 160).optional().or(z.literal('')),
+    openHouseStartAt: z.number().int().positive().optional(),
+    openHouseEndAt: z.number().int().positive().optional(),
+    openHouseCapacity: z.number().int().min(1).max(500).optional(),
+    openHouseNotes: plainText(0, 240).optional().or(z.literal('')),
+
+    roommateWanted: z.boolean().optional(),
+    roommatePreferences: plainText(0, 300).optional().or(z.literal('')),
 
     showPhone: z.boolean().default(true),
 
@@ -143,6 +171,28 @@ export const listingSchema = z
       message: 'Completa los datos de hospedaje, habitación, horario y precio.',
       path: ['roomType'],
     }
+  )
+  .refine((data) => data.alcoholSalesAllowed !== true || data.category === 'local', {
+    message: 'La venta de alcohol solo puede anunciarse para un local comercial.',
+    path: ['alcoholSalesAllowed'],
+  })
+  .refine((data) => (data.openHouseStartAt === undefined) === (data.openHouseEndAt === undefined), {
+    message: 'Indica fecha y hora de inicio y término de la casa abierta.',
+    path: ['openHouseEndAt'],
+  })
+  .refine((data) => data.openHouseStartAt === undefined || data.openHouseEndAt! > data.openHouseStartAt, {
+    message: 'La hora de término debe ser posterior al inicio.',
+    path: ['openHouseEndAt'],
+  })
+  .refine((data) => data.openHouseStartAt === undefined || data.openHouseStartAt > Date.now(), {
+    message: 'La casa abierta debe programarse en una fecha futura.',
+    path: ['openHouseStartAt'],
+  })
+  .refine((data) => (data.waterBilling !== 'extra' || data.waterMonthlyCost !== undefined)
+    && (data.electricityBilling !== 'extra' || data.electricityMonthlyCost !== undefined)
+    && (data.internetBilling !== 'extra' || data.internetMonthlyCost !== undefined), {
+    message: 'Indica el costo estimado mensual de cada servicio que se paga aparte.',
+    path: ['waterMonthlyCost'],
   );
 
 export type ListingInput = z.infer<typeof listingSchema>;
@@ -161,6 +211,8 @@ export type ReportInput = z.infer<typeof reportSchema>;
 export const internalMessageSchema = z.object({
   subject: plainText(3, 100),
   message: plainText(10, 1000),
+  visitRequestedAt: z.number().int().positive().optional(),
+  openHouseRsvp: z.boolean().optional(),
 }).strict();
 
 export type InternalMessageInput = z.infer<typeof internalMessageSchema>;

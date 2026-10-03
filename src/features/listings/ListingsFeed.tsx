@@ -43,6 +43,7 @@ export function ListingsFeed() {
   const [operation, setOperation] = useState<ListingOperation | 'all'>('all');
   const [sort, setSort] = useState<SortOption>('recent');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [roommateOnly, setRoommateOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -163,6 +164,8 @@ export function ListingsFeed() {
       );
     }
 
+    if (roommateOnly) result = result.filter((listing) => listing.roommateWanted === true);
+
     // Fecha
     if (dateFilter !== 'all') {
       const now = new Date();
@@ -214,6 +217,7 @@ export function ListingsFeed() {
     operation,
     sort,
     dateFilter,
+    roommateOnly,
   ]);
 
   const hasActiveFilters =
@@ -221,6 +225,7 @@ export function ListingsFeed() {
     category !== 'all' ||
     operation !== 'all' ||
     dateFilter !== 'all';
+  const activeFilters = hasActiveFilters || roommateOnly;
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
@@ -229,6 +234,7 @@ export function ListingsFeed() {
     category,
     operation,
     dateFilter,
+    roommateOnly,
     sort,
   ]);
 
@@ -245,6 +251,7 @@ export function ListingsFeed() {
     setCategory('all');
     setOperation('all');
     setDateFilter('all');
+    setRoommateOnly(false);
   }
 
   return (
@@ -292,13 +299,13 @@ export function ListingsFeed() {
             type="button"
             onClick={() => setShowFilters((s) => !s)}
             aria-expanded={showFilters}
-            className={`motion-ease inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 active:translate-y-0 sm:flex-none ${showFilters || hasActiveFilters ? 'border-brand-600 bg-brand-700 text-white hover:bg-brand-800' : 'border-ink-700/15 bg-white text-ink-700 hover:border-brand-500/50 hover:bg-cream-50 dark:border-white/10 dark:bg-[#242a22] dark:text-white dark:hover:bg-white/[0.08]'}`}
+            className={`motion-ease inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 active:translate-y-0 sm:flex-none ${showFilters || activeFilters ? 'border-brand-600 bg-brand-700 text-white hover:bg-brand-800' : 'border-ink-700/15 bg-white text-ink-700 hover:border-brand-500/50 hover:bg-cream-50 dark:border-white/10 dark:bg-[#242a22] dark:text-white dark:hover:bg-white/[0.08]'}`}
           >
             <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
             Filtros
-            {hasActiveFilters && (
+            {activeFilters && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1 text-[10px] font-bold">
-                {[category, operation, dateFilter].filter((f) => f !== 'all').length + (search ? 1 : 0)}
+                {[category, operation, dateFilter].filter((f) => f !== 'all').length + (search ? 1 : 0) + (roommateOnly ? 1 : 0)}
               </span>
             )}
           </button>
@@ -447,7 +454,12 @@ export function ListingsFeed() {
               </div>
             </div>
 
-            {hasActiveFilters && (
+            <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-ink-700 dark:text-white">
+              <input type="checkbox" checked={roommateOnly} onChange={(event) => setRoommateOnly(event.target.checked)} className="h-4 w-4 accent-brand-600" />
+              Mostrar solo publicaciones que buscan roomie
+            </label>
+
+            {activeFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
@@ -477,7 +489,7 @@ export function ListingsFeed() {
         />
       ) : filtered.length === 0 ? (
         <EmptyFeed
-          hasActiveFilters={hasActiveFilters}
+          hasActiveFilters={activeFilters}
           onClear={clearFilters}
         />
       ) : (

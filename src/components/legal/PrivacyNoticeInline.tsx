@@ -7,8 +7,8 @@ type NoticeKind = 'account' | 'profile' | 'listing' | 'contact' | 'report';
 const summaries: Record<NoticeKind, string> = {
   account: 'Usaremos tu nombre y correo para crear, verificar y proteger tu cuenta. Al registrarte con Google, Google también procesa los datos necesarios para iniciar sesión.',
   profile: 'Usaremos tu teléfono para completar tu perfil y facilitar el contacto relacionado con tus publicaciones. No lo mostramos en un anuncio salvo que decidas mostrarlo.',
-  listing: 'Los datos, fotos, zona y ubicación mostrada en el mapa serán visibles públicamente. El teléfono de WhatsApp se muestra según la opción que elijas al publicar.',
-  contact: 'El mensaje y tu nombre de perfil se compartirán con el propietario del anuncio para que pueda responderte dentro de IxmiPlace.',
+  listing: 'Los datos, fotos, zona, ubicación mostrada, condiciones, costos, accesibilidad y horarios que publiques serán visibles públicamente. WhatsApp se muestra según la opción elegida.',
+  contact: 'El mensaje, tu nombre de perfil y cualquier fecha de visita o solicitud de asistencia que indiques se compartirán con el propietario para responderte dentro de IxmiPlace.',
   report: 'El reporte y los datos que incluyas serán visibles para el equipo administrador y se usarán para revisar el anuncio.',
 };
 

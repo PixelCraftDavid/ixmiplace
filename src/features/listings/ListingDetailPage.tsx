@@ -184,6 +184,8 @@ export function ListingDetailPage() {
         listingId: listing.id,
         subject: parsed.data.subject,
         message: parsed.data.message,
+        ...(parsed.data.visitRequestedAt ? { visitRequestedAt: parsed.data.visitRequestedAt } : {}),
+        ...(parsed.data.openHouseRsvp ? { openHouseRsvp: true } : {}),
       });
       await requestPushDelivery('message_created', result.messageId);
       setContactSent(true);
@@ -338,6 +340,58 @@ export function ListingDetailPage() {
                 </span>
               </div>
             </section>
+
+            {(listing.waterBilling || listing.electricityBilling || listing.internetBilling || listing.securityDepositMonths !== undefined || listing.guarantorRequired !== undefined || listing.minimumLeaseMonths !== undefined) && (
+              <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-lg font-bold text-ink">Costos y requisitos declarados</h2>
+                <div className="grid gap-3 text-sm sm:grid-cols-2">
+                  {listing.securityDepositMonths !== undefined && <InfoLine label="Depósito" value={`${listing.securityDepositMonths} ${listing.securityDepositMonths === 1 ? 'mes' : 'meses'}`} />}
+                  {listing.minimumLeaseMonths !== undefined && <InfoLine label="Plazo mínimo" value={`${listing.minimumLeaseMonths} meses`} />}
+                  {listing.guarantorRequired !== undefined && <InfoLine label="Aval" value={listing.guarantorRequired ? 'Requerido' : 'No indicado como requisito'} />}
+                  {listing.proofIncomeRequired !== undefined && <InfoLine label="Comprobante de ingresos" value={listing.proofIncomeRequired ? 'Requerido' : 'No indicado como requisito'} />}
+                  <UtilityInfo label="Agua" billing={listing.waterBilling} cost={listing.waterMonthlyCost} />
+                  <UtilityInfo label="Luz" billing={listing.electricityBilling} cost={listing.electricityMonthlyCost} />
+                  <UtilityInfo label="Internet" billing={listing.internetBilling} cost={listing.internetMonthlyCost} />
+                </div>
+                {listing.rentalRequirementsNotes && <p className="mt-3 text-sm text-ink-600">Otros requisitos: {listing.rentalRequirementsNotes}</p>}
+                <p className="mt-4 border-t border-cream-200 pt-3 text-xs text-ink-400">Importes y requisitos los declara quien publica. Confírmalos directamente antes de acordar.</p>
+              </section>
+            )}
+
+            {(listing.stepFreeAccess || listing.rampAccess || listing.accessibleBathroom || listing.elevatorAccess) && (
+              <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-3 text-lg font-bold text-ink">Accesibilidad</h2>
+                <div className="flex flex-wrap gap-2 text-sm">
+                  {listing.stepFreeAccess && <span className="rounded-full bg-brand-50 px-3 py-1.5 text-brand-800">Acceso sin escalones</span>}
+                  {listing.rampAccess && <span className="rounded-full bg-brand-50 px-3 py-1.5 text-brand-800">Rampa</span>}
+                  {listing.accessibleBathroom && <span className="rounded-full bg-brand-50 px-3 py-1.5 text-brand-800">Baño accesible</span>}
+                  {listing.elevatorAccess && <span className="rounded-full bg-brand-50 px-3 py-1.5 text-brand-800">Elevador</span>}
+                </div>
+                <p className="mt-3 text-xs text-ink-400">Características declaradas; solicita confirmación y medidas específicas.</p>
+              </section>
+            )}
+
+            {(listing.alcoholConsumptionAllowed !== undefined || listing.alcoholSalesAllowed !== undefined) && (
+              <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-3 text-lg font-bold text-ink">Política sobre bebidas alcohólicas</h2>
+                <div className="grid gap-3 text-sm sm:grid-cols-2">
+                  {listing.alcoholConsumptionAllowed !== undefined && <InfoLine label="Consumo en el inmueble" value={listing.alcoholConsumptionAllowed ? 'Permitido según quien publica' : 'No permitido según quien publica'} />}
+                  {listing.alcoholSalesAllowed !== undefined && <InfoLine label="Venta en el inmueble" value={listing.alcoholSalesAllowed ? 'Permitida según quien publica' : 'No permitida según quien publica'} />}
+                </div>
+                <p className="mt-3 text-xs text-ink-400">La plataforma no verifica licencias o permisos. Cualquier actividad comercial debe cumplir la normativa aplicable.</p>
+              </section>
+            )}
+
+            {(listing.visitAvailability || listing.openHouseStartAt || listing.roommateWanted) && (
+              <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-3 text-lg font-bold text-ink">Visitas y convivencia</h2>
+                {listing.visitAvailability && <p className="text-sm text-ink-600">Horarios sugeridos: {listing.visitAvailability}</p>}
+                {listing.openHouseStartAt && listing.openHouseEndAt && <div className="mt-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900"><strong>Casa abierta</strong><p>{new Date(listing.openHouseStartAt).toLocaleString('es-MX')} – {new Date(listing.openHouseEndAt).toLocaleString('es-MX')}</p>{listing.openHouseCapacity && <p>Aforo aproximado: {listing.openHouseCapacity}</p>}{listing.openHouseNotes && <p>{listing.openHouseNotes}</p>}<p className="mt-2 text-xs">Solicita asistencia por mensaje; el propietario debe confirmar y no se garantiza un lugar.</p></div>}
+                {listing.roommateWanted && <div className="mt-3 rounded-xl bg-brand-50 p-4 text-sm text-brand-900"><strong>Busca compartir con roomie</strong>{listing.roommatePreferences && <p className="mt-1">{listing.roommatePreferences}</p>}<p className="mt-2 text-xs">Escribe al propietario para conversar sobre convivencia, costos y condiciones.</p></div>}
+              </section>
+            )}
+
+            <InspectionChecklist listingId={listing.id} />
 
             {/* DESCRIPCIÓN */}
             <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
@@ -665,12 +719,56 @@ export function ListingDetailPage() {
           submitting={contacting}
           isSignedIn={Boolean(fbUser)}
           ownerName={ownerName}
+          visitAvailability={listing.visitAvailability}
+          openHouseStartAt={listing.openHouseStartAt}
+          openHouseEndAt={listing.openHouseEndAt}
           onClose={() => setContactOpen(false)}
           onSubmit={submitContact}
         />
       )}
     </div>
   );
+}
+
+function toLocalDateTime(value: number) {
+  const date = new Date(value);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+}
+
+function InfoLine({ label, value }: { label: string; value: string }) {
+  return <div className="flex justify-between gap-3 border-b border-cream-100 pb-2"><span className="text-ink-500">{label}</span><span className="text-right font-medium text-ink-700">{value}</span></div>;
+}
+
+function UtilityInfo({ label, billing, cost }: { label: string; billing?: 'included' | 'extra' | 'unknown'; cost?: number }) {
+  if (!billing) return null;
+  const value = billing === 'included' ? 'Incluido' : billing === 'extra' ? `Se paga aparte${cost !== undefined ? ` · aprox. $${cost.toLocaleString('es-MX')} MXN/mes` : ''}` : 'Sin información';
+  return <InfoLine label={label} value={value} />;
+}
+
+function InspectionChecklist({ listingId }: { listingId: string }) {
+  const checklist = [
+    'Revisar humedad, techo, ventanas y cerraduras',
+    'Probar presión de agua y preguntar por cortes',
+    'Probar contactos, luces y servicios incluidos',
+    'Confirmar depósito, renta, plazo y cargos por escrito',
+    'Verificar identidad de quien ofrece y autorización para rentar',
+    'Leer el contrato antes de entregar dinero o documentos',
+  ];
+  const key = `ixmiplace-inspection-${listingId}`;
+  const [checked, setChecked] = useState<boolean[]>(() => {
+    try { const saved = localStorage.getItem(key); const parsed = saved ? JSON.parse(saved) : []; return checklist.map((_, index) => parsed[index] === true); }
+    catch { return checklist.map(() => false); }
+  });
+  function toggle(index: number) {
+    const next = checked.map((value, current) => current === index ? !value : value);
+    setChecked(next);
+    try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* almacenamiento opcional del dispositivo */ }
+  }
+  return <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm print:break-inside-avoid">
+    <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-ink">Lista para revisar antes de decidir</h2><button type="button" onClick={() => window.print()} className="text-sm font-semibold text-brand-700 underline print:hidden">Imprimir</button></div>
+    <p className="mt-1 text-xs text-ink-400">Se guarda solo en este dispositivo; no se envía al propietario ni a IxmiPlace.</p>
+    <ul className="mt-4 space-y-3">{checklist.map((item, index) => <li key={item}><label className="flex cursor-pointer items-start gap-3 text-sm text-ink-700"><input type="checkbox" checked={checked[index]} onChange={() => toggle(index)} className="mt-0.5 h-4 w-4 accent-brand-600" /><span className={checked[index] ? 'text-ink-400 line-through' : ''}>{item}</span></label></li>)}</ul>
+  </section>;
 }
 
 const NEARBY_SERVICE_LABELS: Record<string, string> = {
@@ -717,6 +815,9 @@ function ContactDialog({
   submitting,
   isSignedIn,
   ownerName,
+  visitAvailability,
+  openHouseStartAt,
+  openHouseEndAt,
   onClose,
   onSubmit,
 }: {
@@ -725,12 +826,17 @@ function ContactDialog({
   submitting: boolean;
   isSignedIn: boolean;
   ownerName: string;
+  visitAvailability?: string;
+  openHouseStartAt?: number;
+  openHouseEndAt?: number;
   onClose: () => void;
   onSubmit: (data: InternalMessageInput) => Promise<void>;
 }) {
   const [subject, setSubject] = useState('Me interesa tu propiedad');
   const [message, setMessage] = useState('');
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [visitAt, setVisitAt] = useState('');
+  const [rsvpOpenHouse, setRsvpOpenHouse] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm">
@@ -764,14 +870,27 @@ function ContactDialog({
                   Mensaje
                   <textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={1000} rows={5} placeholder="Hola, me interesa saber más sobre esta propiedad…" className="mt-2 w-full resize-none rounded-xl border border-cream-300 bg-cream-50 p-3 font-normal text-ink outline-none focus:border-brand-500" />
                 </label>
+                {visitAvailability && <p className="mt-3 rounded-lg bg-brand-50 p-3 text-xs text-brand-800">Horarios sugeridos para visitar: {visitAvailability}</p>}
+                {(visitAvailability || openHouseStartAt) && (
+                  <label className="mt-4 block text-sm font-semibold text-ink-700">
+                    Solicitar una visita (opcional)
+                    <input type="datetime-local" value={visitAt} min={toLocalDateTime(Date.now() + 60_000)} onChange={(event) => setVisitAt(event.target.value)} className="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5 font-normal text-ink outline-none focus:border-brand-500" />
+                  </label>
+                )}
+                {openHouseStartAt && openHouseEndAt && openHouseEndAt > Date.now() && (
+                  <label className="mt-4 flex items-start gap-2.5 rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+                    <input type="checkbox" checked={rsvpOpenHouse} onChange={(event) => setRsvpOpenHouse(event.target.checked)} className="mt-0.5 h-4 w-4 accent-brand-600" />
+                    <span>Quiero solicitar asistencia a la casa abierta del {new Date(openHouseStartAt).toLocaleString('es-MX')} al {new Date(openHouseEndAt).toLocaleString('es-MX')}. El propietario debe confirmar.</span>
+                  </label>
+                )}
                 <label className="mt-4 flex items-start gap-2.5 text-xs leading-relaxed text-ink-500">
                   <input type="checkbox" checked={acceptedPrivacy} onChange={(event) => setAcceptedPrivacy(event.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600" />
-                  <span>Consiento compartir mi nombre, asunto y mensaje con el propietario para que pueda responderme. <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline">Ver Aviso de Privacidad</Link>.</span>
+                  <span>Consiento compartir mi nombre, asunto, mensaje y la solicitud de visita o asistencia que indique con el propietario para que pueda responderme. <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline">Ver Aviso de Privacidad</Link>.</span>
                 </label>
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
                 <div className="mt-5 flex gap-3">
                   <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-cream-300 px-4 py-3 font-semibold text-ink-600 hover:bg-cream-100">Cancelar</button>
-                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ subject, message })} className="flex-1 rounded-xl bg-brand-500 px-4 py-3 font-semibold text-white hover:bg-brand-600 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar mensaje'}</button>
+                  <button type="button" disabled={submitting || !acceptedPrivacy} onClick={() => void onSubmit({ subject: rsvpOpenHouse && !subject.trim() ? 'Solicitud para casa abierta' : subject, message: rsvpOpenHouse && !message.trim() ? 'Me gustaría asistir a la casa abierta, ¿puedes confirmar mi lugar?' : message, ...(visitAt ? { visitRequestedAt: new Date(visitAt).getTime() } : {}), ...(rsvpOpenHouse ? { openHouseRsvp: true } : {}) })} className="flex-1 rounded-xl bg-brand-500 px-4 py-3 font-semibold text-white hover:bg-brand-600 disabled:opacity-60">{submitting ? 'Enviando…' : 'Enviar mensaje'}</button>
                 </div>
               </>
             )}

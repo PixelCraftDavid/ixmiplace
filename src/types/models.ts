@@ -107,6 +107,38 @@ export interface Listing {
   childrenAllowed?: boolean;
   petsAllowed?: boolean;
   smokingAllowed?: boolean;
+  alcoholConsumptionAllowed?: boolean;
+  alcoholSalesAllowed?: boolean;
+
+  // Condiciones de renta y servicios (opcionales para anuncios anteriores).
+  securityDepositMonths?: number;
+  guarantorRequired?: boolean;
+  proofIncomeRequired?: boolean;
+  minimumLeaseMonths?: number;
+  rentalRequirementsNotes?: string;
+  waterBilling?: 'included' | 'extra' | 'unknown';
+  waterMonthlyCost?: number;
+  electricityBilling?: 'included' | 'extra' | 'unknown';
+  electricityMonthlyCost?: number;
+  internetBilling?: 'included' | 'extra' | 'unknown';
+  internetMonthlyCost?: number;
+
+  // Accesibilidad declarada por quien publica.
+  stepFreeAccess?: boolean;
+  rampAccess?: boolean;
+  accessibleBathroom?: boolean;
+  elevatorAccess?: boolean;
+
+  // Visitas y casa abierta. Las solicitudes requieren confirmación del dueño.
+  visitAvailability?: string;
+  openHouseStartAt?: number;
+  openHouseEndAt?: number;
+  openHouseCapacity?: number;
+  openHouseNotes?: string;
+
+  // Posibilidad de compartir el espacio y buscar roomie.
+  roommateWanted?: boolean;
+  roommatePreferences?: string;
 
   // Datos adicionales para anuncios de habitaciones de hotel o motel
   establishmentName?: string;
@@ -208,6 +240,8 @@ export interface InternalMessage {
   senderName: string;
   subject: string;
   message: string;
+  visitRequestedAt?: number;
+  openHouseRsvp?: boolean;
   status: 'unread' | 'read';
   createdAt: number;
 }

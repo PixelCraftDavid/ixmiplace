@@ -67,6 +67,8 @@ export function MessagesPage() {
                     </div>
                     <p className="mt-1 text-sm font-semibold text-brand-700">{message.senderName}</p>
                     <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink-600">{message.message}</p>
+                    {message.visitRequestedAt && <p className="mt-3 rounded-lg bg-brand-50 p-3 text-sm text-brand-800">Solicitud de visita: {new Date(message.visitRequestedAt).toLocaleString('es-MX')} · espera confirmación del propietario.</p>}
+                    {message.openHouseRsvp && <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Solicita asistir a la casa abierta · confirma la asistencia con esta persona.</p>}
                     {message.status === 'unread' && <button type="button" onClick={() => void markRead(message)} className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"><Check className="h-4 w-4" /> Marcar como leído</button>}
                   </div>
                 </div>

@@ -54,7 +54,7 @@ export default async function handler(req, res) {
       logSecurityEvent(req, 'invalid_message_request', user.uid);
       return respond(res, 400, { error: 'Asunto o mensaje inválido.' });
     }
-    const { listingId, subject, message } = input;
+    const { listingId, subject, message, visitRequestedAt, openHouseRsvp } = input;
 
     const db = getFirestore(app);
     failureStage = 'read_profile_and_listing';
@@ -69,6 +69,13 @@ export default async function handler(req, res) {
     }
     if (!listingSnap.exists || listing.status !== 'published' || !Number.isSafeInteger(listing.expiresAt) || listing.expiresAt <= Date.now()) return respond(res, 404, { error: 'Anuncio no disponible.' });
     if (listing.ownerId === user.uid) return respond(res, 403, { error: 'No puedes enviarte un mensaje a ti mismo.' });
+    if (visitRequestedAt && visitRequestedAt <= Date.now()) return respond(res, 400, { error: 'El horario solicitado debe ser futuro.' });
+    if (openHouseRsvp === true && (!Number.isSafeInteger(listing.openHouseStartAt)
+      || !Number.isSafeInteger(listing.openHouseEndAt)
+      || listing.openHouseStartAt <= Date.now()
+      || listing.openHouseEndAt <= listing.openHouseStartAt)) {
+      return respond(res, 400, { error: 'La casa abierta ya no está disponible.' });
+    }
 
     const date = day();
     const quotas = db.collection('abuseRateLimits');
@@ -105,6 +112,8 @@ export default async function handler(req, res) {
         senderName: typeof profile.displayName === 'string' ? profile.displayName.slice(0, 60) : 'Usuario',
         subject,
         message,
+        ...(visitRequestedAt ? { visitRequestedAt } : {}),
+        ...(openHouseRsvp === true ? { openHouseRsvp: true } : {}),
         status: 'unread',
         createdAt: now.toMillis(),
         privacyConsentVersion: '2026-10-03-v8',
