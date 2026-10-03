@@ -15,7 +15,7 @@ export interface AppUser {
 
   // Consentimientos legales: versión aceptada por el usuario.
   // Opcionales: las cuentas anteriores no los tienen y por eso
-  // RequireAuth las redirige a /aceptar-terminos.
+  // RequireAuth las redirige a /aceptacion-legal.
   termsAcceptedVersion?: string;
   adultConfirmedVersion?: string;
   privacyConsentVersion?: string;

@@ -52,9 +52,9 @@ export function RequireAuth({ requireVerified = true }: Props) {
     !isAccountSettings && profile && (profile.termsAcceptedVersion !== TERMS_VERSION ||
       profile.adultConfirmedVersion !== TERMS_VERSION ||
       profile.privacyConsentVersion !== PRIVACY_NOTICE_VERSION) &&
-    loc.pathname !== '/aceptar-terminos'
+    loc.pathname !== '/aceptacion-legal'
   ) {
-    return <Navigate to="/aceptar-terminos" state={{ from: loc }} replace />;
+    return <Navigate to="/aceptacion-legal" state={{ from: loc }} replace />;
   }
 
   // 5. Sin teléfono → completar perfil
