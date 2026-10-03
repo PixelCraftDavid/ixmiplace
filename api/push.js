@@ -1,5 +1,4 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getAppCheck } from 'firebase-admin/app-check';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { logApiFailure, logSecurityEvent, parseBody, requestSchemas } from './_lib/input-security.js';
@@ -279,7 +278,7 @@ export default async function handler(req, res) {
 
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Authorization, Content-Type, X-Firebase-AppCheck',
+    'Authorization, Content-Type',
   );
 
   if (req.method === 'OPTIONS') {
@@ -312,22 +311,12 @@ export default async function handler(req, res) {
       });
     }
 
-    const appCheckToken = req.headers['x-firebase-appcheck'];
-    if (typeof appCheckToken !== 'string') {
-      return respond(res, 401, {
-        error: 'La aplicación no pasó la verificación App Check.',
-      });
-    }
-
     const app = getFirebaseAdmin();
 
     failureStage =
       'firebase_auth_token_lookup';
 
-    const [decoded] = await Promise.all([
-      verifyFirebaseIdToken(idToken),
-      getAppCheck(app).verifyToken(appCheckToken),
-    ]);
+    const decoded = await verifyFirebaseIdToken(idToken);
 
     if (!decoded) {
       return respond(res, 401, {
@@ -439,14 +428,14 @@ export default async function handler(req, res) {
 
       reserved = await reserveEvent(
         db,
-        'chatMessages',
+        'messages',
         id,
         (message) =>
           message.senderId === decoded.uid &&
           message.senderId !==
             message.recipientId &&
-          typeof message.ciphertext === 'string' &&
-          typeof message.conversationId === 'string',
+          message.status === 'unread' &&
+          typeof message.message === 'string',
       );
 
       if (!reserved) {
@@ -473,7 +462,7 @@ export default async function handler(req, res) {
         'Tienes un mensaje nuevo';
 
       body =
-        'Abre IxmiPlace para leerlo.';
+        'Tienes un mensaje nuevo sobre una de tus publicaciones. Abre IxmiPlace para leerlo.';
 
       targetUrl =
         `${APP_ORIGIN}/mensajes`;

@@ -15,7 +15,9 @@ El build de producción se valida con `npm run build`. Los endpoints `/api/*` vi
 
 - WhatsApp debe vivir en `listingPrivateDetails/{listingId}`, nunca en `listings/{listingId}`.
 - `/api/contact` valida Firebase Auth, correo verificado, App Check, consentimiento, estado/vigencia del anuncio y cuotas por usuario/anuncio/IP.
-- `/api/message`, `/api/report`, `/api/metric`, `/api/cloudinary-signature`, `/api/delete-account` y `/api/cleanup-rate-limits` validan App Check y aplican sus propias reglas/cuotas.
+- `/api/message` valida Firebase Auth, correo verificado, consentimiento, publicación vigente y cuotas; no requiere App Check.
+- `/api/push` valida Firebase Auth y que el evento corresponda a un documento autorizado; no requiere App Check.
+- `/api/report`, `/api/metric`, `/api/cloudinary-signature`, `/api/delete-account` y `/api/cleanup-rate-limits` siguen validando App Check y aplican sus propias reglas/cuotas.
 - La eliminación de cuenta vuelve a autenticar al usuario, exige una sesión reciente y elimina primero sus anuncios, medios, contactos privados y datos relacionados; Firebase Auth se elimina al final para permitir reintentar si una operación falla.
 - La subida de imágenes se firma en servidor. El secreto de Cloudinary solo va en variables de Vercel sin prefijo `VITE_`.
 - El navegador valida firma de archivo y rasteriza JPG/PNG/WebP a JPEG antes de subir. Firestore solo acepta URLs del Cloudinary configurado.
@@ -48,11 +50,11 @@ Solo servidor Vercel, nunca `VITE_*`:
 
 ## Puesta en producción segura
 
-1. Registra la app web en Firebase App Check con reCAPTCHA v3. Autoriza el dominio de producción y `localhost` para desarrollo; configura `VITE_FB_APPCHECK_SITE_KEY` en Vercel.
+1. `VITE_FB_APPCHECK_SITE_KEY` solo se necesita para las funciones que todavía usan App Check, como reportes, firma de imágenes y eliminación de cuenta. El mensaje interno y la entrega push no lo requieren. Revisa precios y cuotas antes de configurar un proveedor de App Check.
 2. En Cloudinary crea un preset firmado que solo permita `jpg`, `png` y `webp`, tamaño máximo de 5 MB, carpeta `ixmiplace/listings` y sin sobrescritura. Configura las variables secretas en Vercel.
 3. Desactiva el preset unsigned antiguo después de desplegar la versión que usa `/api/cloudinary-signature`; de otro modo alguien podría seguir subiendo directamente con el preset público antiguo.
 4. Despliega la aplicación y las APIs de Vercel.
-5. Inicia sesión como admin, acepta el Aviso de Privacidad versión 4 y ejecuta una sola vez **Migrar y archivar vencidos**. La API mueve WhatsApp/direcciones legadas fuera de las fichas públicas.
+5. Inicia sesión como admin, acepta las versiones vigentes de Términos y Aviso de Privacidad y ejecuta una sola vez **Migrar y archivar vencidos**. La API mueve WhatsApp/direcciones legadas fuera de las fichas públicas.
 6. Comprueba el resumen: cualquier teléfono inválido se debe corregir manualmente antes de cerrar el acceso público a esos datos.
 7. Solo después publica `firestore.rules` con `firebase deploy --only firestore:rules`.
 8. En Firebase App Check, observa las métricas y luego habilita enforcement para Firestore. No lo fuerces antes de confirmar que producción y desarrollo obtienen tokens válidos.
