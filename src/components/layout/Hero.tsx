@@ -1,4 +1,5 @@
-import { ArrowDown, MapPin } from 'lucide-react';
+import { ArrowDown, ArrowRight, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Hero() {
   return (
@@ -37,6 +38,13 @@ export function Hero() {
               Explorar propiedades
               <ArrowDown className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" aria-hidden="true" />
             </a>
+            <Link
+              to="/publicar"
+              className="motion-ease group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/[0.06] px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-white/45 hover:bg-white/[0.12] active:translate-y-0"
+            >
+              Publicar gratis
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+            </Link>
           </div>
 
           <div className="mt-12 flex flex-wrap gap-x-7 gap-y-3 border-t border-white/15 pt-5 text-xs font-medium text-white/65 sm:text-sm">

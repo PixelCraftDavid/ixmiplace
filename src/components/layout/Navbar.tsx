@@ -91,8 +91,16 @@ export function Navbar() {
   return (
     <header className={`absolute inset-x-0 top-0 z-40 ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link to="/" className={`text-xl font-extrabold ${overDarkHero ? 'text-white drop-shadow-md' : 'text-ink-700 dark:text-ink-50'}`}>
-          Ixmi<span className={overDarkHero ? 'text-brand-400' : 'text-brand-600 dark:text-brand-300'}>Place</span>
+        <Link to="/" className="inline-flex items-center gap-2.5">
+          <img
+            src="/logo-ixmiplace.jpg"
+            alt=""
+            aria-hidden="true"
+            className="h-10 w-10 rounded-xl border border-cream-200 bg-cream object-cover object-[center_34%] shadow-sm"
+          />
+          <span className={`text-xl font-extrabold ${overDarkHero ? 'text-white drop-shadow-md' : 'text-ink-700 dark:text-ink-50'}`}>
+            Ixmi<span className={overDarkHero ? 'text-brand-400' : 'text-brand-600 dark:text-brand-300'}>Place</span>
+          </span>
         </Link>
 
         <nav aria-label="Navegación principal" className="flex items-center gap-3">
