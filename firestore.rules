@@ -253,7 +253,7 @@ service cloud.firestore {
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'phone', 'phoneConsentVersion', 'phoneConsentAt'
           ])
-            || (request.resource.data.phoneConsentVersion == '2026-09-30-v4'
+            || (request.resource.data.phoneConsentVersion == '2026-10-03-v8'
               && validConsentTime(request.resource.data.phoneConsentAt)))
           && request.resource.data.role == resource.data.role
           && request.resource.data.isBanned == resource.data.isBanned
