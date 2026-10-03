@@ -18,8 +18,21 @@ export const requestSchemas = {
   contact: z.object({ listingId: documentIdSchema }).strict(),
   message: z.object({
     listingId: documentIdSchema,
-    subject: plainText(3, 100),
-    message: plainText(10, 1000),
+    recipientId: documentIdSchema,
+    ciphertext: z.string().min(40).max(12000).regex(/^[A-Za-z0-9+/]+=*$/),
+    iv: z.string().length(16).regex(/^[A-Za-z0-9+/]+=*$/),
+    senderEnvelope: z.object({
+      recipientId: documentIdSchema,
+      salt: z.string().length(44).regex(/^[A-Za-z0-9+/]+=*$/),
+      iv: z.string().length(16).regex(/^[A-Za-z0-9+/]+=*$/),
+      encryptedKey: z.string().min(40).max(128).regex(/^[A-Za-z0-9+/]+=*$/),
+    }).strict(),
+    recipientEnvelope: z.object({
+      recipientId: documentIdSchema,
+      salt: z.string().length(44).regex(/^[A-Za-z0-9+/]+=*$/),
+      iv: z.string().length(16).regex(/^[A-Za-z0-9+/]+=*$/),
+      encryptedKey: z.string().min(40).max(128).regex(/^[A-Za-z0-9+/]+=*$/),
+    }).strict(),
   }).strict(),
   report: z.object({
     listingId: documentIdSchema,

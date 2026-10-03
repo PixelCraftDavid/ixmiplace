@@ -439,13 +439,14 @@ export default async function handler(req, res) {
 
       reserved = await reserveEvent(
         db,
-        'messages',
+        'chatMessages',
         id,
         (message) =>
           message.senderId === decoded.uid &&
           message.senderId !==
             message.recipientId &&
-          message.status === 'unread',
+          typeof message.ciphertext === 'string' &&
+          typeof message.conversationId === 'string',
       );
 
       if (!reserved) {

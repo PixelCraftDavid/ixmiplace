@@ -34,6 +34,17 @@ async function deleteQuery(db, collectionName, field, value) {
   }
 }
 
+async function deleteArrayQuery(db, collectionName, field, value) {
+  const collection = db.collection(collectionName);
+  while (true) {
+    const page = await collection.where(field, 'array-contains', value).limit(PAGE_SIZE).get();
+    if (page.empty) return;
+    const batch = db.batch();
+    page.docs.forEach((document) => batch.delete(document.ref));
+    await batch.commit();
+  }
+}
+
 async function deleteDocIdPrefix(db, collectionName, prefix) {
   const collection = db.collection(collectionName);
   let deleted = 0;
@@ -155,6 +166,9 @@ export default async function handler(req, res) {
       deleteQuery(db, 'reports', 'reporterId', decoded.uid),
       deleteQuery(db, 'messages', 'senderId', decoded.uid),
       deleteQuery(db, 'messages', 'recipientId', decoded.uid),
+      deleteQuery(db, 'chatMessages', 'senderId', decoded.uid),
+      deleteQuery(db, 'chatMessages', 'recipientId', decoded.uid),
+      deleteArrayQuery(db, 'conversations', 'participantIds', decoded.uid),
       deleteQuery(db, 'notifications', 'recipientId', decoded.uid),
       deleteQuery(db, 'listingHistory', 'actorId', decoded.uid),
       deleteDocIdPrefix(db, 'contactRateLimits', `user_${decoded.uid}_`),
@@ -173,6 +187,8 @@ export default async function handler(req, res) {
         deleteQuery(db, 'favorites', 'listingId', listingId),
         deleteQuery(db, 'reports', 'listingId', listingId),
         deleteQuery(db, 'messages', 'listingId', listingId),
+        deleteQuery(db, 'chatMessages', 'listingId', listingId),
+        deleteQuery(db, 'conversations', 'listingId', listingId),
         deleteQuery(db, 'notifications', 'listingId', listingId),
         deleteQuery(db, 'listingHistory', 'listingId', listingId),
       ]);
@@ -192,6 +208,7 @@ export default async function handler(req, res) {
 
     await Promise.all([
       db.collection('publicProfiles').doc(decoded.uid).delete().catch((error) => { if (error.code !== 5) throw error; }),
+      db.collection('chatPublicKeys').doc(decoded.uid).delete().catch((error) => { if (error.code !== 5) throw error; }),
       profileRef.delete().catch((error) => { if (error.code !== 5) throw error; }),
     ]);
     return respond(res, 200, { ok: true });

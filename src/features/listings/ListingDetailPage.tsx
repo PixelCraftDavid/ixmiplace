@@ -45,6 +45,7 @@ import { requestPushDelivery } from '../../lib/push-notifications';
 import { WhatsAppContactButton } from './WhatsAppContactButton';
 import { postProtectedApi } from '../../lib/protected-api';
 import { isSafeDocumentId } from '../../lib/document-id';
+import { encryptChatMessage } from '../../lib/e2ee-chat';
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -63,6 +64,7 @@ export function ListingDetailPage() {
   const [reporting, setReporting] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [contactSent, setContactSent] = useState(false);
+  const [contactConversationId, setContactConversationId] = useState('');
   const [contactError, setContactError] = useState('');
   const [contacting, setContacting] = useState(false);
 
@@ -180,12 +182,20 @@ export function ListingDetailPage() {
     setContacting(true);
     setContactError('');
     try {
-      const result = await postProtectedApi<{ messageId: string }>('/api/message', {
+      const encrypted = await encryptChatMessage({
+        uid: fbUser.uid,
+        recipientId: listing.ownerId,
         listingId: listing.id,
         subject: parsed.data.subject,
         message: parsed.data.message,
       });
+      const result = await postProtectedApi<{ messageId: string; conversationId: string }>('/api/message', {
+        listingId: listing.id,
+        recipientId: listing.ownerId,
+        ...encrypted,
+      });
       await requestPushDelivery('message_created', result.messageId);
+      setContactConversationId(result.conversationId);
       setContactSent(true);
     } catch (error) {
       console.error('Error enviando mensaje:', error);
@@ -661,6 +671,7 @@ export function ListingDetailPage() {
       {contactOpen && (
         <ContactDialog
           sent={contactSent}
+          conversationId={contactConversationId}
           error={contactError}
           submitting={contacting}
           isSignedIn={Boolean(fbUser)}
@@ -713,6 +724,7 @@ function InfoBlock({ icon, title, children }: { icon: React.ReactNode; title: st
 
 function ContactDialog({
   sent,
+  conversationId,
   error,
   submitting,
   isSignedIn,
@@ -721,6 +733,7 @@ function ContactDialog({
   onSubmit,
 }: {
   sent: boolean;
+  conversationId: string;
   error: string;
   submitting: boolean;
   isSignedIn: boolean;
@@ -740,7 +753,7 @@ function ContactDialog({
             <Mail className="mx-auto h-10 w-10 text-brand-500" />
             <h2 className="mt-4 text-xl font-bold text-ink">Mensaje enviado</h2>
             <p className="mt-2 text-sm text-ink-500">El propietario podrá responderte dentro de IxmiPlace.</p>
-            <button type="button" onClick={onClose} className="mt-6 rounded-xl bg-brand-500 px-5 py-3 font-semibold text-white hover:bg-brand-600">Cerrar</button>
+            <Link to={`/mensajes?c=${encodeURIComponent(conversationId)}`} className="mt-6 inline-flex rounded-xl bg-brand-700 px-5 py-3 font-semibold text-white hover:bg-brand-800">Abrir chat cifrado</Link>
           </div>
         ) : (
           <>
@@ -756,6 +769,7 @@ function ContactDialog({
             ) : (
               <>
                 <div className="mt-5"><PrivacyNoticeInline kind="contact" /></div>
+                <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-900">El asunto y el texto se cifran antes de enviarse. Tú y el propietario deben preparar el cifrado en sus dispositivos. <Link to="/mensajes" className="font-bold underline">Preparar el mío</Link>.</p>
                 <label className="mt-5 block text-sm font-semibold text-ink-700">
                   Asunto
                   <input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={100} className="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-3 py-2.5 font-normal text-ink outline-none focus:border-brand-500" />

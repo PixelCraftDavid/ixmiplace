@@ -279,7 +279,7 @@ export async function enablePushNotifications(
         serverTimestamp(),
 
       privacyConsentVersion:
-        '2026-10-03-v6',
+        '2026-10-03-v7',
 
       privacyConsentAt:
         serverTimestamp(),

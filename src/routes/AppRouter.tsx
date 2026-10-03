@@ -5,6 +5,7 @@ import { RequireAuth } from '../features/auth/RequireAuth';
 
 import { RegisterPage } from '../features/auth/RegisterPage';
 import { LoginPage } from '../features/auth/LoginPage';
+import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 import { VerifyEmailPage } from '../features/auth/VerifyEmailPage';
 import { CompleteProfilePage } from '../features/auth/CompleteProfilePage';
 import { NotificationsPage } from '../features/auth/NotificationsPage';
@@ -65,6 +66,7 @@ export function AppRouter() {
             ========================== */}
 
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/complete-profile" element={<CompleteProfilePage />} />

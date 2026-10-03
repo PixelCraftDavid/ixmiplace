@@ -125,6 +125,12 @@ export function LoginPage() {
               <p className="text-sm text-red-600">{errors.password.message}</p>
             )}
 
+            <div className="-mt-1 text-right">
+              <Link to="/recuperar-contrasena" className="text-sm font-semibold text-brand-700 underline-offset-4 hover:underline dark:text-brand-200">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+
             {error && <p role="alert" className="rounded-xl border border-red-700/15 bg-red-50/80 px-3.5 py-3 text-sm leading-5 text-red-800 dark:border-red-200/15 dark:bg-red-950/30 dark:text-red-200">{error}</p>}
 
             <button

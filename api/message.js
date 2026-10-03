@@ -56,20 +56,42 @@ export default async function handler(req, res) {
       logSecurityEvent(req, 'invalid_message_request', user.uid);
       return respond(res, 400, { error: 'Asunto o mensaje inválido.' });
     }
-    const { listingId, subject, message } = input;
+    const { listingId, recipientId, ciphertext, iv, senderEnvelope, recipientEnvelope } = input;
 
     const db = getFirestore(app);
-    const [userSnap, listingSnap] = await Promise.all([
+    const [userSnap, listingSnap, conversationSnap] = await Promise.all([
       db.collection('users').doc(user.uid).get(),
       db.collection('listings').doc(listingId).get(),
+      db.collection('conversations').doc(`c_${createHash('sha256').update(`${listingId}:${[user.uid, recipientId].sort().join(':')}`).digest('base64url')}`).get(),
     ]);
     const profile = userSnap.data();
     const listing = listingSnap.data();
-    if (!profile || profile.isBanned === true || profile.privacyConsentVersion !== '2026-10-03-v6') {
+    if (!profile || profile.isBanned === true || profile.privacyConsentVersion !== '2026-10-03-v7') {
       return respond(res, 403, { error: 'Cuenta no autorizada.' });
     }
-    if (!listingSnap.exists || listing.status !== 'published' || !Number.isSafeInteger(listing.expiresAt) || listing.expiresAt <= Date.now()) return respond(res, 404, { error: 'Anuncio no disponible.' });
-    if (listing.ownerId === user.uid) return respond(res, 403, { error: 'No puedes enviarte un mensaje a ti mismo.' });
+    if (!listingSnap.exists) return respond(res, 404, { error: 'Anuncio no disponible.' });
+    if (recipientId === user.uid) return respond(res, 403, { error: 'No puedes enviarte un mensaje a ti mismo.' });
+    const conversationId = `c_${createHash('sha256').update(`${listingId}:${[user.uid, recipientId].sort().join(':')}`).digest('base64url')}`;
+    const validExistingConversation = conversationSnap.exists
+      && conversationSnap.data()?.listingId === listingId
+      && JSON.stringify([...(conversationSnap.data()?.participantIds ?? [])].sort()) === JSON.stringify([user.uid, recipientId].sort());
+    const validNewContact = listing.ownerId === recipientId && listing.ownerId !== user.uid
+      && listing.status === 'published'
+      && Number.isSafeInteger(listing.expiresAt)
+      && listing.expiresAt > Date.now();
+    if (!validNewContact && !validExistingConversation) return respond(res, 403, { error: 'La conversación no está disponible.' });
+    if (senderEnvelope.recipientId !== user.uid || recipientEnvelope.recipientId !== recipientId) {
+      logSecurityEvent(req, 'invalid_chat_key_envelopes', user.uid);
+      return respond(res, 400, { error: 'Las claves del mensaje no coinciden con sus participantes.' });
+    }
+
+    const [senderKeySnap, recipientKeySnap] = await Promise.all([
+      db.collection('chatPublicKeys').doc(user.uid).get(),
+      db.collection('chatPublicKeys').doc(recipientId).get(),
+    ]);
+    if (!senderKeySnap.exists || !recipientKeySnap.exists) {
+      return respond(res, 409, { error: 'Ambas personas deben preparar primero sus mensajes cifrados.' });
+    }
 
     const date = day();
     const quotas = db.collection('abuseRateLimits');
@@ -77,44 +99,59 @@ export default async function handler(req, res) {
     const listingQuota = quotas.doc(`message_listing_${user.uid}_${listingId}_${date}`);
     const ip = ipHash(req, date);
     const ipQuota = ip ? quotas.doc(`message_ip_${ip}_${date}`) : null;
-    const messageRef = db.collection('messages').doc(randomUUID());
+    const participants = [user.uid, recipientId].sort();
+    const conversationRef = db.collection('conversations').doc(conversationId);
+    const messageRef = db.collection('chatMessages').doc(randomUUID());
     const now = Timestamp.now();
     const expiresAt = Timestamp.fromMillis(Date.now() + RETENTION_MS);
     const listingRef = db.collection('listings').doc(listingId);
 
     const result = await db.runTransaction(async (transaction) => {
-      const refs = [userQuota, listingQuota, ...(ipQuota ? [ipQuota] : []), listingRef];
+      const refs = [userQuota, listingQuota, ...(ipQuota ? [ipQuota] : []), listingRef, conversationRef];
       const snapshots = await Promise.all(refs.map((ref) => transaction.get(ref)));
       const userCount = snapshots[0].data()?.count ?? 0;
       const listingCount = snapshots[1].data()?.count ?? 0;
       const ipCount = ipQuota ? snapshots[2].data()?.count ?? 0 : 0;
-      const currentListing = snapshots[snapshots.length - 1].data();
-      if (!currentListing || currentListing.status !== 'published'
-        || !Number.isSafeInteger(currentListing.expiresAt)
-        || currentListing.expiresAt <= Date.now()
-        || currentListing.ownerId !== listing.ownerId) return false;
+      const currentListing = snapshots[snapshots.length - 2].data();
+      if (!currentListing || currentListing.ownerId !== listing.ownerId) return false;
       if (userCount >= MAX_DAILY_USER || listingCount >= MAX_DAILY_LISTING || (ipQuota && ipCount >= MAX_DAILY_IP)) return false;
       const quotaCommon = { expiresAt, updatedAt: FieldValue.serverTimestamp() };
       transaction.set(userQuota, { ...quotaCommon, count: userCount + 1 });
       transaction.set(listingQuota, { ...quotaCommon, count: listingCount + 1 });
       if (ipQuota) transaction.set(ipQuota, { ...quotaCommon, count: ipCount + 1 });
+      const conversation = snapshots[snapshots.length - 1];
+      if (!conversation.exists && (currentListing.status !== 'published'
+        || !Number.isSafeInteger(currentListing.expiresAt)
+        || currentListing.expiresAt <= Date.now()
+        || currentListing.ownerId !== recipientId)) return false;
+      if (conversation.exists && (conversation.data()?.listingId !== listingId
+        || JSON.stringify([...(conversation.data()?.participantIds ?? [])].sort()) !== JSON.stringify(participants))) return false;
+      if (!conversation.exists) transaction.create(conversationRef, {
+        listingId,
+        participantIds: participants,
+        createdAt: now.toMillis(),
+        lastMessageAt: now.toMillis(),
+      });
+      else transaction.update(conversationRef, { lastMessageAt: now.toMillis() });
       transaction.create(messageRef, {
+        conversationId,
         listingId,
         senderId: user.uid,
-        recipientId: listing.ownerId,
-        senderName: typeof profile.displayName === 'string' ? profile.displayName.slice(0, 60) : 'Usuario',
-        subject,
-        message,
+        recipientId,
+        ciphertext,
+        iv,
+        senderEnvelope,
+        recipientEnvelope,
         status: 'unread',
         createdAt: now.toMillis(),
-        privacyConsentVersion: '2026-10-03-v6',
+        privacyConsentVersion: '2026-10-03-v7',
         privacyConsentAt: now,
       });
       return true;
     });
 
     if (!result) return respond(res, 429, { error: 'Límite diario de mensajes alcanzado.' });
-    return respond(res, 201, { ok: true, messageId: messageRef.id });
+    return respond(res, 201, { ok: true, messageId: messageRef.id, conversationId });
   } catch (error) {
     logApiFailure(req, 'message', 'request', error);
     return respond(res, 500, { error: 'No se pudo enviar el mensaje.' });

@@ -1,0 +1,4 @@
+Contact: mailto:angeld10293@gmail.com
+Canonical: https://ixmiplace.vercel.app/.well-known/security.txt
+Expires: 2027-09-30T00:00:00Z
+Preferred-Languages: es, en
