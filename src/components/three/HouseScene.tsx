@@ -2,9 +2,8 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 /**
- * Escena 3D de una casa low-poly de noche, con ventanas iluminadas
- * y partículas flotantes. Gira lentamente sobre su propio eje.
- * Pensada como fondo decorativo en pantallas de autenticación.
+ * Casa 3D con una iluminación que acompaña el tema de la página:
+ * luz cálida y luciérnagas por la noche; cielo abierto y luz de día en tema claro.
  */
 export function HouseScene() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -31,12 +30,12 @@ export function HouseScene() {
     container.appendChild(renderer.domElement);
 
     // ───────── Luces ─────────
-    const ambient = new THREE.AmbientLight(0x8899aa, 0.6);
+    const ambient = new THREE.AmbientLight(0xc6d1d3, 0.6);
     scene.add(ambient);
 
-    const moonLight = new THREE.DirectionalLight(0xaac8ff, 0.8);
-    moonLight.position.set(-4, 6, 3);
-    scene.add(moonLight);
+    const keyLight = new THREE.DirectionalLight(0xaac8ff, 0.8);
+    keyLight.position.set(-4, 6, 3);
+    scene.add(keyLight);
 
     const windowGlow = new THREE.PointLight(0xffc773, 1.2, 6);
     windowGlow.position.set(0, 0.6, 1.05);
@@ -128,17 +127,90 @@ export function HouseScene() {
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
+    const palettes = {
+      day: {
+        ambientColor: new THREE.Color(0xfff1d8),
+        ambientIntensity: 1.65,
+        keyColor: new THREE.Color(0xfff3df),
+        keyIntensity: 1.75,
+        ground: new THREE.Color(0x87a96d),
+        walls: new THREE.Color(0xf0dfbd),
+        roof: new THREE.Color(0x9b6040),
+        door: new THREE.Color(0x68462e),
+        chimney: new THREE.Color(0x8c7565),
+        window: new THREE.Color(0xffe6ae),
+        windowEmissive: new THREE.Color(0x000000),
+        windowEmissiveIntensity: 0,
+        glowIntensity: 0.08,
+        particles: new THREE.Color(0xfff7de),
+        particleOpacity: 0.08,
+      },
+      night: {
+        ambientColor: new THREE.Color(0x8899aa),
+        ambientIntensity: 0.6,
+        keyColor: new THREE.Color(0xaac8ff),
+        keyIntensity: 0.8,
+        ground: new THREE.Color(0x4c6b4f),
+        walls: new THREE.Color(0x9a9d99),
+        roof: new THREE.Color(0x624333),
+        door: new THREE.Color(0x3f2c20),
+        chimney: new THREE.Color(0x62564e),
+        window: new THREE.Color(0xffd98a),
+        windowEmissive: new THREE.Color(0xffb648),
+        windowEmissiveIntensity: 1.1,
+        glowIntensity: 1.1,
+        particles: new THREE.Color(0xffd98a),
+        particleOpacity: 0.8,
+      },
+    };
+
+    let isDarkMode = document.documentElement.classList.contains('dark');
+    let palette = isDarkMode ? palettes.night : palettes.day;
+
+    function selectPalette() {
+      isDarkMode = document.documentElement.classList.contains('dark');
+      palette = isDarkMode ? palettes.night : palettes.day;
+    }
+
+    selectPalette();
+    const themeObserver = new MutationObserver(selectPalette);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
     // ───────── Animación ─────────
     // 🔧 FIX: en vez de THREE.Clock (deprecado), calculamos el tiempo
     // transcurrido manualmente con performance.now().
     let frameId: number;
     const startTime = performance.now();
+    let previousFrame = startTime;
 
     function animate() {
-      const t = (performance.now() - startTime) / 1000; // segundos transcurridos
+      const now = performance.now();
+      const t = (now - startTime) / 1000;
+      const delta = Math.min((now - previousFrame) / 1000, 0.1);
+      previousFrame = now;
       house.rotation.y = t * 0.25;
       particles.rotation.y = t * 0.04;
-      windowGlow.intensity = 1.1 + Math.sin(t * 3) * 0.15; // parpadeo sutil
+      const blend = 1 - Math.exp(-delta * 3.5);
+      ambient.color.lerp(palette.ambientColor, blend);
+      ambient.intensity += (palette.ambientIntensity - ambient.intensity) * blend;
+      keyLight.color.lerp(palette.keyColor, blend);
+      keyLight.intensity += (palette.keyIntensity - keyLight.intensity) * blend;
+      groundMat.color.lerp(palette.ground, blend);
+      wallsMat.color.lerp(palette.walls, blend);
+      roofMat.color.lerp(palette.roof, blend);
+      doorMat.color.lerp(palette.door, blend);
+      chimneyMat.color.lerp(palette.chimney, blend);
+      windowMat.color.lerp(palette.window, blend);
+      windowMat.emissive.lerp(palette.windowEmissive, blend);
+      windowMat.emissiveIntensity += (palette.windowEmissiveIntensity - windowMat.emissiveIntensity) * blend;
+      particleMat.color.lerp(palette.particles, blend);
+      particleMat.opacity += (palette.particleOpacity - particleMat.opacity) * blend;
+      windowGlow.intensity += (palette.glowIntensity - windowGlow.intensity) * blend;
+      if (isDarkMode) windowGlow.intensity += Math.sin(t * 3) * 0.015;
+      windowMat.needsUpdate = true;
       renderer.render(scene, camera);
       frameId = requestAnimationFrame(animate);
     }
@@ -158,6 +230,7 @@ export function HouseScene() {
     return () => {
       cancelAnimationFrame(frameId);
       resizeObserver.disconnect();
+      themeObserver.disconnect();
       container.removeChild(renderer.domElement);
 
       [wallsGeo, roofGeo, doorGeo, windowGeo, chimneyGeo, groundGeo, particleGeo].forEach(

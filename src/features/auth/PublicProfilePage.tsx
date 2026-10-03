@@ -35,8 +35,7 @@ export function PublicProfilePage() {
           getDocs(
             query(
               collection(db, 'listings'),
-              where('status', '==', 'published'),
-              where('expiresAt', '>', Date.now() + 60_000)
+              where('status', '==', 'published')
             )
           ),
         ]);
@@ -60,7 +59,7 @@ export function PublicProfilePage() {
 
   const activeListings = listings.filter((listing) => {
     const expiresAt = listingExpiryMillis(listing.expiresAt);
-    return expiresAt === null || expiresAt > clock;
+    return expiresAt !== null && expiresAt > clock;
   });
 
   return (

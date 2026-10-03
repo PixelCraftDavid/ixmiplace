@@ -1,93 +1,67 @@
+import { ArrowDown, ArrowRight, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function Hero() {
   return (
-    <section className="relative h-screen w-full overflow-hidden">
-
-      {/* Capa 1: Imagen de fondo */}
+    <section className="relative isolate min-h-[min(760px,92svh)] overflow-hidden bg-ink-900 pt-24 text-white">
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="absolute inset-0 -z-20 bg-cover bg-center"
         style={{ backgroundImage: "url('/images/ixmiquilpan-hero.jpg')" }}
         aria-hidden="true"
       />
+      <div className="absolute inset-0 -z-10 bg-[#10140f]/65" aria-hidden="true" />
+      <div className="absolute inset-y-0 left-0 -z-10 w-full bg-gradient-to-r from-[#10140f]/55 via-transparent to-transparent" aria-hidden="true" />
 
-      {/* Capa 2: Blur + oscurecido en la mitad inferior */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-1/2
-                   backdrop-blur-md
-                   bg-gradient-to-b
-                   from-transparent via-black/50 to-black/85"
-        aria-hidden="true"
-      />
+      <div className="mx-auto flex min-h-[min(760px,92svh)] max-w-7xl items-center px-5 pb-24 pt-10 sm:px-8 lg:px-12">
+        <div className="hero-enter max-w-3xl">
+          <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-3.5 py-2 text-xs font-medium tracking-wide text-white/90 backdrop-blur-sm sm:text-sm">
+            <MapPin className="h-4 w-4 text-accent-300" aria-hidden="true" />
+            Vivienda local · Ixmiquilpan, Hidalgo
+          </p>
 
-      {/* Capa 3: Oscurecido lateral izquierdo para legibilidad del texto */}
-      <div
-        className="absolute inset-0
-                   bg-gradient-to-r
-                   from-black/60 via-black/30 to-transparent"
-        aria-hidden="true"
-      />
-
-      {/* Capa 4: Contenido — texto a la izquierda */}
-      <div className="relative z-10 flex h-full items-center
-                      px-8 sm:px-12 md:px-20 lg:px-32">
-        <div className="max-w-2xl text-left">
-
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl
-                         font-extrabold leading-[1.05]
-                         text-white drop-shadow-2xl">
-            Ixmi<span className="text-brand-400">Place</span>
+          <h1 className="max-w-3xl text-[clamp(3rem,8vw,6.75rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-white">
+            Encuentra tu
+            <br />
+            lugar en{' '}
+            <span className="text-accent-300">Ixmiquilpan.</span>
           </h1>
 
-          <p className="mt-6 text-lg sm:text-xl md:text-2xl
-                        font-light text-white/95 drop-shadow-lg">
-            Encuentra rentas, casas y hospedaje
-            <span className="block font-medium text-white">
-              en Ixmiquilpan, sin intermediarios.
-            </span>
+          <p className="mt-7 max-w-xl text-base leading-7 text-white/80 sm:text-lg sm:leading-8">
+            Casas, rentas y hospedaje para descubrir sin intermediarios. Explora opciones de la comunidad y habla directamente con quien publica.
           </p>
 
-          <p className="mt-4 text-sm sm:text-base text-white/75 max-w-xl">
-            Contacta directamente con el propietario por WhatsApp.
-            Publicar es gratis. Encontrar es gratis. Simple.
-          </p>
-
-          <div className="mt-10 flex flex-col sm:flex-row gap-4">
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <a
               href="#propiedades"
-              className="rounded-full bg-brand-600 px-8 py-3.5
-                         text-white font-semibold text-base
-                         hover:bg-brand-500 transition-all
-                         shadow-2xl shadow-brand-900/40
-                         hover:scale-105 text-center"
+              className="motion-ease group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent-400 px-5 py-3 text-sm font-semibold text-ink-900 shadow-[0_8px_30px_rgba(212,154,74,0.18)] transition duration-300 hover:-translate-y-0.5 hover:bg-accent-300 active:translate-y-0"
             >
-              Ver propiedades
+              Explorar propiedades
+              <ArrowDown className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" aria-hidden="true" />
             </a>
-
             <Link
               to="/publicar"
-              className="rounded-full bg-white/10 backdrop-blur-md
-                         border border-white/30
-                         px-8 py-3.5
-                         text-white font-semibold text-base
-                         hover:bg-white/20 transition-all
-                         hover:scale-105 text-center"
+              className="motion-ease group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/[0.06] px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-white/45 hover:bg-white/[0.12] active:translate-y-0"
             >
-              Publicar mi propiedad
+              Publicar gratis
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
             </Link>
+          </div>
+
+          <div className="mt-12 flex flex-wrap gap-x-7 gap-y-3 border-t border-white/15 pt-5 text-xs font-medium text-white/65 sm:text-sm">
+            <span>Rentas y ventas</span>
+            <span>Hospedaje local</span>
+            <span>Trato directo</span>
           </div>
         </div>
       </div>
 
-      {/* Indicador de scroll */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2
-                      z-10 text-white/60 animate-bounce">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M12 5v14M19 12l-7 7-7-7"
-                stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
+      <a
+        href="#propiedades"
+        aria-label="Desplazarse a las propiedades"
+        className="motion-ease absolute bottom-7 left-1/2 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-white/20 text-white/75 transition duration-300 hover:-translate-y-1 hover:border-white/45 hover:text-white"
+      >
+        <ArrowDown className="h-4 w-4" aria-hidden="true" />
+      </a>
     </section>
   );
 }

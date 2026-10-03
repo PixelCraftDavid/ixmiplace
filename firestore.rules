@@ -230,7 +230,10 @@ service cloud.firestore {
     }
 
     match /listings/{listingId} {
-      allow read: if activePublishedListing(resource.data)
+      // La lectura pública depende del estado publicado. La vigencia se
+      // filtra en la interfaz; las reglas siguen validando vencimientos en
+      // operaciones que requieren un anuncio activo.
+      allow read: if resource.data.status == 'published'
         || (signedIn() && resource.data.ownerId == request.auth.uid)
         || isAdmin();
 

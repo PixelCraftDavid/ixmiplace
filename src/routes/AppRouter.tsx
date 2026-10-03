@@ -38,7 +38,7 @@ function HomePage() {
     <main className="min-h-screen bg-cream">
       <Hero />
 
-      <section id="propiedades" className="mx-auto max-w-6xl px-4 py-16">
+      <section id="propiedades" className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
         <ListingsFeed />
       </section>
     </main>

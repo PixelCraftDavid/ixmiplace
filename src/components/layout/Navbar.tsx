@@ -109,9 +109,9 @@ export function Navbar() {
             to="/apoyar"
             aria-label="Apoyar a IxmiPlace"
             title="Apoyar a IxmiPlace"
-            className="group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-rose-300/60 bg-gradient-to-br from-rose-500 to-orange-500 text-white shadow-md shadow-rose-950/25 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rose-950/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c211a] sm:w-auto sm:gap-1.5 sm:px-3"
+            className="motion-ease group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-rose-300/40 bg-[#d95848] text-white shadow-[0_4px_16px_rgba(117,35,28,0.22)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#c94d40] hover:shadow-[0_8px_22px_rgba(117,35,28,0.28)] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c211a] sm:w-auto sm:gap-1.5 sm:px-3"
           >
-            <Heart className="h-4 w-4 fill-current transition-transform duration-200 group-hover:scale-110" />
+            <Heart className="h-4 w-4 fill-current transition-transform duration-300 group-hover:scale-110 group-active:scale-95" />
             <span className="hidden text-sm font-semibold sm:inline">Apoyar</span>
           </Link>
           {fbUser ? (
@@ -242,9 +242,7 @@ export function Navbar() {
               </Link>
               <Link
                 to="/register"
-                className="rounded-full bg-white px-4 py-1.5
-                           text-sm font-semibold text-gray-900
-                           hover:bg-gray-100"
+                className="motion-ease rounded-full border border-[#e4cfaa] bg-[#f4e9d3] px-4 py-2 text-sm font-semibold text-[#263629] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#d49a4a] hover:bg-white active:translate-y-0 dark:border-[#d49a4a]/50 dark:bg-[#d49a4a] dark:text-[#1c211a] dark:hover:bg-[#e4b66e]"
               >
                 Registrarse
               </Link>
