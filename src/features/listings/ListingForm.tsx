@@ -147,7 +147,6 @@ export function ListingForm({
   const foodAvailable = watch('foodAvailable');
   const safetyLevel = watch('safetyLevel');
   const waterIssueLevel = watch('waterIssueLevel');
-  const alcoholSalesAllowed = watch('alcoholSalesAllowed');
   const roommateWanted = watch('roommateWanted');
   const openHouseStartAt = watch('openHouseStartAt');
   const openHouseEndAt = watch('openHouseEndAt');

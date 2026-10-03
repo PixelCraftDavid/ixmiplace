@@ -193,7 +193,7 @@ export const listingSchema = z
     && (data.internetBilling !== 'extra' || data.internetMonthlyCost !== undefined), {
     message: 'Indica el costo estimado mensual de cada servicio que se paga aparte.',
     path: ['waterMonthlyCost'],
-  );
+  });
 
 export type ListingInput = z.infer<typeof listingSchema>;
 

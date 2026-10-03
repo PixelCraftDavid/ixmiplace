@@ -678,10 +678,13 @@ service cloud.firestore {
 
       allow update: if verified()
         && resource.data.recipientId == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'status'
-        ])
-        && request.resource.data.status == 'read';
+        && (
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+            && request.resource.data.status == 'read')
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visitStatus'])
+            && resource.data.visitStatus in ['requested', 'confirmed']
+            && request.resource.data.visitStatus in ['confirmed', 'cancelled'])
+        );
 
       allow delete: if false;
     }

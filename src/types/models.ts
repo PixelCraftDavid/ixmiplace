@@ -242,6 +242,11 @@ export interface InternalMessage {
   message: string;
   visitRequestedAt?: number;
   openHouseRsvp?: boolean;
+  visitStatus?: 'requested' | 'confirmed' | 'cancelled';
+  appointmentStartAt?: number;
+  appointmentEndAt?: number;
+  listingTitle?: string;
+  listingColonia?: string;
   status: 'unread' | 'read';
   createdAt: number;
 }

@@ -100,6 +100,10 @@ export default async function handler(req, res) {
         || !Number.isSafeInteger(currentListing.expiresAt)
         || currentListing.expiresAt <= Date.now()
         || currentListing.ownerId !== listing.ownerId) return false;
+      if (openHouseRsvp === true && (!Number.isSafeInteger(currentListing.openHouseStartAt)
+        || !Number.isSafeInteger(currentListing.openHouseEndAt)
+        || currentListing.openHouseStartAt <= Date.now()
+        || currentListing.openHouseEndAt <= currentListing.openHouseStartAt)) return 'open_house_changed';
       if (userCount >= MAX_DAILY_USER || listingCount >= MAX_DAILY_LISTING || (ipQuota && ipCount >= MAX_DAILY_IP)) return false;
       const quotaCommon = { expiresAt, updatedAt: FieldValue.serverTimestamp() };
       transaction.set(userQuota, { ...quotaCommon, count: userCount + 1 });
@@ -114,6 +118,13 @@ export default async function handler(req, res) {
         message,
         ...(visitRequestedAt ? { visitRequestedAt } : {}),
         ...(openHouseRsvp === true ? { openHouseRsvp: true } : {}),
+        ...((visitRequestedAt || openHouseRsvp === true) ? {
+          visitStatus: 'requested',
+          appointmentStartAt: visitRequestedAt || currentListing.openHouseStartAt,
+          ...(openHouseRsvp === true ? { appointmentEndAt: currentListing.openHouseEndAt } : {}),
+          listingTitle: typeof currentListing.title === 'string' ? currentListing.title.slice(0, 80) : 'Publicación',
+          listingColonia: typeof currentListing.colonia === 'string' ? currentListing.colonia.slice(0, 80) : '',
+        } : {}),
         status: 'unread',
         createdAt: now.toMillis(),
         privacyConsentVersion: '2026-10-03-v8',
@@ -122,6 +133,7 @@ export default async function handler(req, res) {
       return true;
     });
 
+    if (result === 'open_house_changed') return respond(res, 400, { error: 'La casa abierta ya no está disponible.' });
     if (!result) return respond(res, 429, { error: 'Límite diario de mensajes alcanzado.' });
     return respond(res, 201, { ok: true, messageId: messageRef.id });
   } catch (error) {
