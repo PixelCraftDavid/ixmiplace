@@ -13,6 +13,10 @@ import {
   Flag,
   AlertCircle,
   Mail,
+  ShieldCheck,
+  Droplets,
+  Bus,
+  Landmark,
 } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { auth } from '../../lib/firebase';
@@ -422,6 +426,58 @@ export function ListingDetailPage() {
               </section>
             )}
 
+            {(listing.nearbyPlaces || listing.nearbyServices?.length || listing.safetyLevel || listing.waterIssueLevel || listing.transportAvailability) && (
+              <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink">
+                  <Landmark className="h-5 w-5 text-brand-600" />
+                  Entorno y servicios cercanos
+                </h2>
+                <div className="space-y-4">
+                  {listing.nearbyPlaces && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-ink-700">Lugares notables</h3>
+                      <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-ink-500">{listing.nearbyPlaces}</p>
+                    </div>
+                  )}
+                  {listing.nearbyServices && listing.nearbyServices.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-ink-700">Servicios o referencias de la zona</h3>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {listing.nearbyServices.map((service) => (
+                          <span key={service} className="rounded-full bg-cream-100 px-3 py-1.5 text-xs font-medium text-ink-600">
+                            {nearbyServiceLabel(service)}{service === 'other' && listing.nearbyServicesOther ? `: ${listing.nearbyServicesOther}` : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {listing.safetyLevel && (
+                      <InfoBlock icon={<ShieldCheck className="h-4 w-4" />} title="Percepción de seguridad">
+                        <p>{safetyLevelLabel(listing.safetyLevel)}</p>
+                        {listing.safetyDetails && <p className="mt-1 text-xs">{listing.safetyDetails}</p>}
+                      </InfoBlock>
+                    )}
+                    {listing.waterIssueLevel && (
+                      <InfoBlock icon={<Droplets className="h-4 w-4" />} title="Servicio de agua">
+                        <p>{waterIssueLabel(listing.waterIssueLevel)}</p>
+                        {listing.waterIssueDetails && <p className="mt-1 text-xs">{listing.waterIssueDetails}</p>}
+                      </InfoBlock>
+                    )}
+                    {listing.transportAvailability && (
+                      <InfoBlock icon={<Bus className="h-4 w-4" />} title="Transporte público">
+                        <p>{transportLabel(listing.transportAvailability)}</p>
+                        {listing.transportDestinations && <p className="mt-1 text-xs">Rutas o destinos: {listing.transportDestinations}</p>}
+                      </InfoBlock>
+                    )}
+                  </div>
+                  <p className="border-t border-cream-200 pt-3 text-xs leading-relaxed text-ink-400">
+                    Estos datos son proporcionados por quien publica y no son verificados ni garantizados por IxmiPlace. Confírmalos antes de tomar una decisión.
+                  </p>
+                </div>
+              </section>
+            )}
+
             {/* 🆕 UBICACIÓN EN MAPA */}
             {hasLocation && (
               <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
@@ -613,6 +669,44 @@ export function ListingDetailPage() {
           onSubmit={submitContact}
         />
       )}
+    </div>
+  );
+}
+
+const NEARBY_SERVICE_LABELS: Record<string, string> = {
+  'hospital-clinic': 'Hospital o clínica',
+  schools: 'Escuela',
+  market: 'Mercado o supermercado',
+  'public-transport': 'Transporte público',
+  shops: 'Tiendas y comercios',
+  parks: 'Parque o área recreativa',
+  university: 'Universidad',
+  downtown: 'Centro de la ciudad',
+  balnearios: 'Balnearios',
+  other: 'Otro lugar',
+};
+
+function nearbyServiceLabel(value: string) {
+  return NEARBY_SERVICE_LABELS[value] ?? 'Otro lugar';
+}
+
+function safetyLevelLabel(value: NonNullable<Listing['safetyLevel']>) {
+  return ({ quiet: 'La persona que publica la considera tranquila', mixed: 'La seguridad se reporta como variable', caution: 'Se recomienda tomar precauciones', unknown: 'Sin información disponible', other: 'Otra percepción reportada' })[value];
+}
+
+function waterIssueLabel(value: NonNullable<Listing['waterIssueLevel']>) {
+  return ({ none: 'Sin problemas habituales reportados', occasional: 'Problemas ocasionales', frequent: 'Problemas frecuentes', severe: 'Problemas graves o suministro irregular', unknown: 'Sin información disponible', other: 'Otra situación reportada' })[value];
+}
+
+function transportLabel(value: NonNullable<Listing['transportAvailability']>) {
+  return ({ nearby: 'Hay transporte cerca', limited: 'El servicio es limitado', none: 'No hay transporte cercano', unknown: 'Sin información disponible' })[value];
+}
+
+function InfoBlock({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-cream-200 bg-cream-50 p-3 text-sm text-ink-500">
+      <h3 className="mb-1 flex items-center gap-2 font-semibold text-ink-700">{icon}{title}</h3>
+      {children}
     </div>
   );
 }

@@ -34,6 +34,17 @@ export type ListingCategory =
 export type ListingOperation = 'renta' | 'venta' | 'hospedaje';
 
 export type PriceUnit = 'mes' | 'noche' | 'total' | 'estancia';
+export type NearbyService =
+  | 'hospital-clinic'
+  | 'schools'
+  | 'market'
+  | 'public-transport'
+  | 'shops'
+  | 'parks'
+  | 'university'
+  | 'downtown'
+  | 'balnearios'
+  | 'other';
 
 export type ListingStatus =
   | 'draft'      // borrador (no usado en V1, pero útil después)
@@ -77,6 +88,17 @@ export interface Listing {
   parkingSpots?: number;
   areaM2?: number;
   amenities?: string[];   // ej. ["agua", "luz", "internet", "amueblado"]
+
+  // Entorno del inmueble, declarado por quien publica (opcional en registros anteriores).
+  nearbyPlaces?: string;
+  nearbyServices?: NearbyService[];
+  nearbyServicesOther?: string;
+  safetyLevel?: 'quiet' | 'mixed' | 'caution' | 'unknown' | 'other';
+  safetyDetails?: string;
+  waterIssueLevel?: 'none' | 'occasional' | 'frequent' | 'severe' | 'unknown' | 'other';
+  waterIssueDetails?: string;
+  transportAvailability?: 'nearby' | 'limited' | 'none' | 'unknown';
+  transportDestinations?: string;
 
   // Reglas de la casa (solo rentas y hospedaje).
   // Opcionales: los anuncios anteriores no las tienen.

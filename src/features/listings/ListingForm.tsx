@@ -17,6 +17,7 @@ import {
   Baby,
   PawPrint,
   Cigarette,
+  Landmark,
 } from 'lucide-react';
 import { listingSchema, type ListingInput } from '../../lib/zod-schemas';
 import {
@@ -94,6 +95,15 @@ export function ListingForm({
       parkingSpots: 0,
       areaM2: undefined,
       amenities: [],
+      nearbyPlaces: '',
+      nearbyServices: [],
+      nearbyServicesOther: '',
+      safetyLevel: '',
+      safetyDetails: '',
+      waterIssueLevel: '',
+      waterIssueDetails: '',
+      transportAvailability: '',
+      transportDestinations: '',
       maxGuests: undefined,
       childrenAllowed: true,
       petsAllowed: false,
@@ -119,6 +129,8 @@ export function ListingForm({
   const category = watch('category');
   const priceUnit = watch('priceUnit');
   const foodAvailable = watch('foodAvailable');
+  const safetyLevel = watch('safetyLevel');
+  const waterIssueLevel = watch('waterIssueLevel');
   const isLodging = category === 'hotel' || category === 'motel';
   const isMotel = category === 'motel';
   const showHouseRules = supportsHouseRules(category, operation);
@@ -484,6 +496,121 @@ export function ListingForm({
             )}
           />
         </Field>
+      </Section>
+
+      {/* ═══════════ Entorno y servicios cercanos ═══════════ */}
+      <Section
+        icon={<Landmark className="h-5 w-5" />}
+        title="Entorno y servicios cercanos"
+        subtitle="Información opcional para que las personas sepan qué hay alrededor"
+      >
+        <Field label="Lugares notables cercanos" error={errors.nearbyPlaces?.message}>
+          <textarea
+            rows={2}
+            maxLength={240}
+            placeholder="Ej.: centro, mercado, parque o balnearios de la zona…"
+            {...register('nearbyPlaces')}
+            className={`${inputClass} resize-y`}
+          />
+          <p className="mt-1 text-xs text-ink-400">Menciona referencias públicas y evita incluir datos personales.</p>
+        </Field>
+
+        <Field label="¿Qué servicios o lugares quedan cerca?" error={errors.nearbyServices?.message}>
+          <Controller
+            control={control}
+            name="nearbyServices"
+            render={({ field }) => {
+              const services = [
+                ['hospital-clinic', 'Hospital o clínica'],
+                ['schools', 'Escuela'],
+                ['market', 'Mercado o supermercado'],
+                ['public-transport', 'Transporte público'],
+                ['shops', 'Tiendas y comercios'],
+                ['parks', 'Parque o área recreativa'],
+                ['university', 'Universidad'],
+                ['downtown', 'Centro de la ciudad'],
+                ['balnearios', 'Balnearios'],
+                ['other', 'Otro'],
+              ] as const;
+              return (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {services.map(([value, label]) => (
+                    <label key={value} className="flex min-h-11 items-center gap-3 rounded-xl border border-cream-200 bg-white px-3 py-2 text-sm text-ink-700 transition-colors hover:border-brand-300">
+                      <input
+                        type="checkbox"
+                        checked={(field.value ?? []).includes(value)}
+                        onChange={(event) => {
+                          const current = field.value ?? [];
+                          field.onChange(event.target.checked
+                            ? [...current, value]
+                            : current.filter((item) => item !== value));
+                        }}
+                        className="h-4 w-4 accent-brand-600"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              );
+            }}
+          />
+        </Field>
+        {(watch('nearbyServices') ?? []).includes('other') && (
+          <Field label="Otros lugares cercanos" error={errors.nearbyServicesOther?.message}>
+            <input type="text" maxLength={120} placeholder="Describe otros lugares útiles" {...register('nearbyServicesOther')} className={inputClass} />
+          </Field>
+        )}
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Percepción de seguridad de la zona" error={errors.safetyLevel?.message}>
+            <select {...register('safetyLevel')} className={inputClass}>
+              <option value="">Prefiero no indicarlo</option>
+              <option value="quiet">Me parece tranquila</option>
+              <option value="mixed">La seguridad es variable</option>
+              <option value="caution">Conviene tomar precauciones</option>
+              <option value="unknown">No tengo información</option>
+              <option value="other">Otra percepción</option>
+            </select>
+            <p className="mt-1 text-xs text-ink-400">Es una referencia declarada por quien publica; IxmiPlace no verifica ni garantiza la seguridad de la zona.</p>
+          </Field>
+          <Field label="Disponibilidad de agua" error={errors.waterIssueLevel?.message}>
+            <select {...register('waterIssueLevel')} className={inputClass}>
+              <option value="">Sin información</option>
+              <option value="none">Sin problemas habituales reportados</option>
+              <option value="occasional">Problemas ocasionales</option>
+              <option value="frequent">Problemas frecuentes</option>
+              <option value="severe">Problemas graves o suministro muy irregular</option>
+              <option value="unknown">No lo sé</option>
+              <option value="other">Otra situación</option>
+            </select>
+          </Field>
+        </div>
+
+        {(safetyLevel === 'other' || safetyLevel === 'mixed' || safetyLevel === 'caution') && (
+          <Field label="Detalle sobre seguridad (opcional)" error={errors.safetyDetails?.message}>
+            <textarea rows={2} maxLength={240} placeholder="Comparte una referencia general y objetiva, sin datos personales" {...register('safetyDetails')} className={`${inputClass} resize-y`} />
+          </Field>
+        )}
+        {(waterIssueLevel === 'occasional' || waterIssueLevel === 'frequent' || waterIssueLevel === 'severe' || waterIssueLevel === 'other') && (
+          <Field label="¿Con qué frecuencia o cómo afecta el servicio?" error={errors.waterIssueDetails?.message}>
+            <textarea rows={2} maxLength={240} placeholder="Ej.: cortes algunas tardes, baja presión en temporada seca…" {...register('waterIssueDetails')} className={`${inputClass} resize-y`} />
+          </Field>
+        )}
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Transporte público cercano" error={errors.transportAvailability?.message}>
+            <select {...register('transportAvailability')} className={inputClass}>
+              <option value="">Sin información</option>
+              <option value="nearby">Sí, hay transporte cerca</option>
+              <option value="limited">Hay, pero con servicio limitado</option>
+              <option value="none">No hay transporte cercano</option>
+              <option value="unknown">No lo sé</option>
+            </select>
+          </Field>
+          <Field label="Rutas o destinos" error={errors.transportDestinations?.message}>
+            <input type="text" maxLength={200} placeholder="Ej.: centro, mercado, comunidades cercanas" {...register('transportDestinations')} className={inputClass} />
+          </Field>
+        </div>
       </Section>
 
       {/* ═══════════ Reglas de la casa ═══════════ */}

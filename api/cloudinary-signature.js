@@ -73,9 +73,9 @@ export default async function handler(req, res) {
     const db = getFirestore(app);
     const profileSnap = await db.collection('users').doc(user.uid).get();
     const profile = profileSnap.data();
-    if (!profile || profile.isBanned === true || profile.termsAcceptedVersion !== '2026-09-26-v2'
-      || profile.adultConfirmedVersion !== '2026-09-26-v2'
-      || profile.privacyConsentVersion !== '2026-09-30-v4') {
+    if (!profile || profile.isBanned === true || profile.termsAcceptedVersion !== '2026-10-03-v3'
+      || profile.adultConfirmedVersion !== '2026-10-03-v3'
+      || profile.privacyConsentVersion !== '2026-10-03-v6') {
       return respond(res, 403, { error: 'Cuenta no autorizada para subir imágenes.' });
     }
 

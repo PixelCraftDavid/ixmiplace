@@ -70,6 +70,16 @@ export function CreateListingPage() {
     if (data.amenities && data.amenities.length > 0)
       listing.amenities = data.amenities;
 
+    if (data.nearbyPlaces?.trim()) listing.nearbyPlaces = data.nearbyPlaces.trim();
+    if (data.nearbyServices?.length) listing.nearbyServices = data.nearbyServices;
+    if (data.nearbyServices?.includes('other') && data.nearbyServicesOther?.trim()) listing.nearbyServicesOther = data.nearbyServicesOther.trim();
+    if (data.safetyLevel) listing.safetyLevel = data.safetyLevel;
+    if (['other', 'mixed', 'caution'].includes(data.safetyLevel ?? '') && data.safetyDetails?.trim()) listing.safetyDetails = data.safetyDetails.trim();
+    if (data.waterIssueLevel) listing.waterIssueLevel = data.waterIssueLevel;
+    if (['occasional', 'frequent', 'severe', 'other'].includes(data.waterIssueLevel ?? '') && data.waterIssueDetails?.trim()) listing.waterIssueDetails = data.waterIssueDetails.trim();
+    if (data.transportAvailability) listing.transportAvailability = data.transportAvailability;
+    if (data.transportDestinations?.trim()) listing.transportDestinations = data.transportDestinations.trim();
+
     // Reglas de la casa: solo se guardan cuando aplican a la categoría/operación.
     if (supportsHouseRules(data.category, data.operation)) {
       listing.childrenAllowed = data.childrenAllowed ?? true;

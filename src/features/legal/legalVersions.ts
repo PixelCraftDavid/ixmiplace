@@ -1,7 +1,7 @@
 import type { AppUser } from '../../types/models';
 
-export const TERMS_VERSION = '2026-09-26-v2';
-export const PRIVACY_NOTICE_VERSION = '2026-09-30-v4';
+export const TERMS_VERSION = '2026-10-03-v3';
+export const PRIVACY_NOTICE_VERSION = '2026-10-03-v6';
 export const LISTING_CONSENT_VERSION = '2026-09-26';
 
 /** true si el usuario aceptó las versiones vigentes de términos, mayoría de edad y privacidad. */

@@ -51,7 +51,7 @@ export function LegalAcceptanceFields({
           className="mt-1 h-4 w-4 shrink-0 accent-brand-600"
         />
         <span>
-          Leí el <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline dark:text-brand-300">Aviso de Privacidad</Link> y consiento el tratamiento de mis datos para operar mi cuenta y las funciones que solicite.
+          Confirmo que leí el <Link to="/aviso-de-privacidad" target="_blank" className="font-semibold text-brand-700 underline dark:text-brand-300">Aviso de Privacidad</Link> y conozco las finalidades descritas. Los consentimientos opcionales (por ejemplo, divulgar mi teléfono o activar notificaciones) se solicitan por separado.
         </span>
       </label>
     </fieldset>

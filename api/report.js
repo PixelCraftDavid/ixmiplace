@@ -62,7 +62,7 @@ export default async function handler(req, res) {
     const db = getFirestore(app);
     const profileSnap = await db.collection('users').doc(user.uid).get();
     const profile = profileSnap.data();
-    if (!profile || profile.isBanned === true || profile.privacyConsentVersion !== '2026-09-30-v4') {
+    if (!profile || profile.isBanned === true || profile.privacyConsentVersion !== '2026-10-03-v6') {
       return respond(res, 403, { error: 'Cuenta no autorizada.' });
     }
     const date = day();
@@ -103,7 +103,7 @@ export default async function handler(req, res) {
         ...(comment.trim() ? { comment: comment.trim() } : {}),
         status: 'open',
         createdAt: now.toMillis(),
-        privacyConsentVersion: '2026-09-30-v4',
+        privacyConsentVersion: '2026-10-03-v6',
         privacyConsentAt: now,
       });
       transaction.update(listingRef, { reportsCount: FieldValue.increment(1) });

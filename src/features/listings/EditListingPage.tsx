@@ -114,6 +114,15 @@ export function EditListingPage() {
     updates.areaM2 = data.areaM2 && data.areaM2 > 0 ? data.areaM2 : deleteField();
     updates.amenities =
       data.amenities && data.amenities.length > 0 ? data.amenities : deleteField();
+    updates.nearbyPlaces = data.nearbyPlaces?.trim() || deleteField();
+    updates.nearbyServices = data.nearbyServices?.length ? data.nearbyServices : deleteField();
+    updates.nearbyServicesOther = data.nearbyServices?.includes('other') ? (data.nearbyServicesOther?.trim() || deleteField()) : deleteField();
+    updates.safetyLevel = data.safetyLevel || deleteField();
+    updates.safetyDetails = ['other', 'mixed', 'caution'].includes(data.safetyLevel ?? '') ? (data.safetyDetails?.trim() || deleteField()) : deleteField();
+    updates.waterIssueLevel = data.waterIssueLevel || deleteField();
+    updates.waterIssueDetails = ['occasional', 'frequent', 'severe', 'other'].includes(data.waterIssueLevel ?? '') ? (data.waterIssueDetails?.trim() || deleteField()) : deleteField();
+    updates.transportAvailability = data.transportAvailability || deleteField();
+    updates.transportDestinations = data.transportDestinations?.trim() || deleteField();
     if (listing.category === 'hotel' || listing.category === 'motel') {
       updates.price = data.price;
       updates.establishmentName = data.establishmentName?.trim() || deleteField();
@@ -258,6 +267,15 @@ export function EditListingPage() {
             parkingSpots: listing!.parkingSpots ?? 0,
             areaM2: listing!.areaM2,
             amenities: listing!.amenities ?? [],
+            nearbyPlaces: listing!.nearbyPlaces ?? '',
+            nearbyServices: listing!.nearbyServices ?? [],
+            nearbyServicesOther: listing!.nearbyServicesOther ?? '',
+            safetyLevel: listing!.safetyLevel,
+            safetyDetails: listing!.safetyDetails ?? '',
+            waterIssueLevel: listing!.waterIssueLevel,
+            waterIssueDetails: listing!.waterIssueDetails ?? '',
+            transportAvailability: listing!.transportAvailability,
+            transportDestinations: listing!.transportDestinations ?? '',
             showPhone: listing!.showPhone,
             availability: listing!.availability,
             establishmentName: listing!.establishmentName ?? '',

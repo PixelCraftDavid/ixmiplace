@@ -77,6 +77,20 @@ export const listingSchema = z
 
     amenities: z.array(plainText(1, 40)).max(30).optional(),
 
+    // Entorno y servicios cercanos. Todos son opcionales para anuncios existentes.
+    nearbyPlaces: plainText(0, 240).optional().or(z.literal('')),
+    nearbyServices: z.array(z.enum([
+      'hospital-clinic', 'schools', 'market', 'public-transport', 'shops',
+      'parks', 'university', 'downtown', 'balnearios', 'other',
+    ])).max(10).optional(),
+    nearbyServicesOther: plainText(0, 120).optional().or(z.literal('')),
+    safetyLevel: z.enum(['quiet', 'mixed', 'caution', 'unknown', 'other']).optional().or(z.literal('')),
+    safetyDetails: plainText(0, 240).optional().or(z.literal('')),
+    waterIssueLevel: z.enum(['none', 'occasional', 'frequent', 'severe', 'unknown', 'other']).optional().or(z.literal('')),
+    waterIssueDetails: plainText(0, 240).optional().or(z.literal('')),
+    transportAvailability: z.enum(['nearby', 'limited', 'none', 'unknown']).optional().or(z.literal('')),
+    transportDestinations: plainText(0, 200).optional().or(z.literal('')),
+
     // Reglas de la casa (solo aplican a rentas y hospedaje)
     maxGuests: z
       .number({ error: 'Indica un número de personas' })
