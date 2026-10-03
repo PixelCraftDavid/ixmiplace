@@ -371,14 +371,17 @@ export function ListingDetailPage() {
               </section>
             )}
 
-            {(listing.alcoholConsumptionAllowed !== undefined || listing.alcoholSalesAllowed !== undefined) && (
+            {(listing.alcoholConsumptionAllowed !== undefined || listing.alcoholSalesAllowed !== undefined || listing.commercialActivityAllowed !== undefined || listing.shortStayUse) && (
               <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-3 text-lg font-bold text-ink">Política sobre bebidas alcohólicas</h2>
+                <h2 className="mb-3 text-lg font-bold text-ink">Reglas de la casa</h2>
                 <div className="grid gap-3 text-sm sm:grid-cols-2">
                   {listing.alcoholConsumptionAllowed !== undefined && <InfoLine label="Consumo en el inmueble" value={listing.alcoholConsumptionAllowed ? 'Permitido según quien publica' : 'No permitido según quien publica'} />}
-                  {listing.alcoholSalesAllowed !== undefined && <InfoLine label="Venta en el inmueble" value={listing.alcoholSalesAllowed ? 'Permitida según quien publica' : 'No permitida según quien publica'} />}
+                  {listing.alcoholSalesAllowed !== undefined && <InfoLine label="Venta de bebidas alcohólicas" value={listing.alcoholSalesAllowed ? 'Permitida según quien publica' : 'No permitida según quien publica'} />}
+                  {listing.commercialActivityAllowed !== undefined && <InfoLine label="Venta de comida u otros productos" value={listing.commercialActivityAllowed ? 'Permitida según quien publica' : 'No permitida según quien publica'} />}
                 </div>
-                <p className="mt-3 text-xs text-ink-400">La plataforma no verifica licencias o permisos. Cualquier actividad comercial debe cumplir la normativa aplicable.</p>
+                {listing.commercialActivityNotes && <p className="mt-3 text-sm text-ink-600">Condiciones declaradas: {listing.commercialActivityNotes}</p>}
+                {listing.shortStayUse && <div className="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-950"><strong>Hospedaje o renta temporal</strong><p>{({ vacation: 'Vacaciones o descanso', events: 'Reuniones o eventos', both: 'Vacaciones y eventos', other: 'Otro uso permitido' } as const)[listing.shortStayUse]}</p>{listing.shortStayNotes && <p className="mt-1">{listing.shortStayNotes}</p>}</div>}
+                <p className="mt-3 text-xs text-ink-400">Son condiciones declaradas por quien publica. La plataforma no verifica licencias o permisos; confirma los acuerdos y la normativa aplicable.</p>
               </section>
             )}
 
@@ -387,7 +390,7 @@ export function ListingDetailPage() {
                 <h2 className="mb-3 text-lg font-bold text-ink">Visitas y convivencia</h2>
                 {listing.visitAvailability && <p className="text-sm text-ink-600">Horarios sugeridos: {listing.visitAvailability}</p>}
                 {listing.openHouseStartAt && listing.openHouseEndAt && <div className="mt-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900"><strong>Casa abierta</strong><p>{new Date(listing.openHouseStartAt).toLocaleString('es-MX')} – {new Date(listing.openHouseEndAt).toLocaleString('es-MX')}</p>{listing.openHouseCapacity && <p>Aforo aproximado: {listing.openHouseCapacity}</p>}{listing.openHouseNotes && <p>{listing.openHouseNotes}</p>}<p className="mt-2 text-xs">Solicita asistencia por mensaje; el propietario debe confirmar y no se garantiza un lugar.</p></div>}
-                {listing.roommateWanted && <div className="mt-3 rounded-xl bg-brand-50 p-4 text-sm text-brand-900"><strong>Busca compartir con roomie</strong>{listing.roommatePreferences && <p className="mt-1">{listing.roommatePreferences}</p>}<p className="mt-2 text-xs">Escribe al propietario para conversar sobre convivencia, costos y condiciones.</p></div>}
+                {listing.roommateWanted && <div className="mt-3 rounded-xl bg-brand-50 p-4 text-sm text-brand-900"><strong>Busca roomies</strong><dl className="mt-2 grid gap-2 sm:grid-cols-2"><div><dt className="text-brand-700">Personas que ya viven aquí</dt><dd className="font-semibold">{listing.currentOccupants ?? 'No indicado'}</dd></div><div><dt className="text-brand-700">Cupos que busca</dt><dd className="font-semibold">{listing.roommatesWantedCount ?? 'No indicado'}</dd></div><div><dt className="text-brand-700">Cuarto</dt><dd className="font-semibold">{listing.roommatePrivateRoom === undefined ? 'No indicado' : listing.roommatePrivateRoom ? 'Privado' : 'Compartido'}</dd></div><div><dt className="text-brand-700">Amueblado</dt><dd className="font-semibold">{listing.roommateFurnished === undefined ? 'No indicado' : listing.roommateFurnished ? 'Sí' : 'No'}</dd></div><div><dt className="text-brand-700">Baño compartido</dt><dd className="font-semibold">{listing.roommateSharedBathroom === undefined ? 'No indicado' : listing.roommateSharedBathroom ? 'Sí' : 'No'}</dd></div><div><dt className="text-brand-700">Cocina compartida</dt><dd className="font-semibold">{listing.roommateSharedKitchen === undefined ? 'No indicado' : listing.roommateSharedKitchen ? 'Sí' : 'No'}</dd></div></dl>{listing.roommatePreferences && <p className="mt-3">Convivencia: {listing.roommatePreferences}</p>}<p className="mt-2 text-xs">Coordina una conversación y visita antes de compartir documentos, llaves o dinero.</p></div>}
               </section>
             )}
 

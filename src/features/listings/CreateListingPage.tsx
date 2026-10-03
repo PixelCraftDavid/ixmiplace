@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, PencilLine, X } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
@@ -87,9 +87,11 @@ export function CreateListingPage() {
       listing.smokingAllowed = data.smokingAllowed ?? false;
       if (data.maxGuests && data.maxGuests > 0) listing.maxGuests = data.maxGuests;
     }
-    if (data.operation === 'renta' && (supportsHouseRules(data.category, data.operation) || data.category === 'local')) {
+    if (data.operation !== 'venta' && (supportsHouseRules(data.category, data.operation) || data.category === 'local')) {
       listing.alcoholConsumptionAllowed = data.alcoholConsumptionAllowed ?? false;
       listing.alcoholSalesAllowed = data.alcoholSalesAllowed ?? false;
+      listing.commercialActivityAllowed = data.commercialActivityAllowed ?? false;
+      if (data.commercialActivityAllowed && data.commercialActivityNotes?.trim()) listing.commercialActivityNotes = data.commercialActivityNotes.trim();
     }
 
     const optionalListingFields: (keyof ListingInput)[] = [
@@ -113,6 +115,8 @@ export function CreateListingPage() {
     if (data.visitAvailability?.trim()) listing.visitAvailability = data.visitAvailability.trim();
     if (data.openHouseNotes?.trim()) listing.openHouseNotes = data.openHouseNotes.trim();
     if (data.roommateWanted && data.roommatePreferences?.trim()) listing.roommatePreferences = data.roommatePreferences.trim();
+    if (data.shortStayUse) listing.shortStayUse = data.shortStayUse;
+    if (data.shortStayNotes?.trim()) listing.shortStayNotes = data.shortStayNotes.trim();
     if (data.category !== 'hotel' && data.category !== 'motel') {
       listing.stepFreeAccess = data.stepFreeAccess ?? false;
       listing.rampAccess = data.rampAccess ?? false;
@@ -238,6 +242,7 @@ export function CreateListingPage() {
           <p className="mx-auto mt-3 max-w-md text-ink-500">
             Llena el formulario. Tu anuncio será revisado y publicado en minutos.
           </p>
+          <Link to="/publicar-roomie" className="mt-4 inline-flex rounded-full border border-brand-300 px-4 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-50">¿Buscas roomie? Usa el formulario independiente →</Link>
         </div>
 
         {publishError && (

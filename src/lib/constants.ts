@@ -34,7 +34,7 @@ export function categoryEmoji(value: ListingCategory): string {
 export const OPERATIONS: { value: ListingOperation; label: string }[] = [
   { value: 'renta',     label: 'En renta' },
   { value: 'venta',     label: 'En venta' },
-  { value: 'hospedaje', label: 'Hospedaje' },
+  { value: 'hospedaje', label: 'Hospedaje o renta temporal' },
 ];
 
 export function operationLabel(value: ListingOperation): string {
@@ -54,6 +54,7 @@ export function priceUnitsFor(operation: ListingOperation): { value: PriceUnit; 
       ];
     case 'hospedaje':
       return [
+        { value: 'dia',    label: 'por día' },
         { value: 'noche', label: 'por noche' },
         { value: 'mes',   label: 'por mes' },
       ];
@@ -65,6 +66,7 @@ export function priceUnitsFor(operation: ListingOperation): { value: PriceUnit; 
 export function priceUnitLabel(unit?: PriceUnit): string {
   switch (unit) {
     case 'mes':   return '/ mes';
+    case 'dia':   return '/ día';
     case 'noche': return '/ noche';
     case 'total': return '';
     case 'estancia': return '/ estancia';

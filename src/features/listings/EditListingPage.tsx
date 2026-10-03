@@ -131,10 +131,11 @@ export function EditListingPage() {
       'accessibleBathroom', 'elevatorAccess', 'visitAvailability', 'openHouseStartAt',
       'openHouseEndAt', 'openHouseCapacity', 'openHouseNotes', 'roommateWanted',
       'roommatePreferences', 'alcoholConsumptionAllowed', 'alcoholSalesAllowed',
+      'commercialActivityAllowed', 'commercialActivityNotes', 'shortStayUse', 'shortStayNotes',
     ] as const) {
       const value = data[key];
       if (!(data.operation === 'renta' && (supportsHouseRules(data.category, data.operation) || data.category === 'local'))
-        && (key === 'alcoholConsumptionAllowed' || key === 'alcoholSalesAllowed')) {
+        && ['alcoholConsumptionAllowed', 'alcoholSalesAllowed', 'commercialActivityAllowed', 'commercialActivityNotes'].includes(key)) {
         updates[key] = deleteField();
         continue;
       }
@@ -142,8 +143,12 @@ export function EditListingPage() {
         'securityDepositMonths', 'guarantorRequired', 'proofIncomeRequired', 'minimumLeaseMonths',
         'waterBilling', 'waterMonthlyCost', 'electricityBilling', 'electricityMonthlyCost',
         'internetBilling', 'internetMonthlyCost', 'roommateWanted', 'roommatePreferences',
-        'alcoholConsumptionAllowed', 'alcoholSalesAllowed',
+        'alcoholConsumptionAllowed', 'alcoholSalesAllowed', 'commercialActivityAllowed', 'commercialActivityNotes',
       ].includes(key)) {
+        updates[key] = deleteField();
+        continue;
+      }
+      if ((key === 'shortStayUse' || key === 'shortStayNotes') && data.operation !== 'hospedaje') {
         updates[key] = deleteField();
         continue;
       }
@@ -319,6 +324,10 @@ export function EditListingPage() {
             smokingAllowed: listing!.smokingAllowed ?? false,
             alcoholConsumptionAllowed: listing!.alcoholConsumptionAllowed ?? false,
             alcoholSalesAllowed: listing!.alcoholSalesAllowed ?? false,
+            commercialActivityAllowed: listing!.commercialActivityAllowed ?? false,
+            commercialActivityNotes: listing!.commercialActivityNotes ?? '',
+            shortStayUse: listing!.shortStayUse ?? '',
+            shortStayNotes: listing!.shortStayNotes ?? '',
             securityDepositMonths: listing!.securityDepositMonths,
             guarantorRequired: listing!.guarantorRequired ?? false,
             proofIncomeRequired: listing!.proofIncomeRequired ?? false,

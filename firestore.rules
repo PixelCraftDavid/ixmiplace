@@ -67,11 +67,18 @@ service cloud.firestore {
         && (!('smokingAllowed' in d) || d.smokingAllowed is bool)
         && (!('alcoholConsumptionAllowed' in d) || d.alcoholConsumptionAllowed is bool)
         && (!('alcoholSalesAllowed' in d) || d.alcoholSalesAllowed is bool)
-        && (!('alcoholSalesAllowed' in d) || d.alcoholSalesAllowed != true || d.category == 'local');
+        && (!('commercialActivityAllowed' in d) || d.commercialActivityAllowed is bool)
+        && (!('commercialActivityNotes' in d) || (d.commercialActivityNotes is string && d.commercialActivityNotes.size() <= 240 && !d.commercialActivityNotes.matches('.*[<>].*')))
+        && (!('shortStayUse' in d) || (d.operation == 'hospedaje' && d.category in ['casa', 'departamento', 'cuarto'] && d.shortStayUse in ['vacation', 'events', 'both', 'other']))
+        && (!('shortStayNotes' in d) || (d.shortStayNotes is string && d.shortStayNotes.size() <= 240 && !d.shortStayNotes.matches('.*[<>].*')));
     }
 
     function validListingExtras(d) {
-      return (!('securityDepositMonths' in d) || (d.securityDepositMonths is int && d.securityDepositMonths >= 0 && d.securityDepositMonths <= 12))
+      return (!('priceUnit' in d) || d.priceUnit in ['mes', 'dia', 'noche', 'total', 'estancia'])
+        && (d.operation != 'renta' || !('priceUnit' in d) || d.priceUnit in ['mes', 'total'])
+        && (d.operation != 'venta' || !('priceUnit' in d) || d.priceUnit == 'total')
+        && (d.operation != 'hospedaje' || !('priceUnit' in d) || d.priceUnit in ['dia', 'noche', 'mes', 'estancia'])
+        && (!('securityDepositMonths' in d) || (d.securityDepositMonths is int && d.securityDepositMonths >= 0 && d.securityDepositMonths <= 12))
         && (!('minimumLeaseMonths' in d) || (d.minimumLeaseMonths is int && d.minimumLeaseMonths >= 1 && d.minimumLeaseMonths <= 120))
         && (!('guarantorRequired' in d) || d.guarantorRequired is bool)
         && (!('proofIncomeRequired' in d) || d.proofIncomeRequired is bool)
@@ -97,7 +104,25 @@ service cloud.firestore {
         && (!('openHouseCapacity' in d) || (d.openHouseCapacity is int && d.openHouseCapacity >= 1 && d.openHouseCapacity <= 500))
         && (!('openHouseNotes' in d) || (d.openHouseNotes is string && d.openHouseNotes.size() <= 240 && !d.openHouseNotes.matches('.*[<>].*')))
         && (!('roommateWanted' in d) || d.roommateWanted is bool)
-        && (!('roommatePreferences' in d) || (d.roommatePreferences is string && d.roommatePreferences.size() <= 300 && !d.roommatePreferences.matches('.*[<>].*')));
+        && (!('roommatePreferences' in d) || (d.roommatePreferences is string && d.roommatePreferences.size() <= 300 && !d.roommatePreferences.matches('.*[<>].*')))
+        && (!('roommatesWantedCount' in d) || (d.roommatesWantedCount is int && d.roommatesWantedCount >= 1 && d.roommatesWantedCount <= 10))
+        && (!('currentOccupants' in d) || (d.currentOccupants is int && d.currentOccupants >= 1 && d.currentOccupants <= 30))
+        && (!('roommatePrivateRoom' in d) || d.roommatePrivateRoom is bool)
+        && (!('roommateFurnished' in d) || d.roommateFurnished is bool)
+        && (!('roommateSharedBathroom' in d) || d.roommateSharedBathroom is bool)
+        && (!('roommateSharedKitchen' in d) || d.roommateSharedKitchen is bool)
+        && (!('roommateAuthorizationConfirmed' in d) || d.roommateAuthorizationConfirmed is bool)
+        && (!('roommateWanted' in d) || d.roommateWanted != true || (d.category in ['casa', 'departamento', 'cuarto']
+          && d.operation == 'renta'
+          && (!('roommatesWantedCount' in d) || (d.lat == 20.4833 && d.lng == -99.2167))))
+        && (!('roommatesWantedCount' in d) || (d.roommateWanted == true
+          && 'currentOccupants' in d
+          && 'roommatePrivateRoom' in d
+          && 'roommateFurnished' in d
+          && 'roommateSharedBathroom' in d
+          && 'roommateSharedKitchen' in d
+          && 'roommateAuthorizationConfirmed' in d
+          && d.roommateAuthorizationConfirmed == true));
     }
 
     // Entorno declarado por la persona que publica. Opcional para mantener
@@ -346,13 +371,16 @@ service cloud.firestore {
           'maxGuests', 'childrenAllowed', 'petsAllowed', 'smokingAllowed',
           'whatsappContactsCount', 'favoritesCount', 'createdAt', 'updatedAt',
           'alcoholConsumptionAllowed', 'alcoholSalesAllowed',
+          'commercialActivityAllowed', 'commercialActivityNotes', 'shortStayUse', 'shortStayNotes',
           'securityDepositMonths', 'guarantorRequired', 'proofIncomeRequired',
           'minimumLeaseMonths', 'rentalRequirementsNotes',
           'waterBilling', 'waterMonthlyCost', 'electricityBilling', 'electricityMonthlyCost',
           'internetBilling', 'internetMonthlyCost', 'stepFreeAccess', 'rampAccess',
           'accessibleBathroom', 'elevatorAccess', 'visitAvailability',
           'openHouseStartAt', 'openHouseEndAt', 'openHouseCapacity', 'openHouseNotes',
-          'roommateWanted', 'roommatePreferences'
+          'roommateWanted', 'roommatePreferences', 'roommatesWantedCount', 'currentOccupants',
+          'roommatePrivateRoom', 'roommateFurnished', 'roommateSharedBathroom', 'roommateSharedKitchen',
+          'roommateAuthorizationConfirmed'
         ])
         && request.resource.data.title is string
         && request.resource.data.title.size() >= 8
@@ -378,6 +406,11 @@ service cloud.firestore {
         && request.resource.data.availability in ['available', 'occupied', 'reserved', 'rented', 'sold', 'unavailable', 'unconfirmed']
         && validHouseRules(request.resource.data)
         && validListingExtras(request.resource.data)
+        && (!('roommateWanted' in request.resource.data) || request.resource.data.roommateWanted != true
+          || request.resource.data.keys().hasAll([
+            'roommatesWantedCount', 'currentOccupants', 'roommatePrivateRoom', 'roommateFurnished',
+            'roommateSharedBathroom', 'roommateSharedKitchen', 'roommateAuthorizationConfirmed'
+          ]) && request.resource.data.roommateAuthorizationConfirmed == true)
         && validNearbyInformation(request.resource.data)
         && (request.resource.data.category != 'hotel'
           || (request.resource.data.operation == 'hospedaje'
@@ -450,13 +483,18 @@ service cloud.firestore {
             'smokingAllowed',
             'alcoholConsumptionAllowed',
             'alcoholSalesAllowed',
+            'commercialActivityAllowed',
+            'commercialActivityNotes',
+            'shortStayUse',
+            'shortStayNotes',
             'securityDepositMonths', 'guarantorRequired', 'proofIncomeRequired',
             'minimumLeaseMonths', 'rentalRequirementsNotes',
             'waterBilling', 'waterMonthlyCost', 'electricityBilling', 'electricityMonthlyCost',
             'internetBilling', 'internetMonthlyCost', 'stepFreeAccess', 'rampAccess',
             'accessibleBathroom', 'elevatorAccess', 'visitAvailability',
             'openHouseStartAt', 'openHouseEndAt', 'openHouseCapacity', 'openHouseNotes',
-            'roommateWanted', 'roommatePreferences',
+            'roommateWanted', 'roommatePreferences', 'roommatesWantedCount', 'currentOccupants',
+            'roommatePrivateRoom', 'roommateFurnished', 'roommateSharedBathroom', 'roommateSharedKitchen',
             'photos',
             'photoPublicIds',
             'ownerEmailVerified',

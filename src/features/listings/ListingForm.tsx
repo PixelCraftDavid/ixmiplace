@@ -114,6 +114,10 @@ export function ListingForm({
       smokingAllowed: false,
       alcoholConsumptionAllowed: false,
       alcoholSalesAllowed: false,
+      commercialActivityAllowed: false,
+      commercialActivityNotes: '',
+      shortStayUse: undefined,
+      shortStayNotes: '',
       guarantorRequired: false,
       proofIncomeRequired: false,
       waterBilling: 'unknown',
@@ -147,12 +151,14 @@ export function ListingForm({
   const foodAvailable = watch('foodAvailable');
   const safetyLevel = watch('safetyLevel');
   const waterIssueLevel = watch('waterIssueLevel');
-  const roommateWanted = watch('roommateWanted');
+  const commercialActivityAllowed = watch('commercialActivityAllowed');
+  const isResidentialShortStay = operation === 'hospedaje' && ['casa', 'departamento', 'cuarto'].includes(category);
   const openHouseStartAt = watch('openHouseStartAt');
   const openHouseEndAt = watch('openHouseEndAt');
   const isLodging = category === 'hotel' || category === 'motel';
   const isMotel = category === 'motel';
   const showHouseRules = supportsHouseRules(category, operation);
+  const showCommercialRules = operation !== 'venta' && (showHouseRules || category === 'local');
   const priceUnits = isMotel
     ? [
         { value: 'estancia' as const, label: 'por estancia' },
@@ -633,58 +639,55 @@ export function ListingForm({
       </Section>
 
       {/* ═══════════ Reglas de la casa ═══════════ */}
-      {showHouseRules && (
+      {showCommercialRules && (
         <Section
           icon={<Users className="h-5 w-5" />}
-          title={isLodging ? 'Ocupación y políticas' : 'Reglas de la casa'}
+          title={isLodging ? 'Ocupación y políticas' : category === 'local' ? 'Reglas del local' : 'Reglas de la casa'}
           subtitle="Ayuda a los interesados a saber si es para ellos"
         >
-          <Field
-            label={isLodging ? 'Capacidad máxima por habitación' : 'Número máximo de personas'}
-            error={errors.maxGuests?.message}
-          >
-            <input
-              type="number"
-              min="1"
-              max={LISTING_LIMITS.maxGuestsMax}
-              placeholder="4"
-              {...register('maxGuests', { setValueAs: optionalNumber })}
-              className={inputClass}
-            />
-          </Field>
+          {showHouseRules && <>
+            <Field
+              label={isLodging ? 'Capacidad máxima por habitación' : 'Número máximo de personas'}
+              error={errors.maxGuests?.message}
+            >
+              <input
+                type="number"
+                min="1"
+                max={LISTING_LIMITS.maxGuestsMax}
+                placeholder="4"
+                {...register('maxGuests', { setValueAs: optionalNumber })}
+                className={inputClass}
+              />
+            </Field>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <RuleToggle
-              icon={<Baby className="h-4 w-4" />}
-              label="Se aceptan niños"
-              {...register('childrenAllowed')}
-            />
-            <RuleToggle
-              icon={<PawPrint className="h-4 w-4" />}
-              label="Pet friendly"
-              {...register('petsAllowed')}
-            />
-            <RuleToggle
-              icon={<Cigarette className="h-4 w-4" />}
-              label="Se permite fumar"
-              {...register('smokingAllowed')}
-            />
-          </div>
-        </Section>
-      )}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <RuleToggle icon={<Baby className="h-4 w-4" />} label="Se aceptan niños" {...register('childrenAllowed')} />
+              <RuleToggle icon={<PawPrint className="h-4 w-4" />} label="Pet friendly" {...register('petsAllowed')} />
+              <RuleToggle icon={<Cigarette className="h-4 w-4" />} label="Se permite fumar" {...register('smokingAllowed')} />
+            </div>
+          </>}
 
-      {operation === 'renta' && (supportsHouseRules(category, operation) || category === 'local') && (
-        <Section icon={<Info className="h-5 w-5" />} title="Política de bebidas alcohólicas" subtitle="Para venta de alcohol selecciona Local comercial y verifica las licencias aplicables">
           <div className="grid gap-3 sm:grid-cols-2">
             <RuleToggle label="Se permite consumir bebidas alcohólicas" {...register('alcoholConsumptionAllowed')} />
             <RuleToggle label="Se permite vender bebidas alcohólicas" {...register('alcoholSalesAllowed')} />
+            <RuleToggle label="Se permite vender comida u otros productos desde el inmueble" {...register('commercialActivityAllowed')} />
           </div>
+          {commercialActivityAllowed && <Field label="Condiciones para la actividad de venta (opcional)"><textarea rows={2} maxLength={240} {...register('commercialActivityNotes')} className={`${inputClass} resize-y`} placeholder="Ej.: solo comida empacada, horario limitado; no incluyas datos personales" /></Field>}
+          <p className="text-xs text-ink-400">Son condiciones declaradas por quien publica; las actividades deben cumplir las reglas y permisos aplicables.</p>
+
+          {isResidentialShortStay && <div className="space-y-4 rounded-xl border border-brand-200 bg-brand-50/60 p-4">
+            <p className="text-sm font-semibold text-brand-900">Renta temporal por noche</p>
+            <Field label="Uso previsto"><select {...register('shortStayUse')} className={inputClass}><option value="">Elige una opción</option><option value="vacation">Vacaciones o descanso</option><option value="events">Reuniones o eventos</option><option value="both">Vacaciones y eventos</option><option value="other">Otro uso permitido</option></select></Field>
+            <Field label="Condiciones de estancia (opcional)"><textarea rows={2} maxLength={240} {...register('shortStayNotes')} className={`${inputClass} resize-y`} placeholder="Ej.: horario de silencio, limpieza, número máximo de visitantes" /></Field>
+            <p className="text-xs text-brand-800">El precio puede expresarse por día o por noche. Confirma con quien publica si el evento o reunión está permitido y qué servicios incluye.</p>
+          </div>}
         </Section>
       )}
 
       {/* ═══════════ Condiciones, servicios y accesibilidad ═══════════ */}
       {(operation === 'renta' || operation === 'hospedaje') && (
-        <Section icon={<Droplets className="h-5 w-5" />} title="Costos y requisitos" subtitle="Aclara qué incluye la renta y qué necesita el interesado">
+        <Section icon={<Droplets className="h-5 w-5" />} title={operation === 'hospedaje' ? 'Condiciones de estancia' : 'Costos y requisitos'} subtitle={operation === 'hospedaje' ? 'Define condiciones para noches, vacaciones o eventos' : 'Aclara qué incluye la renta y qué necesita el interesado'}>
+          {operation === 'renta' && <>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Depósito (meses)"><input type="number" min="0" max="12" {...register('securityDepositMonths', { setValueAs: optionalNumber })} className={inputClass} /></Field>
             <Field label="Plazo mínimo (meses)"><input type="number" min="1" max="120" {...register('minimumLeaseMonths', { setValueAs: optionalNumber })} className={inputClass} /></Field>
@@ -694,12 +697,15 @@ export function ListingForm({
             <RuleToggle label="Se comprueban ingresos" {...register('proofIncomeRequired')} />
           </div>
           <Field label="Otros requisitos"><textarea rows={2} maxLength={300} {...register('rentalRequirementsNotes')} className={`${inputClass} resize-y`} placeholder="Ej.: identificación y referencias" /></Field>
+          </>}
+          {operation === 'renta' && <>
           <div className="grid gap-4 sm:grid-cols-3">
             <UtilityField label="Agua" billingName="waterBilling" costName="waterMonthlyCost" register={register} inputClass={inputClass} optionalNumber={optionalNumber} />
             <UtilityField label="Luz" billingName="electricityBilling" costName="electricityMonthlyCost" register={register} inputClass={inputClass} optionalNumber={optionalNumber} />
             <UtilityField label="Internet" billingName="internetBilling" costName="internetMonthlyCost" register={register} inputClass={inputClass} optionalNumber={optionalNumber} />
           </div>
           <p className="text-xs text-ink-400">Los montos son estimados declarados por quien publica; confirma el importe y la forma de cobro directamente.</p>
+          </>}
         </Section>
       )}
 
@@ -713,7 +719,7 @@ export function ListingForm({
       </Section>
 
       {/* ═══════════ Visitas, roomies e inspección ═══════════ */}
-      <Section icon={<CalendarDays className="h-5 w-5" />} title="Visitas y convivencia" subtitle="Coordina una visita y aclara si buscas compartir el espacio">
+      <Section icon={<CalendarDays className="h-5 w-5" />} title="Visitas" subtitle="Coordina una cita o una jornada de puertas abiertas">
         <Field label="Horarios habituales para visitar"><input maxLength={160} {...register('visitAvailability')} className={inputClass} placeholder="Ej.: lunes a sábado, de 10:00 a 17:00; con cita" /></Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Casa abierta: inicio"><input type="datetime-local" value={toLocalDateTime(openHouseStartAt)} onChange={(e) => setValue('openHouseStartAt', e.target.value ? new Date(e.target.value).getTime() : undefined, { shouldValidate: true })} className={inputClass} /></Field>
@@ -723,10 +729,9 @@ export function ListingForm({
         <Field label="Indicaciones de la visita"><input maxLength={240} {...register('openHouseNotes')} className={inputClass} placeholder="Ej.: confirmar asistencia; punto de encuentro" /></Field>
         <p className="text-xs text-ink-400">Enviar una solicitud no reserva una visita ni un lugar; el propietario debe confirmarla.</p>
         {operation === 'renta' && (category === 'cuarto' || category === 'departamento' || category === 'casa') && (
-          <>
-            <RuleToggle label="Busco compartir este espacio con un roomie" {...register('roommateWanted')} />
-            {roommateWanted && <Field label="Preferencias de convivencia (opcional)"><textarea rows={2} maxLength={300} {...register('roommatePreferences')} className={`${inputClass} resize-y`} placeholder="Horarios, áreas compartidas o dinámica deseada; no incluyas datos sensibles" /></Field>}
-          </>
+          <Link to="/publicar-roomie" className="block rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm font-semibold text-brand-900 transition hover:border-brand-400 hover:bg-brand-100">
+            ¿Quieres compartir tu espacio? Publica una búsqueda de roomie en su formulario separado →
+          </Link>
         )}
       </Section>
 

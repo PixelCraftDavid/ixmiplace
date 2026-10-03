@@ -33,7 +33,7 @@ export type ListingCategory =
 
 export type ListingOperation = 'renta' | 'venta' | 'hospedaje';
 
-export type PriceUnit = 'mes' | 'noche' | 'total' | 'estancia';
+export type PriceUnit = 'mes' | 'dia' | 'noche' | 'total' | 'estancia';
 export type NearbyService =
   | 'hospital-clinic'
   | 'schools'
@@ -109,6 +109,10 @@ export interface Listing {
   smokingAllowed?: boolean;
   alcoholConsumptionAllowed?: boolean;
   alcoholSalesAllowed?: boolean;
+  commercialActivityAllowed?: boolean;
+  commercialActivityNotes?: string;
+  shortStayUse?: 'vacation' | 'events' | 'both' | 'other';
+  shortStayNotes?: string;
 
   // Condiciones de renta y servicios (opcionales para anuncios anteriores).
   securityDepositMonths?: number;
@@ -139,6 +143,13 @@ export interface Listing {
   // Posibilidad de compartir el espacio y buscar roomie.
   roommateWanted?: boolean;
   roommatePreferences?: string;
+  roommatesWantedCount?: number;
+  currentOccupants?: number;
+  roommatePrivateRoom?: boolean;
+  roommateFurnished?: boolean;
+  roommateSharedBathroom?: boolean;
+  roommateSharedKitchen?: boolean;
+  roommateAuthorizationConfirmed?: boolean;
 
   // Datos adicionales para anuncios de habitaciones de hotel o motel
   establishmentName?: string;

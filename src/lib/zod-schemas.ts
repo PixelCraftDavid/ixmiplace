@@ -41,7 +41,7 @@ export const listingSchema = z
       .positive('El precio debe ser mayor a 0')
       .max(LISTING_LIMITS.priceMax, 'Precio demasiado alto'),
 
-    priceUnit: z.enum(['mes', 'noche', 'total', 'estancia']).optional(),
+    priceUnit: z.enum(['mes', 'dia', 'noche', 'total', 'estancia']).optional(),
 
     establishmentName: plainText(0, 100).optional().or(z.literal('')),
     roomType: plainText(0, 80).optional().or(z.literal('')),
@@ -103,6 +103,10 @@ export const listingSchema = z
     smokingAllowed: z.boolean().optional(),
     alcoholConsumptionAllowed: z.boolean().optional(),
     alcoholSalesAllowed: z.boolean().optional(),
+    commercialActivityAllowed: z.boolean().optional(),
+    commercialActivityNotes: plainText(0, 240).optional().or(z.literal('')),
+    shortStayUse: z.enum(['vacation', 'events', 'both', 'other']).optional().or(z.literal('')),
+    shortStayNotes: plainText(0, 240).optional().or(z.literal('')),
 
     securityDepositMonths: z.number().int().min(0).max(12).optional(),
     guarantorRequired: z.boolean().optional(),
@@ -129,6 +133,12 @@ export const listingSchema = z
 
     roommateWanted: z.boolean().optional(),
     roommatePreferences: plainText(0, 300).optional().or(z.literal('')),
+    roommatesWantedCount: z.number().int().min(1).max(10).optional(),
+    currentOccupants: z.number().int().min(1).max(30).optional(),
+    roommatePrivateRoom: z.boolean().optional(),
+    roommateFurnished: z.boolean().optional(),
+    roommateSharedBathroom: z.boolean().optional(),
+    roommateSharedKitchen: z.boolean().optional(),
 
     showPhone: z.boolean().default(true),
 
@@ -172,9 +182,9 @@ export const listingSchema = z
       path: ['roomType'],
     }
   )
-  .refine((data) => data.alcoholSalesAllowed !== true || data.category === 'local', {
-    message: 'La venta de alcohol solo puede anunciarse para un local comercial.',
-    path: ['alcoholSalesAllowed'],
+  .refine((data) => data.roommateWanted !== true || (data.operation === 'renta' && ['casa', 'departamento', 'cuarto'].includes(data.category)), {
+    message: 'La búsqueda de roomie solo aplica a cuartos, departamentos o casas en renta.',
+    path: ['roommateWanted'],
   })
   .refine((data) => (data.openHouseStartAt === undefined) === (data.openHouseEndAt === undefined), {
     message: 'Indica fecha y hora de inicio y término de la casa abierta.',
@@ -196,6 +206,45 @@ export const listingSchema = z
   });
 
 export type ListingInput = z.infer<typeof listingSchema>;
+
+// Formulario separado para buscar roomie. Se convierte en un anuncio estándar
+// de cuarto en renta para conservar moderación, lectura y reportes actuales.
+export const roommateListingSchema = z.object({
+  title: plainText(8, 80),
+  description: plainText(30, 1500),
+  price: z.number().positive().max(LISTING_LIMITS.priceMax),
+  colonia: plainText(2, 80),
+  whatsapp: z.string().regex(/^\d{10}$/, 'Debe ser un número de 10 dígitos (sin espacios)'),
+  currentOccupants: z.number().int().min(1).max(30),
+  roommatesWantedCount: z.number().int().min(1).max(10),
+  roommatePrivateRoom: z.boolean(),
+  roommateFurnished: z.boolean(),
+  roommateSharedBathroom: z.boolean(),
+  roommateSharedKitchen: z.boolean(),
+  roommateAuthorizationConfirmed: z.boolean().refine((value) => value, 'Confirma que eres propietario o tienes autorización para compartir el espacio.'),
+  petsAllowed: z.boolean(),
+  smokingAllowed: z.boolean(),
+  alcoholConsumptionAllowed: z.boolean(),
+  alcoholSalesAllowed: z.boolean(),
+  commercialActivityAllowed: z.boolean(),
+  commercialActivityNotes: plainText(0, 240).optional().or(z.literal('')),
+  roommatePreferences: plainText(0, 300).optional().or(z.literal('')),
+  waterBilling: z.enum(['included', 'extra', 'unknown']),
+  waterMonthlyCost: z.number().min(0).max(100000).optional(),
+  electricityBilling: z.enum(['included', 'extra', 'unknown']),
+  electricityMonthlyCost: z.number().min(0).max(100000).optional(),
+  internetBilling: z.enum(['included', 'extra', 'unknown']),
+  internetMonthlyCost: z.number().min(0).max(100000).optional(),
+  publicationConsentAccepted: z.boolean().refine((value) => value, 'Confirma que tienes autorización para publicar.'),
+}).strict().refine((data) =>
+  (data.waterBilling !== 'extra' || data.waterMonthlyCost !== undefined)
+  && (data.electricityBilling !== 'extra' || data.electricityMonthlyCost !== undefined)
+  && (data.internetBilling !== 'extra' || data.internetMonthlyCost !== undefined), {
+  message: 'Indica el costo estimado mensual de cada servicio que se paga aparte.',
+  path: ['waterMonthlyCost'],
+});
+
+export type RoommateListingInput = z.infer<typeof roommateListingSchema>;
 
 // ============================================================
 // Reporte

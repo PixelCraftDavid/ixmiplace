@@ -15,6 +15,7 @@ import { SuspendedPage } from '../features/auth/SuspendedPage';
 import { EditProfilePage } from '../features/auth/EditProfilePage';
 
 import { CreateListingPage } from '../features/listings/CreateListingPage';
+import { CreateRoommateListingPage } from '../features/listings/CreateRoommateListingPage';
 import { EditListingPage } from '../features/listings/EditListingPage';
 import { MyListingsPage } from '../features/listings/MyListingsPage';
 import { ListingDetailPage } from '../features/listings/ListingDetailPage';
@@ -114,6 +115,8 @@ export function AppRouter() {
               <Route path="/perfil" element={<EditProfilePage />} />
 
               <Route path="/publicar" element={<CreateListingPage />} />
+
+              <Route path="/publicar-roomie" element={<CreateRoommateListingPage />} />
 
               <Route path="/editar/:id" element={<EditListingPage />} />
 
