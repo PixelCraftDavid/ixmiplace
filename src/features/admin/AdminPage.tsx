@@ -9,11 +9,16 @@ import {
   Search,
   ShieldCheck,
   X,
-  MessageCircle,
   BarChart3,
   Ban,
   UserCheck,
   Trash2,
+  LayoutDashboard,
+  Building2,
+  Flag,
+  UsersRound,
+  Wrench,
+  ArrowUpRight,
 } from 'lucide-react';
 import {
   collection,
@@ -37,6 +42,26 @@ import { migratePrivateContacts } from '../../lib/contact-migration';
 import { postProtectedApi } from '../../lib/protected-api';
 
 type AdminFilter = 'all' | 'pending' | 'published' | 'rejected' | 'archived';
+type AdminSection = 'overview' | 'listings' | 'reports' | 'users' | 'tools';
+
+function sectionHeading(section: AdminSection) {
+  const headings: Record<AdminSection, { title: string; description: string }> = {
+    overview: { title: 'Panel de administración', description: 'Una vista rápida de la actividad y las tareas pendientes.' },
+    listings: { title: 'Publicaciones', description: 'Busca, filtra y modera los anuncios de IxmiPlace.' },
+    reports: { title: 'Reportes', description: 'Revisa los avisos de la comunidad y registra una resolución.' },
+    users: { title: 'Usuarios', description: 'Consulta cuentas y administra suspensiones.' },
+    tools: { title: 'Herramientas', description: 'Tareas de mantenimiento que se ejecutan manualmente.' },
+  };
+  return headings[section];
+}
+
+const ADMIN_SECTIONS: { id: AdminSection; label: string; icon: typeof LayoutDashboard }[] = [
+  { id: 'overview', label: 'Resumen', icon: LayoutDashboard },
+  { id: 'listings', label: 'Publicaciones', icon: Building2 },
+  { id: 'reports', label: 'Reportes', icon: Flag },
+  { id: 'users', label: 'Usuarios', icon: UsersRound },
+  { id: 'tools', label: 'Herramientas', icon: Wrench },
+];
 
 const FILTERS: { value: AdminFilter; label: string }[] = [
   { value: 'all', label: 'Todas' },
@@ -82,6 +107,7 @@ export function AdminPage() {
   const [migrationSummary, setMigrationSummary] = useState('');
   const [cleanupRunning, setCleanupRunning] = useState(false);
   const [cleanupSummary, setCleanupSummary] = useState('');
+  const [activeSection, setActiveSection] = useState<AdminSection>('overview');
 
   useEffect(() => {
     if (!profile || profile.role !== 'admin') return;
@@ -153,14 +179,9 @@ export function AdminPage() {
 
   const statistics = useMemo(
     () => ({
-      views: listings.reduce((total, listing) => total + (listing.viewsCount ?? 0), 0),
-      contacts: listings.reduce(
-        (total, listing) => total + (listing.whatsappContactsCount ?? 0),
-        0
-      ),
       openReports: reports.filter((report) => report.status === 'open').length,
     }),
-    [listings, reports]
+    [reports]
   );
 
   const filteredListings = useMemo(() => {
@@ -175,6 +196,30 @@ export function AdminPage() {
       return matchesFilter && matchesSearch;
     });
   }, [filter, listings, search]);
+
+  const filteredReports = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    return reports.filter((report) => {
+      if (!normalizedSearch) return true;
+      const listing = listings.find((item) => item.id === report.listingId);
+      return [
+        report.comment,
+        report.reason,
+        report.reporterId,
+        listing?.title,
+        report.listingId,
+      ].some((value) => value?.toLowerCase().includes(normalizedSearch));
+    });
+  }, [listings, reports, search]);
+
+  const filteredUsers = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    return users.filter((user) => !normalizedSearch || [
+      user.displayName,
+      user.email,
+      user.uid,
+    ].some((value) => value?.toLowerCase().includes(normalizedSearch)));
+  }, [users, search]);
 
   if (authLoading) return null;
   if (!profile || profile.role !== 'admin') return <Navigate to="/" replace />;
@@ -458,28 +503,40 @@ export function AdminPage() {
   return (
     <main className="min-h-screen bg-cream px-4 pb-16 pt-24">
       <div className="mx-auto max-w-7xl py-8">
-        <header className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <header className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Espacio privado
+              ADMINISTRACIÓN · ESPACIO PRIVADO
             </div>
-            <h1 className="text-3xl font-extrabold text-ink sm:text-4xl">Panel de administrador</h1>
-            <p className="mt-2 text-ink-500">Modera las propiedades antes de que lleguen al público.</p>
+            <h1 className="text-3xl font-semibold tracking-[-0.04em] text-ink-900 sm:text-4xl">{sectionHeading(activeSection).title}</h1>
+            <p className="mt-2 text-sm text-ink-500 sm:text-base">{sectionHeading(activeSection).description}</p>
           </div>
 
-          <label className="relative block w-full lg:w-80">
+          {activeSection !== 'overview' && activeSection !== 'tools' && <label className="relative block w-full lg:w-80">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar por título, zona o propietario"
-              className="w-full rounded-xl border border-cream-300 bg-white py-3 pl-10 pr-4 text-sm text-ink outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15"
+              placeholder={activeSection === 'listings' ? 'Buscar anuncio, zona o propietario' : activeSection === 'reports' ? 'Buscar reporte o publicación' : 'Buscar nombre, correo o usuario'}
+              className="motion-ease w-full rounded-xl border border-ink-700/10 bg-white py-3 pl-10 pr-4 text-sm text-ink-800 shadow-[0_4px_18px_rgba(30,36,28,0.04)] outline-none transition focus:border-brand-500/50 focus:ring-4 focus:ring-brand-500/10"
             />
-          </label>
+          </label>}
         </header>
 
-        <section className="mb-8 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <nav aria-label="Secciones del panel" className="mb-8 flex gap-1 overflow-x-auto rounded-2xl border border-ink-700/10 bg-white/75 p-1.5 shadow-[0_8px_26px_rgba(30,36,28,0.04)] backdrop-blur-sm">
+          {ADMIN_SECTIONS.map((section) => {
+            const Icon = section.icon;
+            const badge = section.id === 'listings' ? counts.pending : section.id === 'reports' ? statistics.openReports : undefined;
+            return <button key={section.id} type="button" onClick={() => { setActiveSection(section.id); setSearch(''); }} aria-current={activeSection === section.id ? 'page' : undefined} className={`motion-ease inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-medium transition duration-200 active:scale-[0.98] sm:px-4 ${activeSection === section.id ? 'bg-ink-900 text-white shadow-[0_4px_12px_rgba(27,32,24,0.16)]' : 'text-ink-500 hover:bg-ink-700/[0.04] hover:text-ink-800'}`}>
+              <Icon className="h-4 w-4" aria-hidden="true" />{section.label}
+              {badge !== undefined && badge > 0 && <span className={`min-w-5 rounded-full px-1.5 py-0.5 text-center text-[10px] font-semibold ${activeSection === section.id ? 'bg-white/15 text-white' : 'bg-amber-500/10 text-amber-800'}`}>{badge}</span>}
+            </button>;
+          })}
+        </nav>
+
+        {activeSection === 'tools' && <div className="space-y-4">
+        <section className="flex flex-col gap-3 rounded-2xl border border-amber-300/50 bg-amber-50/80 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-bold text-amber-950">Preparar anuncios existentes</h2>
             <p className="mt-1 max-w-3xl text-sm text-amber-900/80">
@@ -498,7 +555,7 @@ export function AdminPage() {
           </button>
         </section>
 
-        <section className="mb-8 flex flex-col gap-3 rounded-2xl border border-cream-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+        <section className="flex flex-col gap-3 rounded-2xl border border-ink-700/10 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-bold text-ink-800">Limpiar límites de abuso vencidos</h2>
             <p className="mt-1 max-w-3xl text-sm text-ink-500">
@@ -516,22 +573,29 @@ export function AdminPage() {
             {cleanupRunning ? 'Limpiando…' : 'Limpiar registros vencidos'}
           </button>
         </section>
+        </div>}
 
-        <section className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        {activeSection === 'overview' && <>
+        <section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Metric icon={<Clock3 />} label="En revisión" value={counts.pending} tone="amber" />
           <Metric icon={<Check />} label="Publicadas" value={counts.published} tone="green" />
-          <Metric icon={<AlertCircle />} label="Rechazadas" value={counts.rejected} tone="red" />
-          <Metric icon={<Eye />} label="Visitas" value={statistics.views} tone="blue" />
-          <Metric icon={<MessageCircle />} label="Contactos" value={statistics.contacts} tone="blue" />
           <Metric icon={<AlertCircle />} label="Reportes abiertos" value={statistics.openReports} tone="red" />
+          <Metric icon={<UsersRound />} label="Cuentas" value={users.length} tone="blue" />
         </section>
 
         <AdminAnalytics listings={listings} />
 
-        <section className="mb-8 rounded-2xl border border-cream-200 bg-white p-5 shadow-sm">
-          <div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-bold text-ink">Usuarios</h2><p className="mt-1 text-xs text-ink-400">Control de cuentas suspendidas</p></div><UserCheck className="h-5 w-5 text-brand-500" /></div>
-          <div className="space-y-3">{users.map((user) => <div key={user.uid} className="flex flex-col gap-3 rounded-xl border border-cream-200 p-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold text-ink">{user.displayName}</p><p className="truncate text-xs text-ink-400">{user.email}</p></div><button type="button" disabled={user.uid === adminUid} onClick={() => void toggleUserSuspension(user)} className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${user.isBanned ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}>{user.isBanned ? <><UserCheck className="h-4 w-4" /> Reactivar</> : <><Ban className="h-4 w-4" /> Suspender</>}</button></div>)}</div>
+        <section className="grid gap-4 md:grid-cols-2">
+          <QuickAction icon={<Building2 className="h-5 w-5" />} eyebrow="Moderación" title="Revisar publicaciones" detail={`${counts.pending} anuncios esperan una decisión.`} onClick={() => { setActiveSection('listings'); setFilter('pending'); setSearch(''); }} />
+          <QuickAction icon={<Flag className="h-5 w-5" />} eyebrow="Comunidad" title="Atender reportes" detail={`${statistics.openReports} reportes siguen abiertos.`} onClick={() => { setActiveSection('reports'); setSearch(''); }} />
         </section>
+        </>}
+
+        {activeSection === 'users' && <section className="rounded-2xl border border-ink-700/10 bg-white p-5 shadow-[0_12px_36px_rgba(30,36,28,0.045)]">
+          <div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-bold text-ink">Usuarios</h2><p className="mt-1 text-xs text-ink-400">Control de cuentas suspendidas</p></div><UserCheck className="h-5 w-5 text-brand-500" /></div>
+          <div className="divide-y divide-ink-700/[0.07]">{filteredUsers.map((user) => <div key={user.uid} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-700/[0.07] text-sm font-semibold text-brand-800">{(user.displayName || user.email || '?').slice(0, 1).toUpperCase()}</div><div className="min-w-0"><p className="truncate text-sm font-semibold text-ink-800">{user.displayName}</p><p className="truncate text-xs text-ink-400">{user.email}</p></div><span className={`ml-1 shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${user.isBanned ? 'bg-red-500/10 text-red-700' : 'bg-emerald-500/10 text-emerald-800'}`}>{user.isBanned ? 'Suspendida' : 'Activa'}</span></div><button type="button" disabled={user.uid === adminUid} onClick={() => void toggleUserSuspension(user)} className={`motion-ease inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-3.5 text-sm font-semibold transition duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 ${user.isBanned ? 'border-emerald-700/15 text-emerald-800 hover:bg-emerald-50' : 'border-red-700/15 text-red-700 hover:bg-red-50'}`}>{user.isBanned ? <><UserCheck className="h-4 w-4" /> Reactivar</> : <><Ban className="h-4 w-4" /> Suspender</>}</button></div>)}</div>
+          {filteredUsers.length === 0 && <EmptyAdminState message={search ? 'No encontramos cuentas que coincidan.' : 'Todavía no hay cuentas para mostrar.'} />}
+        </section>}
 
         {error && (
           <div className="mb-6 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -540,22 +604,26 @@ export function AdminPage() {
           </div>
         )}
 
-        <div className="mb-5 flex flex-wrap gap-2">
+        {activeSection === 'listings' && <>
+        <section className="mb-5 flex flex-col gap-4 rounded-2xl border border-ink-700/10 bg-white/75 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div><h2 className="text-sm font-semibold text-ink-800">Estado de las publicaciones</h2><p className="mt-1 text-xs text-ink-400">{filteredListings.length} resultados · {counts.pending} pendientes de revisión</p></div>
+          <div className="flex gap-1 overflow-x-auto rounded-xl bg-ink-700/[0.035] p-1">
           {FILTERS.map((item) => (
             <button
               key={item.value}
               type="button"
               onClick={() => setFilter(item.value)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              className={`motion-ease shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition duration-200 ${
                 filter === item.value
-                  ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
-                  : 'bg-white text-ink-600 ring-1 ring-cream-300 hover:bg-cream-100'
+                  ? 'bg-white text-ink-900 shadow-sm'
+                  : 'text-ink-500 hover:bg-white/70 hover:text-ink-800'
               }`}
             >
               {item.label} <span className="ml-1 opacity-70">{counts[item.value]}</span>
             </button>
           ))}
-        </div>
+          </div>
+        </section>
 
         {loading ? (
           <div className="flex flex-col items-center py-24 text-ink-400">
@@ -589,24 +657,25 @@ export function AdminPage() {
             ))}
           </div>
         )}
+        </>}
 
-        <section className="mt-12">
+        {activeSection === 'reports' && <section>
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-extrabold text-ink">Reportes de la comunidad</h2>
+              <h2 className="text-lg font-semibold tracking-tight text-ink-800">Reportes de la comunidad</h2>
               <p className="mt-1 text-sm text-ink-500">
-                {reports.filter((report) => report.status === 'open').length} reportes pendientes de revisión
+                {statistics.openReports} abiertos · {filteredReports.length} resultados
               </p>
             </div>
           </div>
 
-          {reports.length === 0 ? (
+          {filteredReports.length === 0 ? (
             <div className="rounded-2xl border border-cream-200 bg-white p-8 text-center text-sm text-ink-500 shadow-sm">
-              Todavía no hay reportes.
+              {search ? 'No encontramos reportes que coincidan.' : 'Todavía no hay reportes.'}
             </div>
           ) : (
             <div className="space-y-3">
-              {reports.map((report) => {
+              {filteredReports.map((report) => {
                 const reportedListing = listings.find((listing) => listing.id === report.listingId);
                 return (
                   <ReportRow
@@ -621,7 +690,7 @@ export function AdminPage() {
               })}
             </div>
           )}
-        </section>
+        </section>}
       </div>
 
       {rejecting && (
@@ -733,11 +802,25 @@ function Metric({ icon, label, value, tone }: { icon: React.ReactNode; label: st
     blue: 'bg-sky-50 text-sky-600',
   };
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-cream-200 bg-white p-5 shadow-sm">
-      <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${tones[tone]}`}>{icon}</div>
-      <div><p className="text-sm text-ink-500">{label}</p><p className="text-2xl font-extrabold text-ink">{value}</p></div>
+    <div className="flex items-center gap-4 rounded-2xl border border-ink-700/10 bg-white p-4 shadow-[0_8px_28px_rgba(30,36,28,0.035)] sm:p-5">
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tones[tone]}`}>{icon}</div>
+      <div><p className="text-xs font-medium text-ink-500">{label}</p><p className="mt-0.5 text-2xl font-semibold tracking-tight text-ink-900">{value}</p></div>
     </div>
   );
+}
+
+function QuickAction({ icon, eyebrow, title, detail, onClick }: { icon: React.ReactNode; eyebrow: string; title: string; detail: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="motion-ease group flex min-h-28 items-center gap-4 rounded-2xl border border-ink-700/10 bg-white p-5 text-left shadow-[0_8px_28px_rgba(30,36,28,0.035)] transition duration-300 hover:-translate-y-0.5 hover:border-brand-700/20 hover:shadow-[0_14px_38px_rgba(30,36,28,0.08)] active:translate-y-0">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-700/[0.07] text-brand-800">{icon}</span>
+      <span className="min-w-0 flex-1"><span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">{eyebrow}</span><span className="mt-1 block text-sm font-semibold text-ink-900">{title}</span><span className="mt-1 block text-xs text-ink-500">{detail}</span></span>
+      <ArrowUpRight className="h-4 w-4 shrink-0 text-ink-400 transition duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-brand-700" aria-hidden="true" />
+    </button>
+  );
+}
+
+function EmptyAdminState({ message }: { message: string }) {
+  return <p className="rounded-xl border border-dashed border-ink-700/15 px-4 py-10 text-center text-sm text-ink-500">{message}</p>;
 }
 
 function AdminListingRow({ listing, busy, onApprove, onReject, onReview, onDelete }: { listing: Listing; busy: boolean; onApprove: () => void; onReject: () => void; onReview: () => void; onDelete: () => void }) {
