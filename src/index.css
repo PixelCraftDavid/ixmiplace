@@ -145,3 +145,400 @@ html.dark .auth-visual-wash {
 ::-webkit-scrollbar-thumb:hover {
   background: #856341;
 }
+
+/* Impresiones de una sola hoja: guía breve del anuncio y confirmación de visita. */
+.listing-print-sheet,
+.appointment-print-sheet {
+  display: none;
+}
+
+@page {
+  size: letter portrait;
+  margin: 11mm;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .listing-print-sheet,
+  .listing-print-sheet *,
+  .appointment-print-sheet,
+  .appointment-print-sheet * {
+    visibility: visible !important;
+  }
+
+  .listing-print-sheet {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 255mm !important;
+    max-height: 255mm !important;
+    overflow: hidden !important;
+    padding: 8mm !important;
+    border: 1px solid #e7e1d4 !important;
+    border-top: 4px solid #52634a !important;
+    border-radius: 4mm !important;
+    background: #fff !important;
+    color: #292824 !important;
+    font-family: Arial, sans-serif !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .listing-print-watermark,
+  .appointment-print-watermark {
+    position: absolute !important;
+    z-index: 0 !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 72mm !important;
+    height: 72mm !important;
+    object-fit: contain !important;
+    opacity: 0.075 !important;
+    transform: translate(-50%, -50%) !important;
+    pointer-events: none !important;
+  }
+
+  .listing-print-header,
+  .listing-print-title-row,
+  .listing-print-facts,
+  .listing-print-visit,
+  .listing-print-checklist,
+  .listing-print-footer,
+  .appointment-print-header,
+  .appointment-print-eyebrow,
+  .appointment-print-sheet h1,
+  .appointment-print-location,
+  .appointment-print-datetime,
+  .appointment-print-details,
+  .appointment-print-note,
+  .appointment-print-footer {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  .listing-print-header,
+  .appointment-print-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8mm !important;
+    padding-bottom: 4mm !important;
+    border-bottom: 1px solid #e7e1d4 !important;
+  }
+
+  .listing-print-brand,
+  .appointment-print-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 3mm !important;
+  }
+
+  .listing-print-brand img,
+  .appointment-print-brand img {
+    width: 15mm !important;
+    height: 15mm !important;
+    border-radius: 3mm !important;
+    object-fit: cover !important;
+  }
+
+  .listing-print-brand div,
+  .appointment-print-brand div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1mm !important;
+  }
+
+  .listing-print-brand strong,
+  .appointment-print-brand strong {
+    color: #293b2b !important;
+    font-size: 16pt !important;
+    letter-spacing: -0.3pt !important;
+  }
+
+  .listing-print-brand span,
+  .appointment-print-brand span,
+  .listing-print-ref,
+  .appointment-print-status {
+    color: #817b6c !important;
+    font-size: 7pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.1pt !important;
+  }
+
+  .listing-print-title-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6mm !important;
+    margin-top: 5mm !important;
+  }
+
+  .listing-print-photo {
+    flex: 0 0 43mm !important;
+    width: 43mm !important;
+    height: 34mm !important;
+    border-radius: 3mm !important;
+    object-fit: cover !important;
+  }
+
+  .listing-print-heading h1,
+  .appointment-print-sheet h1 {
+    margin: 1mm 0 2mm !important;
+    color: #26372a !important;
+    font-size: 20pt !important;
+    line-height: 1.12 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .listing-print-kicker,
+  .appointment-print-eyebrow {
+    margin: 0 !important;
+    color: #a17838 !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 1pt !important;
+    text-transform: uppercase !important;
+  }
+
+  .listing-print-location,
+  .appointment-print-location {
+    margin: 0 0 2mm !important;
+    color: #625f56 !important;
+    font-size: 10pt !important;
+  }
+
+  .listing-print-price {
+    color: #52634a !important;
+    font-size: 16pt !important;
+  }
+
+  .listing-print-facts {
+    display: flex !important;
+    justify-content: space-around !important;
+    gap: 3mm !important;
+    margin-top: 5mm !important;
+    padding: 3mm 2mm !important;
+    border-radius: 3mm !important;
+    background: #f3f4ef !important;
+  }
+
+  .listing-print-facts div {
+    display: flex !important;
+    flex: 1 1 0 !important;
+    flex-direction: column !important;
+    gap: 1mm !important;
+    text-align: center !important;
+  }
+
+  .listing-print-facts span,
+  .listing-print-visit p,
+  .listing-print-checklist li,
+  .listing-print-footer,
+  .appointment-print-details span,
+  .appointment-print-note,
+  .appointment-print-footer {
+    color: #625f56 !important;
+    font-size: 8.5pt !important;
+    line-height: 1.35 !important;
+  }
+
+  .listing-print-facts strong {
+    color: #293b2b !important;
+    font-size: 11pt !important;
+  }
+
+  .listing-print-visit,
+  .listing-print-checklist {
+    margin-top: 5mm !important;
+  }
+
+  .listing-print-visit h2,
+  .listing-print-checklist h2 {
+    margin: 0 0 2mm !important;
+    color: #293b2b !important;
+    font-size: 11pt !important;
+  }
+
+  .listing-print-visit p {
+    margin: 1mm 0 !important;
+  }
+
+  .listing-print-checklist ul {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 3mm 6mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
+
+  .listing-print-checklist li {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 2mm !important;
+  }
+
+  .listing-print-checkbox {
+    display: inline-flex !important;
+    flex: 0 0 4mm !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 4mm !important;
+    height: 4mm !important;
+    border: 1px solid #829078 !important;
+    border-radius: 1mm !important;
+    color: #52634a !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+  }
+
+  .listing-print-footer {
+    position: absolute !important;
+    right: 8mm !important;
+    bottom: 6mm !important;
+    left: 8mm !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 5mm !important;
+    padding-top: 3mm !important;
+    border-top: 1px solid #e7e1d4 !important;
+  }
+
+  .listing-print-footer strong,
+  .appointment-print-footer strong {
+    color: #52634a !important;
+  }
+
+  .print-target {
+    position: static !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  .appointment-print-sheet {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 255mm !important;
+    max-height: 255mm !important;
+    overflow: hidden !important;
+    padding: 12mm !important;
+    border: 1px solid #e7e1d4 !important;
+    border-top: 4px solid #52634a !important;
+    border-radius: 4mm !important;
+    background: #fff !important;
+    color: #292824 !important;
+    font-family: Arial, sans-serif !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .appointment-print-status {
+    padding: 2mm 3mm !important;
+    border: 1px solid #cbd7c6 !important;
+    border-radius: 99px !important;
+    background: #f0f4ed !important;
+    color: #40553c !important;
+  }
+
+  .appointment-print-eyebrow {
+    margin-top: 17mm !important;
+  }
+
+  .appointment-print-sheet h1 {
+    max-width: 150mm !important;
+    margin-top: 3mm !important;
+    font-size: 27pt !important;
+  }
+
+  .appointment-print-location {
+    font-size: 12pt !important;
+  }
+
+  .appointment-print-datetime {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3mm !important;
+    margin-top: 13mm !important;
+    padding: 8mm !important;
+    border-left: 3px solid #d49a4a !important;
+    border-radius: 2mm !important;
+    background: #f7f6f1 !important;
+  }
+
+  .appointment-print-datetime span {
+    color: #817b6c !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.1pt !important;
+  }
+
+  .appointment-print-datetime strong {
+    color: #293b2b !important;
+    font-size: 19pt !important;
+  }
+
+  .appointment-print-datetime small {
+    color: #625f56 !important;
+    font-size: 10pt !important;
+  }
+
+  .appointment-print-details {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6mm !important;
+    margin-top: 8mm !important;
+  }
+
+  .appointment-print-details div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2mm !important;
+    padding-bottom: 3mm !important;
+    border-bottom: 1px solid #e7e1d4 !important;
+  }
+
+  .appointment-print-details strong {
+    color: #293b2b !important;
+    font-size: 12pt !important;
+  }
+
+  .appointment-print-note {
+    margin-top: 12mm !important;
+    padding: 4mm !important;
+    border-radius: 2mm !important;
+    background: #f3f4ef !important;
+  }
+
+  .appointment-print-footer {
+    position: absolute !important;
+    right: 12mm !important;
+    bottom: 8mm !important;
+    left: 12mm !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 5mm !important;
+    padding-top: 4mm !important;
+    border-top: 1px solid #e7e1d4 !important;
+  }
+}

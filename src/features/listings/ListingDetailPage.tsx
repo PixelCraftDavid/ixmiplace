@@ -445,7 +445,7 @@ export function ListingDetailPage() {
               </section>
             )}
 
-            <InspectionChecklist listingId={listing.id} />
+            <InspectionChecklist listing={listing} />
 
             {/* DESCRIPCIÓN */}
             <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
@@ -799,7 +799,7 @@ function UtilityInfo({ label, billing, cost }: { label: string; billing?: 'inclu
   return <InfoLine label={label} value={value} />;
 }
 
-function InspectionChecklist({ listingId }: { listingId: string }) {
+function InspectionChecklist({ listing }: { listing: Listing }) {
   const checklist = [
     'Revisar humedad, techo, ventanas y cerraduras',
     'Probar presión de agua y preguntar por cortes',
@@ -808,7 +808,7 @@ function InspectionChecklist({ listingId }: { listingId: string }) {
     'Verificar identidad de quien ofrece y autorización para rentar',
     'Leer el contrato antes de entregar dinero o documentos',
   ];
-  const key = `ixmiplace-inspection-${listingId}`;
+  const key = `ixmiplace-inspection-${listing.id}`;
   const [checked, setChecked] = useState<boolean[]>(() => {
     try { const saved = localStorage.getItem(key); const parsed = saved ? JSON.parse(saved) : []; return checklist.map((_, index) => parsed[index] === true); }
     catch { return checklist.map(() => false); }
@@ -818,11 +818,60 @@ function InspectionChecklist({ listingId }: { listingId: string }) {
     setChecked(next);
     try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* almacenamiento opcional del dispositivo */ }
   }
-  return <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm print:break-inside-avoid">
-    <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-ink">Lista para revisar antes de decidir</h2><button type="button" onClick={() => window.print()} className="text-sm font-semibold text-brand-700 underline print:hidden">Imprimir</button></div>
-    <p className="mt-1 text-xs text-ink-400">Se guarda solo en este dispositivo; no se envía al propietario ni a IxmiPlace.</p>
-    <ul className="mt-4 space-y-3">{checklist.map((item, index) => <li key={item}><label className="flex cursor-pointer items-start gap-3 text-sm text-ink-700"><input type="checkbox" checked={checked[index]} onChange={() => toggle(index)} className="mt-0.5 h-4 w-4 accent-brand-600" /><span className={checked[index] ? 'text-ink-400 line-through' : ''}>{item}</span></label></li>)}</ul>
-  </section>;
+  return <>
+    <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-ink">Lista para revisar antes de decidir</h2><button type="button" onClick={() => window.print()} className="text-sm font-semibold text-brand-700 underline print:hidden">Imprimir guía</button></div>
+      <p className="mt-1 text-xs text-ink-400">Se guarda solo en este dispositivo; no se envía al propietario ni a IxmiPlace.</p>
+      <ul className="mt-4 space-y-3">{checklist.map((item, index) => <li key={item}><label className="flex cursor-pointer items-start gap-3 text-sm text-ink-700"><input type="checkbox" checked={checked[index]} onChange={() => toggle(index)} className="mt-0.5 h-4 w-4 accent-brand-600" /><span className={checked[index] ? 'text-ink-400 line-through' : ''}>{item}</span></label></li>)}</ul>
+    </section>
+
+    <section className="listing-print-sheet" aria-hidden="true">
+      <img className="listing-print-watermark" src="/logo-ixmiplace.jpg" alt="" />
+      <header className="listing-print-header">
+        <div className="listing-print-brand">
+          <img src="/logo-ixmiplace.jpg" alt="" />
+          <div><strong>IxmiPlace</strong><span>GUÍA PARA VISITAR</span></div>
+        </div>
+        <span className="listing-print-ref">REF. {listing.id.slice(0, 8).toUpperCase()}</span>
+      </header>
+
+      <div className="listing-print-title-row">
+        {listing.photos[0] && <img className="listing-print-photo" src={optimizedUrl(listing.photos[0], 480, 320)} alt="" />}
+        <div className="listing-print-heading">
+          <p className="listing-print-kicker">{categoryLabel(listing.category)} · {operationLabel(listing.operation)}</p>
+          <h1>{listing.title}</h1>
+          <p className="listing-print-location">{listing.colonia}, Ixmiquilpan, Hidalgo</p>
+          <strong className="listing-print-price">{formatPrice(listing.price)} {priceUnitLabel(listing.priceUnit)}</strong>
+        </div>
+      </div>
+
+      <div className="listing-print-facts">
+        {[
+          listing.bedrooms !== undefined && ['Recámaras', String(listing.bedrooms)],
+          listing.bathrooms !== undefined && ['Baños', String(listing.bathrooms)],
+          listing.parkingSpots !== undefined && ['Estacionamiento', String(listing.parkingSpots)],
+          listing.areaM2 !== undefined && ['Superficie', `${listing.areaM2} m²`],
+        ].filter((fact): fact is string[] => Boolean(fact)).map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+      </div>
+
+      {(listing.visitAvailability || (listing.openHouseStartAt && listing.openHouseEndAt)) && <section className="listing-print-visit">
+        <h2>Visita</h2>
+        {listing.visitAvailability && <p><strong>Horario sugerido:</strong> {listing.visitAvailability}</p>}
+        {listing.openHouseStartAt && listing.openHouseEndAt && <p><strong>Casa abierta:</strong> {new Date(listing.openHouseStartAt).toLocaleString('es-MX')} – {new Date(listing.openHouseEndAt).toLocaleString('es-MX')}</p>}
+        {listing.openHouseNotes && <p><strong>Indicaciones:</strong> {listing.openHouseNotes}</p>}
+      </section>}
+
+      <section className="listing-print-checklist">
+        <h2>Qué revisar durante la visita</h2>
+        <ul>{checklist.map((item, index) => <li key={item}><span className={`listing-print-checkbox${checked[index] ? ' checked' : ''}`}>{checked[index] ? '✓' : ''}</span><span>{item}</span></li>)}</ul>
+      </section>
+
+      <footer className="listing-print-footer">
+        <span>La ubicación mostrada es aproximada. Confirma el punto de encuentro directamente con quien publica.</span>
+        <strong>ixmiplace.vercel.app</strong>
+      </footer>
+    </section>
+  </>;
 }
 
 const NEARBY_SERVICE_LABELS: Record<string, string> = {

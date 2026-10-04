@@ -131,6 +131,27 @@ export function MessagesPage() {
                           <p className="mt-2 text-xs text-emerald-800">A nombre de: {message.senderName} · Folio: {message.id.slice(0, 8).toUpperCase()}</p>
                           <p className="mt-2 text-xs text-emerald-800">Esta confirmación no acredita identidad. No incluye dirección exacta, teléfono ni correo; acuerda el punto de encuentro con el propietario.</p>
                           {folder === 'sent' && <button type="button" onClick={() => printAppointment(message.id)} className="print-hide mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-800 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-900 print:hidden"><Printer className="h-4 w-4" />Imprimir confirmación</button>}
+                          <section className="appointment-print-sheet" aria-hidden="true">
+                            <img className="appointment-print-watermark" src="/logo-ixmiplace.jpg" alt="" />
+                            <header className="appointment-print-header">
+                              <div className="appointment-print-brand"><img src="/logo-ixmiplace.jpg" alt="" /><div><strong>IxmiPlace</strong><span>COMPROBANTE DE VISITA</span></div></div>
+                              <span className="appointment-print-status">CITA CONFIRMADA</span>
+                            </header>
+                            <p className="appointment-print-eyebrow">{message.openHouseRsvp ? 'ASISTENCIA A CASA ABIERTA' : 'VISITA A PROPIEDAD'}</p>
+                            <h1>{message.listingTitle ?? 'Visita a la propiedad'}</h1>
+                            {message.listingColonia && <p className="appointment-print-location">{message.listingColonia}, Ixmiquilpan, Hidalgo</p>}
+                            <div className="appointment-print-datetime">
+                              <span>FECHA Y HORA</span>
+                              <strong>{message.appointmentStartAt ? new Date(message.appointmentStartAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' }) : 'Por acordar'}</strong>
+                              {message.appointmentEndAt && <small>Hasta {new Date(message.appointmentEndAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' })}</small>}
+                            </div>
+                            <div className="appointment-print-details">
+                              <div><span>Asistente</span><strong>{message.senderName}</strong></div>
+                              <div><span>Folio</span><strong>{message.id.slice(0, 8).toUpperCase()}</strong></div>
+                            </div>
+                            <p className="appointment-print-note">Presenta este comprobante al coordinar tu visita. La dirección exacta y el punto de encuentro deben confirmarse directamente con quien publica.</p>
+                            <footer className="appointment-print-footer"><strong>IxmiPlace</strong><span>Tu comunidad, tu hogar · ixmiplace.vercel.app</span></footer>
+                          </section>
                         </div>
                       )}
                       {message.visitStatus === 'cancelled' && <p className="mt-3 rounded-lg bg-cream-100 p-3 text-sm text-ink-600">La solicitud no fue confirmada.</p>}
@@ -142,7 +163,6 @@ export function MessagesPage() {
             })}
           </div>
         )}
-        <style>{`@media print { body * { visibility: hidden !important; } .print-target { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; box-shadow: none !important; border: 0 !important; visibility: visible !important; } .print-target > div > div:first-child { display: none !important; } .print-target > div > div:last-child { display: contents !important; } .print-target > div > div:last-child > *:not(.appointment-ticket) { display: none !important; } .print-target .appointment-ticket, .print-target .appointment-ticket * { visibility: visible !important; } .print-target .appointment-ticket { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; } .print-hide, .print\\:hidden { display: none !important; } }`}</style>
       </div>
     </main>
   );
