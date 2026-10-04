@@ -2,13 +2,10 @@ import { Heart, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/lib/i18n';
 
-export function SiteFooter({ mobileDrawerOpen = false }: { mobileDrawerOpen?: boolean }) {
+export function SiteFooter() {
   const { t } = useLanguage();
   return (
-    <footer
-      style={mobileDrawerOpen ? { transform: 'perspective(1400px) translate3d(72vw, 8px, 0) scale(0.88) rotateY(-7deg)', transformOrigin: 'left center', borderRadius: '24px', boxShadow: '0 24px 60px rgba(16, 24, 18, 0.28)', backfaceVisibility: 'hidden' } : undefined}
-      className="relative z-50 transform-gpu border-t border-cream-200 bg-cream-100 px-4 py-8 text-ink-600 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:border-[#4b5847] dark:bg-[#1c211a] dark:text-ink-300"
-    >
+    <footer className="border-t border-cream-200 bg-cream-100 px-4 py-8 text-ink-600 dark:border-[#4b5847] dark:bg-[#1c211a] dark:text-ink-300">
       <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-bold text-ink-700 dark:text-ink-50">

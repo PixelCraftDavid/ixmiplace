@@ -208,8 +208,12 @@ export function ListingDetailPage() {
   }
 
   async function submitContact(data: InternalMessageInput & { website?: string }) {
-    if (!fbUser || !listing || !profile) {
+    if (!fbUser || !fbUser.emailVerified) {
       setContactError('Inicia sesión y verifica tu correo para enviar mensajes.');
+      return;
+    }
+    if (!listing || !profile) {
+      setContactError('No se pudo cargar tu perfil o el anuncio. Recarga la página e inténtalo de nuevo.');
       return;
     }
 
@@ -242,7 +246,7 @@ export function ListingDetailPage() {
       setContactSent(true);
     } catch (error) {
       console.error('Error enviando mensaje:', error);
-      setContactError('No se pudo enviar el mensaje. Intenta de nuevo.');
+      setContactError(error instanceof Error ? error.message : 'No se pudo enviar el mensaje. Intenta de nuevo.');
     } finally {
       setContacting(false);
     }

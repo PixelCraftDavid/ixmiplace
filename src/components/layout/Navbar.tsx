@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, Heart, Home, ChevronDown, User, ShieldCheck, Bell, Moon, Sun, Mail, Settings, Languages, Plus, Menu, X, MapPin } from 'lucide-react';
 import { signOut } from 'firebase/auth';
@@ -17,6 +18,7 @@ export function Navbar() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const menuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null);
 
   async function logout() {
     await signOut(auth);
@@ -86,6 +88,7 @@ export function Navbar() {
 
   function closeMobileDrawer() {
     setMobileDrawerOpen(false);
+    window.requestAnimationFrame(() => mobileMenuTriggerRef.current?.focus());
   }
 
   useEffect(() => {
@@ -126,10 +129,7 @@ export function Navbar() {
 
   return (
     <>
-    <header
-      style={mobileDrawerOpen ? { transform: 'perspective(1400px) translate3d(72vw, 8px, 0) scale(0.88) rotateY(-7deg)', transformOrigin: 'left center', backfaceVisibility: 'hidden' } : undefined}
-      className={`absolute inset-x-0 top-0 z-[60] transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}
-    >
+    <header className={`absolute inset-x-0 top-0 z-[60] ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="inline-flex items-center gap-2.5">
           <img
@@ -325,6 +325,7 @@ export function Navbar() {
           )}
           <button
             type="button"
+            ref={mobileMenuTriggerRef}
             onClick={() => setMobileDrawerOpen((open) => !open)}
             aria-label={t('nav.account')}
             aria-expanded={mobileDrawerOpen}
@@ -336,15 +337,13 @@ export function Navbar() {
         </nav>
       </div>
     </header>
-      <div className={`pointer-events-none fixed inset-y-2 left-2 z-[45] w-[calc(min(62vw,20rem)_+_36px)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:hidden ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`} aria-hidden={!mobileDrawerOpen}>
-        <span aria-hidden="true" className="pointer-events-none absolute inset-y-5 right-0 w-5 rounded-r-xl bg-[#4e8b75] shadow-md dark:bg-[#3a6b58]" />
-        <span aria-hidden="true" className="pointer-events-none absolute inset-y-8 right-4 w-5 rounded-r-xl border-r border-white/80 bg-cream-100 shadow-md dark:border-[#4b5847] dark:bg-[#293027]" />
+      {createPortal(<div className="pointer-events-none fixed inset-0 z-[40] sm:hidden" aria-hidden={!mobileDrawerOpen}>
+        <span aria-hidden="true" className={`mobile-menu-depth-tab absolute inset-y-4 left-[53vw] w-[9vw] rounded-r-2xl transition-transform duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-[70vw]'}`} />
         <aside
           id="mobile-navigation-drawer"
           aria-label={t('nav.primary')}
           inert={!mobileDrawerOpen}
-          style={mobileDrawerOpen ? { transform: 'perspective(1400px) translateX(-8px) scale(0.98) rotateY(3deg)', transformOrigin: 'right center', backfaceVisibility: 'hidden' } : undefined}
-          className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-[min(62vw,20rem)] flex-col overflow-hidden rounded-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.18)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:bg-[#26392f]"
+          className={`pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-[min(66vw,21rem)] flex-col overflow-hidden rounded-r-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.18)] transition-transform duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:bg-[#26392f] ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
         >
           <div className="flex items-center gap-3 border-b border-white/20 px-4 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))]">
             {profile?.photoURL ? (
@@ -397,7 +396,7 @@ export function Navbar() {
             </>}
           </nav>
         </aside>
-      </div>
+      </div>, document.body)}
     </>
   );
 }

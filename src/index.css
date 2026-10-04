@@ -12,6 +12,39 @@ body {
   overflow-x: hidden;
 }
 
+.mobile-menu-screen {
+  position: relative;
+  z-index: 50;
+  min-height: 100%;
+  transform-origin: left center;
+  backface-visibility: hidden;
+  transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 560ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 560ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.mobile-menu-depth-tab {
+  background: linear-gradient(145deg, #e8c27f, #7eaa9b 68%);
+  box-shadow: 8px 0 26px rgb(19 39 31 / 14%);
+}
+
+html.dark .mobile-menu-depth-tab {
+  background: linear-gradient(145deg, #c69750, #355447 68%);
+}
+
+@media (max-width: 639px) {
+  .mobile-menu-screen[data-mobile-menu-open='true'] {
+    transform: perspective(1100px) translate3d(55vw, 8px, -45px) scale(0.88) rotateY(-7deg);
+    border-radius: 28px;
+    box-shadow: 0 24px 64px rgb(16 24 18 / 32%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu-screen {
+    transition-duration: 1ms;
+  }
+}
+
 html.dark {
   color-scheme: dark;
 }

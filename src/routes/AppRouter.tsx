@@ -82,15 +82,12 @@ function AppContent() {
       <>
         <RouteMetadata />
         <AnalyticsConsent />
-        <SkipToContentLink />
+        <div id="app-screen" data-mobile-menu-open={mobileDrawerOpen} className="mobile-menu-screen">
+          <SkipToContentLink />
 
-        <Navbar />
+          <Navbar />
 
-        <div
-          id="main-content"
-          style={mobileDrawerOpen ? { transform: 'perspective(1400px) translate3d(72vw, 8px, 0) scale(0.88) rotateY(-7deg)', transformOrigin: 'left center', borderRadius: '24px', boxShadow: '0 24px 60px rgba(16, 24, 18, 0.28)', backfaceVisibility: 'hidden' } : undefined}
-          className="relative z-50 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-        >
+          <div id="main-content">
           <Routes>
             {/* =========================
                 PÚBLICAS
@@ -178,10 +175,11 @@ function AppContent() {
 
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
-        </div>
+          </div>
 
-        {/* Footer global */}
-        <SiteFooter mobileDrawerOpen={mobileDrawerOpen} />
+          {/* Footer global */}
+          <SiteFooter />
+        </div>
       </>
   );
 }
