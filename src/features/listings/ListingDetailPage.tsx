@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import {
@@ -759,7 +760,7 @@ export function ListingDetailPage() {
         </div>
       )}
 
-      {reportOpen && (
+      {reportOpen && createPortal(
         <ReportDialog
           sent={reportSent}
           error={reportError}
@@ -767,10 +768,11 @@ export function ListingDetailPage() {
           isSignedIn={Boolean(fbUser)}
           onClose={() => setReportOpen(false)}
           onSubmit={submitReport}
-        />
+        />,
+        document.body,
       )}
 
-      {contactOpen && (
+      {contactOpen && createPortal(
         <ContactDialog
           sent={contactSent}
           error={contactError}
@@ -782,7 +784,8 @@ export function ListingDetailPage() {
           openHouseEndAt={listing.openHouseEndAt}
           onClose={() => setContactOpen(false)}
           onSubmit={submitContact}
-        />
+        />,
+        document.body,
       )}
     </div>
   );
@@ -947,7 +950,7 @@ function ContactDialog({
   const [rsvpOpenHouse, setRsvpOpenHouse] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-ink/40 p-3 backdrop-blur-sm sm:p-4">
+    <div className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-ink/40 p-3 backdrop-blur-sm sm:items-center sm:p-4">
       <div className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-cream-200 bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6">
         {sent ? (
           <div className="text-center">

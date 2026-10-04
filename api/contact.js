@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getAppCheck } from 'firebase-admin/app-check';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore';
 import { logApiFailure, logSecurityEvent, parseBody, requestSchemas } from './_lib/input-security.js';
@@ -10,6 +9,7 @@ const GLOBAL_DAILY_LIMIT = 30;
 const PER_LISTING_DAILY_LIMIT = 2;
 const IP_DAILY_LIMIT = 80;
 const RATE_LIMIT_RETENTION_MS = 8 * 24 * 60 * 60 * 1000;
+const PHONE_CONSENT_VERSIONS = new Set(['2026-09-30-v4', '2026-10-03-v8', '2026-10-03-v9']);
 
 function respond(res, status, body) {
   return res.status(status).json(body);
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
   }
   if (origin) res.setHeader('Access-Control-Allow-Origin', APP_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Firebase-AppCheck');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') { logSecurityEvent(req, 'blocked_method'); return respond(res, 405, { error: 'Método no permitido.' }); }
@@ -92,17 +92,13 @@ export default async function handler(req, res) {
   try {
     const authorization = req.headers.authorization || '';
     const idToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
-    const appCheckToken = req.headers['x-firebase-appcheck'];
-    if (!idToken || typeof appCheckToken !== 'string') {
-      logSecurityEvent(req, 'missing_auth_or_app_check');
-      return respond(res, 401, { error: 'Se requiere sesión y App Check válido.' });
+    if (!idToken) {
+      logSecurityEvent(req, 'missing_auth');
+      return respond(res, 401, { error: 'Inicia sesión para consultar el contacto.' });
     }
 
     const app = getFirebaseAdmin();
-    const [decoded] = await Promise.all([
-      getAuth(app).verifyIdToken(idToken, true),
-      getAppCheck(app).verifyToken(appCheckToken),
-    ]);
+    const decoded = await getAuth(app).verifyIdToken(idToken, true);
 
     if (decoded.email_verified !== true) {
       return respond(res, 403, { error: 'Verifica tu correo antes de consultar el contacto.' });
@@ -154,7 +150,7 @@ export default async function handler(req, res) {
 
     const ownerSnap = await db.collection('users').doc(listing.ownerId).get();
     const owner = ownerSnap.data();
-    if (!owner || owner.isBanned === true || owner.phoneConsentVersion !== '2026-09-30-v4') {
+    if (!owner || owner.isBanned === true || !PHONE_CONSENT_VERSIONS.has(owner.phoneConsentVersion)) {
       return respond(res, 404, { error: 'El contacto no está disponible.' });
     }
 

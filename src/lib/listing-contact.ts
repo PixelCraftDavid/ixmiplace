@@ -1,5 +1,4 @@
-import { getToken } from 'firebase/app-check';
-import { auth, appCheck } from './firebase';
+import { auth } from './firebase';
 
 interface ContactResponse {
   url: string;
@@ -10,20 +9,12 @@ export async function requestListingWhatsApp(listingId: string): Promise<string>
   if (!user || !user.emailVerified) {
     throw new Error('Inicia sesión y verifica tu correo para consultar el contacto.');
   }
-  if (!appCheck) {
-    throw new Error('La protección App Check aún no está configurada. Usa el mensaje interno por ahora.');
-  }
-
-  const [idToken, appCheckResult] = await Promise.all([
-    user.getIdToken(),
-    getToken(appCheck),
-  ]);
+  const idToken = await user.getIdToken();
 
   const response = await fetch('/api/contact', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${idToken}`,
-      'X-Firebase-AppCheck': appCheckResult.token,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ listingId }),
