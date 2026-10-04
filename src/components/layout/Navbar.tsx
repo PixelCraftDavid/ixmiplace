@@ -94,8 +94,6 @@ export function Navbar() {
 
   useEffect(() => {
     if (!mobileDrawerOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeMobileDrawer();
     };
@@ -105,7 +103,6 @@ export function Navbar() {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('resize', handleResize);
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', handleResize);
     };
@@ -129,7 +126,7 @@ export function Navbar() {
 
   return (
     <>
-    <header className={`absolute inset-x-0 top-0 z-50 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-[58vw] translate-y-2 scale-[0.94] origin-left' : ''} ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`} inert={mobileDrawerOpen}>
+    <header className={`absolute inset-x-0 top-0 z-50 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-[calc(min(62vw,20rem)_+_44px)] translate-y-2 scale-[0.94] origin-left' : ''} ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="inline-flex items-center gap-2.5">
           <img
@@ -336,13 +333,11 @@ export function Navbar() {
         </nav>
       </div>
     </header>
-      <div className={`pointer-events-none fixed inset-y-2 left-2 z-[45] w-[calc(min(62vw,20rem)+22px)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:hidden ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`} aria-hidden={!mobileDrawerOpen}>
-        <span aria-hidden="true" className="pointer-events-none absolute inset-y-5 right-0 w-3 rounded-r-xl bg-cream-100 shadow-md dark:bg-[#3a4337]" />
-        <span aria-hidden="true" className="pointer-events-none absolute inset-y-8 right-2 w-3 rounded-r-xl border-r border-white/80 bg-white shadow-md dark:border-[#4b5847] dark:bg-[#293027]" />
+      <div className={`pointer-events-none fixed inset-y-2 left-2 z-[45] w-[calc(min(62vw,20rem)_+_36px)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:hidden ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`} aria-hidden={!mobileDrawerOpen}>
+        <span aria-hidden="true" className="pointer-events-none absolute inset-y-5 right-0 w-5 rounded-r-xl bg-[#4e8b75] shadow-md dark:bg-[#3a6b58]" />
+        <span aria-hidden="true" className="pointer-events-none absolute inset-y-8 right-4 w-5 rounded-r-xl border-r border-white/80 bg-cream-100 shadow-md dark:border-[#4b5847] dark:bg-[#293027]" />
         <aside
           id="mobile-navigation-drawer"
-          role="dialog"
-          aria-modal={mobileDrawerOpen}
           aria-label={t('nav.primary')}
           inert={!mobileDrawerOpen}
           className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-[min(62vw,20rem)] flex-col overflow-hidden rounded-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.18)] dark:bg-[#26392f]"
@@ -390,7 +385,7 @@ export function Navbar() {
               {darkMode ? t('nav.lightMode') : t('nav.darkMode')}
             </button>
             <Link to="/apoyar" aria-current={pathname === '/apoyar' ? 'page' : undefined} className={mobileNavItemClass('/apoyar')}><Heart className="h-4 w-4 text-rose-100" aria-hidden="true" />{t('nav.supportShort')}</Link>
-            {fbUser && <>
+          {fbUser && <>
               <div className="mx-4 my-3 border-t border-white/25" />
               <button type="button" onClick={() => { closeMobileDrawer(); void logout(); }} className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left text-sm font-semibold text-white transition duration-200 hover:bg-[#a8493b]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80">
                 <LogOut className="h-4 w-4" aria-hidden="true" />{t('nav.logout')}
