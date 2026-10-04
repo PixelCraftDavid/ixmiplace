@@ -112,7 +112,6 @@ export function Navbar() {
   }, [mobileDrawerOpen]);
 
   useEffect(() => {
-    closeMobileDrawer();
     closeMenu();
   }, [pathname]);
 
@@ -121,6 +120,11 @@ export function Navbar() {
     setDarkMode(nextDarkMode);
     document.documentElement.classList.toggle('dark', nextDarkMode);
     localStorage.setItem('ixmiplace:theme', nextDarkMode ? 'dark' : 'light');
+  }
+
+  function mobileNavItemClass(path: string) {
+    const isActive = path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(`${path}/`);
+    return `flex items-center gap-3 rounded-full px-4 py-3 text-sm transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${isActive ? 'bg-white text-[#426c5f] shadow-sm' : 'text-white/95 hover:bg-white/15'}`;
   }
 
   return (
@@ -332,14 +336,16 @@ export function Navbar() {
         </nav>
       </div>
     </header>
-      <div className="pointer-events-none fixed inset-0 z-30 sm:hidden" aria-hidden={!mobileDrawerOpen}>
+      <div className={`pointer-events-none fixed inset-y-0 left-0 z-[45] w-[calc(min(76vw,20rem)+18px)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:hidden ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`} aria-hidden={!mobileDrawerOpen}>
+        <span aria-hidden="true" className="pointer-events-none absolute inset-y-5 right-0 w-3 rounded-r-xl bg-cream-100 shadow-md dark:bg-[#3a4337]" />
+        <span aria-hidden="true" className="pointer-events-none absolute inset-y-8 right-2 w-3 rounded-r-xl border-r border-white/80 bg-white shadow-md dark:border-[#4b5847] dark:bg-[#293027]" />
         <aside
           id="mobile-navigation-drawer"
           role="dialog"
           aria-modal={mobileDrawerOpen}
           aria-label={t('nav.primary')}
           inert={!mobileDrawerOpen}
-          className={`pointer-events-auto absolute inset-y-0 left-0 flex w-[min(76vw,20rem)] flex-col overflow-hidden rounded-r-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.18)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:bg-[#26392f] ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-[min(76vw,20rem)] flex-col overflow-hidden rounded-r-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.18)] dark:bg-[#26392f]"
         >
           <div className="flex items-center gap-3 border-b border-white/20 px-4 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))]">
             {profile?.photoURL ? (
@@ -366,24 +372,24 @@ export function Navbar() {
           </label>
 
           <nav aria-label={t('nav.primary')} className="mt-3 flex-1 space-y-0.5 overflow-y-auto px-2.5 pb-3">
-            <Link to="/" onClick={closeMobileDrawer} aria-current={pathname === '/' ? 'page' : undefined} className={`flex items-center gap-3 rounded-full px-4 py-3 text-sm transition duration-200 hover:bg-white/15 ${pathname === '/' ? 'bg-white text-[#426c5f] shadow-sm' : 'text-white/95'}`}><MapPin className="h-4 w-4" aria-hidden="true" />{t('nav.explore')}</Link>
+            <Link to="/" aria-current={pathname === '/' ? 'page' : undefined} className={mobileNavItemClass('/')}><MapPin className="h-4 w-4" aria-hidden="true" />{t('nav.explore')}</Link>
             {fbUser ? <>
-              <Link to="/perfil" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><Settings className="h-4 w-4" aria-hidden="true" />{t('nav.editProfile')}</Link>
-              <Link to="/mis-publicaciones" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><Home className="h-4 w-4" aria-hidden="true" />{t('nav.myListings')}</Link>
-              <Link to="/favoritos" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><Heart className="h-4 w-4" aria-hidden="true" />{t('nav.favorites')}</Link>
-              <Link to="/notificaciones" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><Bell className="h-4 w-4" aria-hidden="true" />{t('nav.notifications')}</Link>
-              <Link to="/mensajes" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><Mail className="h-4 w-4" aria-hidden="true" />{t('nav.messages')}</Link>
-              {profile?.role === 'admin' && <Link to="/admin" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><ShieldCheck className="h-4 w-4" aria-hidden="true" />{t('nav.admin')}</Link>}
+              <Link to="/perfil" aria-current={pathname === '/perfil' ? 'page' : undefined} className={mobileNavItemClass('/perfil')}><Settings className="h-4 w-4" aria-hidden="true" />{t('nav.editProfile')}</Link>
+              <Link to="/mis-publicaciones" aria-current={pathname === '/mis-publicaciones' ? 'page' : undefined} className={mobileNavItemClass('/mis-publicaciones')}><Home className="h-4 w-4" aria-hidden="true" />{t('nav.myListings')}</Link>
+              <Link to="/favoritos" aria-current={pathname === '/favoritos' ? 'page' : undefined} className={mobileNavItemClass('/favoritos')}><Heart className="h-4 w-4" aria-hidden="true" />{t('nav.favorites')}</Link>
+              <Link to="/notificaciones" aria-current={pathname === '/notificaciones' ? 'page' : undefined} className={mobileNavItemClass('/notificaciones')}><Bell className="h-4 w-4" aria-hidden="true" />{t('nav.notifications')}</Link>
+              <Link to="/mensajes" aria-current={pathname === '/mensajes' ? 'page' : undefined} className={mobileNavItemClass('/mensajes')}><Mail className="h-4 w-4" aria-hidden="true" />{t('nav.messages')}</Link>
+              {profile?.role === 'admin' && <Link to="/admin" aria-current={pathname === '/admin' ? 'page' : undefined} className={mobileNavItemClass('/admin')}><ShieldCheck className="h-4 w-4" aria-hidden="true" />{t('nav.admin')}</Link>}
             </> : <>
-              <Link to="/login" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><User className="h-4 w-4" aria-hidden="true" />{t('nav.login')}</Link>
-              <Link to="/register" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><Plus className="h-4 w-4" aria-hidden="true" />{t('nav.register')}</Link>
+              <Link to="/login" aria-current={pathname === '/login' ? 'page' : undefined} className={mobileNavItemClass('/login')}><User className="h-4 w-4" aria-hidden="true" />{t('nav.login')}</Link>
+              <Link to="/register" aria-current={pathname === '/register' ? 'page' : undefined} className={mobileNavItemClass('/register')}><Plus className="h-4 w-4" aria-hidden="true" />{t('nav.register')}</Link>
             </>}
             <div className="mx-4 my-3 border-t border-white/25" />
-            <button type="button" onClick={toggleTheme} className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left text-sm text-white/95 transition duration-200 hover:bg-white/15">
+            <button type="button" onClick={toggleTheme} className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left text-sm text-white/95 transition duration-200 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80">
               {darkMode ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
               {darkMode ? t('nav.lightMode') : t('nav.darkMode')}
             </button>
-            <Link to="/apoyar" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><Heart className="h-4 w-4 text-rose-100" aria-hidden="true" />{t('nav.supportShort')}</Link>
+            <Link to="/apoyar" aria-current={pathname === '/apoyar' ? 'page' : undefined} className={mobileNavItemClass('/apoyar')}><Heart className="h-4 w-4 text-rose-100" aria-hidden="true" />{t('nav.supportShort')}</Link>
           </nav>
 
           {fbUser && <div className="border-t border-white/20 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
