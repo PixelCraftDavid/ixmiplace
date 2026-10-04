@@ -89,16 +89,25 @@ export function Navbar() {
   }
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent('ixmiplace:mobile-drawer-change', { detail: mobileDrawerOpen }));
+  }, [mobileDrawerOpen]);
+
+  useEffect(() => {
     if (!mobileDrawerOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeMobileDrawer();
     };
+    const handleResize = () => {
+      if (window.matchMedia('(min-width: 640px)').matches) closeMobileDrawer();
+    };
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleResize);
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
     };
   }, [mobileDrawerOpen]);
 
@@ -116,7 +125,7 @@ export function Navbar() {
 
   return (
     <>
-    <header className={`absolute inset-x-0 top-0 z-40 ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}>
+    <header className={`absolute inset-x-0 top-0 z-50 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-[70vw] scale-[0.9] origin-left' : ''} ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`} inert={mobileDrawerOpen}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="inline-flex items-center gap-2.5">
           <img
@@ -323,26 +332,16 @@ export function Navbar() {
         </nav>
       </div>
     </header>
-      <div
-        className={`fixed inset-0 z-[60] transition-opacity duration-300 ease-out motion-reduce:transition-none sm:hidden ${mobileDrawerOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-        aria-hidden={!mobileDrawerOpen}
-      >
-        <button
-          type="button"
-          tabIndex={mobileDrawerOpen ? 0 : -1}
-          onClick={closeMobileDrawer}
-          aria-label={t('nav.closeMenu')}
-          className="absolute inset-0 h-full w-full bg-[#142019]/45 backdrop-blur-[2px]"
-        />
+      <div className="pointer-events-none fixed inset-0 z-30 sm:hidden" aria-hidden={!mobileDrawerOpen}>
         <aside
           id="mobile-navigation-drawer"
           role="dialog"
           aria-modal={mobileDrawerOpen}
           aria-label={t('nav.primary')}
           inert={!mobileDrawerOpen}
-          className={`absolute inset-y-0 left-0 flex w-[min(84vw,21rem)] flex-col overflow-hidden rounded-r-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.22)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:bg-[#26392f] ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className={`pointer-events-auto absolute inset-y-0 left-0 flex w-[min(76vw,20rem)] flex-col overflow-hidden rounded-r-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.18)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:bg-[#26392f] ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
         >
-          <div className="flex items-center gap-3 border-b border-white/20 px-5 pb-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
+          <div className="flex items-center gap-3 border-b border-white/20 px-4 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))]">
             {profile?.photoURL ? (
               <img src={profile.photoURL} alt="" referrerPolicy="no-referrer" className="h-12 w-12 rounded-full border-2 border-white/50 object-cover shadow-sm" />
             ) : (
@@ -357,7 +356,7 @@ export function Navbar() {
             </button>
           </div>
 
-          <label className="mx-4 mt-4 flex items-center justify-between gap-3 rounded-xl bg-white/10 px-3 py-2.5 text-sm">
+          <label className="mx-3 mt-3 flex items-center justify-between gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm">
             <span className="inline-flex items-center gap-2"><Languages className="h-4 w-4" aria-hidden="true" />{t('language.label')}</span>
             <select aria-label={t('language.label')} value={locale} onChange={(event) => setLocale(event.target.value as Locale)} className="max-w-32 rounded-lg border border-white/30 bg-white/95 px-2 py-1.5 text-xs text-ink-700 outline-none focus-visible:ring-2 focus-visible:ring-white">
               <option value="es">{t('language.spanish')}</option>
@@ -366,7 +365,7 @@ export function Navbar() {
             </select>
           </label>
 
-          <nav aria-label={t('nav.primary')} className="mt-4 flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+          <nav aria-label={t('nav.primary')} className="mt-3 flex-1 space-y-0.5 overflow-y-auto px-2.5 pb-3">
             <Link to="/" onClick={closeMobileDrawer} aria-current={pathname === '/' ? 'page' : undefined} className={`flex items-center gap-3 rounded-full px-4 py-3 text-sm transition duration-200 hover:bg-white/15 ${pathname === '/' ? 'bg-white text-[#426c5f] shadow-sm' : 'text-white/95'}`}><MapPin className="h-4 w-4" aria-hidden="true" />{t('nav.explore')}</Link>
             {fbUser ? <>
               <Link to="/perfil" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><Settings className="h-4 w-4" aria-hidden="true" />{t('nav.editProfile')}</Link>
@@ -380,6 +379,10 @@ export function Navbar() {
               <Link to="/register" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><Plus className="h-4 w-4" aria-hidden="true" />{t('nav.register')}</Link>
             </>}
             <div className="mx-4 my-3 border-t border-white/25" />
+            <button type="button" onClick={toggleTheme} className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left text-sm text-white/95 transition duration-200 hover:bg-white/15">
+              {darkMode ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
+              {darkMode ? t('nav.lightMode') : t('nav.darkMode')}
+            </button>
             <Link to="/apoyar" onClick={closeMobileDrawer} className="flex items-center gap-3 rounded-full px-4 py-3 text-sm text-white/95 transition duration-200 hover:bg-white/15"><Heart className="h-4 w-4 text-rose-100" aria-hidden="true" />{t('nav.supportShort')}</Link>
           </nav>
 
@@ -388,34 +391,6 @@ export function Navbar() {
           </div>}
         </aside>
       </div>
-      {fbUser && (
-        <nav aria-label={t('nav.primary')} className="fixed inset-x-0 bottom-0 z-50 border-t border-cream-200 bg-cream/95 shadow-[0_-8px_28px_rgba(27,32,24,0.09)] backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95 sm:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div className="mx-auto grid h-[4.25rem] max-w-lg grid-cols-5 items-center px-1">
-            <Link to="/" aria-current={pathname === '/' ? 'page' : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-[10px] font-medium transition ${pathname === '/' ? 'text-brand-700 dark:text-brand-300' : 'text-ink-500 dark:text-ink-300'}`}>
-              <Home className="h-5 w-5" aria-hidden="true" />
-              <span className="truncate">{t('nav.explore')}</span>
-            </Link>
-            <Link to="/favoritos" aria-current={pathname === '/favoritos' ? 'page' : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-[10px] font-medium transition ${pathname === '/favoritos' ? 'text-brand-700 dark:text-brand-300' : 'text-ink-500 dark:text-ink-300'}`}>
-              <Heart className="h-5 w-5" aria-hidden="true" />
-              <span className="truncate">{t('nav.favorites')}</span>
-            </Link>
-            <Link to="/publicar" aria-current={pathname === '/publicar' ? 'page' : undefined} aria-label={t('nav.publish')} className="-mt-3 flex min-w-0 flex-col items-center justify-center gap-1 text-[10px] font-semibold text-ink-800 dark:text-ink-50">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-400 text-ink-900 shadow-[0_6px_16px_rgba(212,154,74,0.3)] transition active:scale-95 dark:bg-accent-300">
-                <Plus className="h-6 w-6" aria-hidden="true" />
-              </span>
-              <span className="truncate">{t('nav.publish')}</span>
-            </Link>
-            <Link to="/mensajes" aria-current={pathname === '/mensajes' ? 'page' : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-[10px] font-medium transition ${pathname === '/mensajes' ? 'text-brand-700 dark:text-brand-300' : 'text-ink-500 dark:text-ink-300'}`}>
-              <Mail className="h-5 w-5" aria-hidden="true" />
-              <span className="truncate">{t('nav.messages')}</span>
-            </Link>
-            <Link to="/perfil" aria-current={pathname === '/perfil' ? 'page' : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-[10px] font-medium transition ${pathname === '/perfil' ? 'text-brand-700 dark:text-brand-300' : 'text-ink-500 dark:text-ink-300'}`}>
-              <User className="h-5 w-5" aria-hidden="true" />
-              <span className="truncate">{t('nav.account')}</span>
-            </Link>
-          </div>
-        </nav>
-      )}
     </>
   );
 }

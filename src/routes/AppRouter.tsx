@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-import { AuthProvider, useAuth } from '../features/auth/AuthContext';
+import { AuthProvider } from '../features/auth/AuthContext';
 import { RequireAuth } from '../features/auth/RequireAuth';
 
 import { RegisterPage } from '../features/auth/RegisterPage';
@@ -67,7 +68,16 @@ function SkipToContentLink() {
 }
 
 function AppContent() {
-  const { fbUser } = useAuth();
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    const handleDrawerChange = (event: Event) => {
+      setMobileDrawerOpen(Boolean((event as CustomEvent<boolean>).detail));
+    };
+    window.addEventListener('ixmiplace:mobile-drawer-change', handleDrawerChange);
+    return () => window.removeEventListener('ixmiplace:mobile-drawer-change', handleDrawerChange);
+  }, []);
+
   return (
       <>
         <RouteMetadata />
@@ -76,7 +86,12 @@ function AppContent() {
 
         <Navbar />
 
-        <div id="main-content" className={fbUser ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))] sm:pb-0' : ''}>
+        <div
+          id="main-content"
+          aria-hidden={mobileDrawerOpen}
+          inert={mobileDrawerOpen}
+          className={`relative z-40 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-[70vw] scale-[0.9] origin-left rounded-[2rem] shadow-2xl pointer-events-none' : ''}`}
+        >
           <Routes>
             {/* =========================
                 PÚBLICAS
@@ -167,7 +182,7 @@ function AppContent() {
         </div>
 
         {/* Footer global */}
-        <SiteFooter hasMobileNav={Boolean(fbUser)} />
+        <SiteFooter mobileDrawerOpen={mobileDrawerOpen} />
       </>
   );
 }
