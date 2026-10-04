@@ -392,8 +392,8 @@ export function Navbar() {
             <Link to="/apoyar" aria-current={pathname === '/apoyar' ? 'page' : undefined} className={mobileNavItemClass('/apoyar')}><Heart className="h-4 w-4 text-rose-100" aria-hidden="true" />{t('nav.supportShort')}</Link>
           </nav>
 
-          {fbUser && <div className="border-t border-white/20 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <button type="button" onClick={() => { closeMobileDrawer(); void logout(); }} className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left text-sm text-white/95 transition hover:bg-white/15"><LogOut className="h-4 w-4" aria-hidden="true" />{t('nav.logout')}</button>
+          {fbUser && <div className="mt-auto shrink-0 border-t border-white/25 bg-[#739d8f] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:bg-[#203228]">
+            <button type="button" onClick={() => { closeMobileDrawer(); void logout(); }} className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left text-sm font-semibold text-white/95 transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"><LogOut className="h-4 w-4" aria-hidden="true" />{t('nav.logout')}</button>
           </div>}
         </aside>
       </div>

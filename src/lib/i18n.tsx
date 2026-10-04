@@ -27,7 +27,7 @@ const messages = {
     'nav.notifications': 'Notificaciones',
     'nav.messages': 'Mensajes',
     'nav.admin': 'Panel de administrador',
-    'nav.logout': 'Salir',
+    'nav.logout': 'Cerrar sesión',
     'nav.user': 'Usuario',
     'nav.guest': 'Bienvenido a IxmiPlace',
     'nav.closeMenu': 'Cerrar menú',
