@@ -9,6 +9,7 @@ const VALID_EVENTS = new Set([
   'listing_created',
   'message_created',
   'notification_created',
+  'favorite_created',
   'report_created',
 ]);
 
@@ -372,9 +373,99 @@ export default async function handler(req, res) {
       `${APP_ORIGIN}/notificaciones`;
 
     /*
+     * ME GUSTA RECIBIDO
+     * La API valida el favorito que creó el usuario y crea el aviso interno
+     * en nombre del servidor. Así no se permite que el cliente se notifique
+     * a sí mismo ni que invente avisos para publicaciones ajenas.
+     */
+    if (type === 'favorite_created') {
+      failureStage = 'firestore_reserve_favorite_event';
+
+      reserved = await reserveEvent(
+        db,
+        'favorites',
+        id,
+        (favorite) => favorite.userId === decoded.uid,
+      );
+
+      if (!reserved) {
+        return respond(res, 403, {
+          error: 'Me gusta no autorizado.',
+        });
+      }
+
+      if (reserved.skipped) {
+        return respond(res, 200, {
+          ok: true,
+          skipped: true,
+        });
+      }
+
+      claimedEventRef = reserved.ref;
+
+      const listingId = reserved.value.listingId;
+      if (typeof listingId !== 'string') {
+        return respond(res, 403, {
+          error: 'Publicación no válida.',
+        });
+      }
+
+      failureStage = 'firestore_read_favorite_listing';
+      const listingSnapshot = await db
+        .collection('listings')
+        .doc(listingId)
+        .get();
+      const listing = listingSnapshot.data();
+
+      if (
+        !listingSnapshot.exists ||
+        listing?.status !== 'published' ||
+        typeof listing.ownerId !== 'string' ||
+        typeof listing.expiresAt !== 'number' ||
+        listing.expiresAt <= Date.now()
+      ) {
+        return respond(res, 403, {
+          error: 'Publicación no disponible.',
+        });
+      }
+
+      if (listing.ownerId !== decoded.uid) {
+        title = '¡Tu publicación recibió un Me gusta!';
+        body = `A alguien le gustó «${String(listing.title || 'tu publicación').slice(0, 100)}».`;
+        targetUrl = `${APP_ORIGIN}/listing/${listingId}`;
+
+        const favoriteCreatedAt = Number.isSafeInteger(reserved.value.createdAt)
+          ? reserved.value.createdAt
+          : Date.now();
+        const notificationId = `favorite_${id}_${favoriteCreatedAt}`;
+        const notificationRef = db
+          .collection('notifications')
+          .doc(notificationId);
+
+        failureStage = 'firestore_create_favorite_notification';
+        await db.runTransaction(async (transaction) => {
+          const existing = await transaction.get(notificationRef);
+          if (existing.exists) return;
+
+          transaction.create(notificationRef, {
+            recipientId: listing.ownerId,
+            type: 'favorite_received',
+            title,
+            message: body,
+            listingId,
+            isRead: false,
+            createdAt: Date.now(),
+          });
+        });
+
+        recipientIds = [listing.ownerId];
+      }
+    }
+
+    /*
      * PUBLICACIÓN CREADA
      */
-    if (type === 'listing_created') {
+    else if (type === 'listing_created') {
       failureStage =
         'firestore_reserve_listing_event';
 

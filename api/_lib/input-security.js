@@ -32,7 +32,7 @@ export const requestSchemas = {
   }).strict(),
   metric: z.object({ listingId: documentIdSchema, metric: z.literal('viewsCount') }).strict(),
   push: z.object({
-    type: z.enum(['listing_created', 'message_created', 'notification_created', 'report_created']),
+    type: z.enum(['listing_created', 'message_created', 'notification_created', 'favorite_created', 'report_created']),
     id: documentIdSchema,
   }).strict(),
   deleteAccount: z.object({ confirm: z.literal('ELIMINAR') }).strict(),

@@ -230,7 +230,8 @@ export interface Favorite {
 export type NotificationType =
   | 'listing_approved'
   | 'listing_rejected'
-  | 'listing_removed';
+  | 'listing_removed'
+  | 'favorite_received';
 
 export interface AppNotification {
   id: string;

@@ -340,7 +340,6 @@ export function Navbar() {
       </div>
     </header>
       {createPortal(<div data-open={mobileDrawerOpen} className="mobile-menu-stage pointer-events-none fixed inset-0 z-[49] sm:hidden" aria-hidden={!mobileDrawerOpen}>
-        <span aria-hidden="true" className="mobile-menu-depth-tab mobile-menu-depth-tab-back absolute inset-y-5 left-[63vw] w-[18vw]" />
         <span aria-hidden="true" className="mobile-menu-depth-tab mobile-menu-depth-tab-front absolute inset-y-8 left-[68vw] w-[16vw]" />
         <aside
           id="mobile-navigation-drawer"

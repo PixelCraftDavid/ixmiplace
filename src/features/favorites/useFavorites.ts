@@ -10,6 +10,7 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase';
+import { requestPushDelivery } from '../../lib/push-notifications';
 import { useAuth } from '../auth/AuthContext';
 import type { Favorite, Listing } from '../../types/models';
 
@@ -95,9 +96,9 @@ export function useFavorites() {
 
       await batch.commit();
 
-      // 🔍 Log temporal de verificación — bórralo cuando confirmes que funciona
-      const check = await getDoc(listingRef);
-      console.log('🔥 favoritesCount después del batch:', check.data()?.favoritesCount);
+      if (!favoriteIds.has(listingId)) {
+        await requestPushDelivery('favorite_created', favId);
+      }
     },
     [favoriteIds]
   );

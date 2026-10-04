@@ -366,6 +366,7 @@ export type PushEventType =
   | 'listing_created'
   | 'message_created'
   | 'notification_created'
+  | 'favorite_created'
   | 'report_created';
 
 export async function requestPushDelivery(
