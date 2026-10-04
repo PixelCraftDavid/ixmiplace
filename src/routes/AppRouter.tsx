@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import { AuthProvider } from '../features/auth/AuthContext';
@@ -69,20 +69,86 @@ function SkipToContentLink() {
 
 function AppContent() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [mobileDrawerActive, setMobileDrawerActive] = useState(false);
+  const pageScrollTop = useRef(0);
+  const drawerCloseTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const handleDrawerChange = (event: Event) => {
-      setMobileDrawerOpen(Boolean((event as CustomEvent<boolean>).detail));
+      const detail = (event as CustomEvent<{ open?: boolean; scrollTop?: number }>).detail;
+      const isOpen = Boolean(detail?.open);
+      if (isOpen && Number.isFinite(detail.scrollTop)) pageScrollTop.current = detail.scrollTop as number;
+      if (!isOpen) {
+        const screen = document.getElementById('app-screen');
+        if (screen) pageScrollTop.current = screen.scrollTop;
+      }
+      setMobileDrawerOpen(isOpen);
+      window.clearTimeout(drawerCloseTimer.current);
+      if (isOpen) {
+        setMobileDrawerActive(true);
+      } else if (window.matchMedia('(min-width: 640px)').matches) {
+        setMobileDrawerActive(false);
+      } else {
+        drawerCloseTimer.current = window.setTimeout(() => {
+          const screen = document.getElementById('app-screen');
+          if (screen) pageScrollTop.current = screen.scrollTop;
+          setMobileDrawerActive(false);
+        }, 580);
+      }
     };
     window.addEventListener('ixmiplace:mobile-drawer-change', handleDrawerChange);
-    return () => window.removeEventListener('ixmiplace:mobile-drawer-change', handleDrawerChange);
+    return () => {
+      window.removeEventListener('ixmiplace:mobile-drawer-change', handleDrawerChange);
+      window.clearTimeout(drawerCloseTimer.current);
+    };
   }, []);
+
+  useLayoutEffect(() => {
+    if (!mobileDrawerActive) return;
+
+    const screen = document.getElementById('app-screen');
+    if (!screen) return;
+
+    const body = document.body;
+    const previousBodyStyles = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+    };
+    const currentScrollTop = pageScrollTop.current;
+    pageScrollTop.current = currentScrollTop;
+
+    const rememberScreenScroll = () => {
+      pageScrollTop.current = screen.scrollTop;
+    };
+    screen.addEventListener('scroll', rememberScreenScroll, { passive: true });
+    screen.scrollTop = currentScrollTop;
+    body.style.position = 'fixed';
+    body.style.top = `-${currentScrollTop}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+
+    return () => {
+      const nextScrollTop = pageScrollTop.current;
+      screen.removeEventListener('scroll', rememberScreenScroll);
+      screen.scrollTop = 0;
+      body.style.position = previousBodyStyles.position;
+      body.style.top = previousBodyStyles.top;
+      body.style.left = previousBodyStyles.left;
+      body.style.right = previousBodyStyles.right;
+      body.style.width = previousBodyStyles.width;
+      window.requestAnimationFrame(() => window.scrollTo(0, nextScrollTop || pageScrollTop.current));
+    };
+  }, [mobileDrawerActive]);
 
   return (
       <>
         <RouteMetadata />
         <AnalyticsConsent />
-        <div id="app-screen" data-mobile-menu-open={mobileDrawerOpen} className="mobile-menu-screen">
+        <div id="app-screen" data-mobile-menu-open={mobileDrawerOpen} data-mobile-menu-active={mobileDrawerActive} className="mobile-menu-screen">
           <SkipToContentLink />
 
           <Navbar />
