@@ -88,7 +88,8 @@ function AppContent() {
 
         <div
           id="main-content"
-          className={`relative z-40 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-[calc(min(62vw,20rem)_+_44px)] translate-y-2 scale-[0.94] origin-left rounded-[2rem] shadow-2xl' : ''}`}
+          style={mobileDrawerOpen ? { transform: 'perspective(1400px) translate3d(72vw, 8px, 0) scale(0.88) rotateY(-7deg)', transformOrigin: 'left center', borderRadius: '24px', boxShadow: '0 24px 60px rgba(16, 24, 18, 0.28)', backfaceVisibility: 'hidden' } : undefined}
+          className="relative z-50 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
         >
           <Routes>
             {/* =========================

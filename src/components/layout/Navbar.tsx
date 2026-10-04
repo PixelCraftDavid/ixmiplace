@@ -126,7 +126,10 @@ export function Navbar() {
 
   return (
     <>
-    <header className={`absolute inset-x-0 top-0 z-50 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-[calc(min(62vw,20rem)_+_44px)] translate-y-2 scale-[0.94] origin-left' : ''} ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}>
+    <header
+      style={mobileDrawerOpen ? { transform: 'perspective(1400px) translate3d(72vw, 8px, 0) scale(0.88) rotateY(-7deg)', transformOrigin: 'left center', backfaceVisibility: 'hidden' } : undefined}
+      className={`absolute inset-x-0 top-0 z-[60] transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}
+    >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="inline-flex items-center gap-2.5">
           <img
@@ -340,7 +343,8 @@ export function Navbar() {
           id="mobile-navigation-drawer"
           aria-label={t('nav.primary')}
           inert={!mobileDrawerOpen}
-          className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-[min(62vw,20rem)] flex-col overflow-hidden rounded-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.18)] dark:bg-[#26392f]"
+          style={mobileDrawerOpen ? { transform: 'perspective(1400px) translateX(-8px) scale(0.98) rotateY(3deg)', transformOrigin: 'right center', backfaceVisibility: 'hidden' } : undefined}
+          className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-[min(62vw,20rem)] flex-col overflow-hidden rounded-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.18)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:bg-[#26392f]"
         >
           <div className="flex items-center gap-3 border-b border-white/20 px-4 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))]">
             {profile?.photoURL ? (
