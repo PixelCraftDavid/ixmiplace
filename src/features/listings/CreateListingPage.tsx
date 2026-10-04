@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, PencilLine, X } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
 import { LISTING_LIMITS, supportsHouseRules } from '../../lib/constants';
@@ -8,8 +8,9 @@ import { ListingForm } from './ListingForm';
 import { ListingScenePreview } from './ListingScenePreview';
 import type { ListingInput } from '../../lib/zod-schemas';
 import type { Listing } from '../../types/models';
-import { LISTING_CONSENT_VERSION } from '../legal/legalVersions';
+import { LISTING_CONSENT_VERSION, PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../legal/legalVersions';
 import { requestPushDelivery } from '../../lib/push-notifications';
+import { isConfiguredCloudinaryPhotoUrl } from '../../lib/cloudinary';
 
 export function CreateListingPage() {
   const nav = useNavigate();
@@ -28,13 +29,57 @@ export function CreateListingPage() {
     photos: string[],
     photoPublicIds: string[] = []
   ) {
-    if (!auth.currentUser) throw new Error('Sesión expirada');
-    if (!data.publicationConsentAccepted) throw new Error('Debes confirmar tu autorización para publicar este anuncio.');
+    const user = auth.currentUser;
+    if (!user) throw new Error('PUBLICATION_CHECK:Tu sesión expiró. Inicia sesión de nuevo.');
+    if (!data.publicationConsentAccepted) {
+      throw new Error('PUBLICATION_CHECK:Confirma que tienes autorización para publicar este anuncio.');
+    }
+
+    // Actualiza los claims antes de la escritura: Firestore evalúa email_verified
+    // en el token, no el campo espejo emailVerified del perfil.
+    const token = await user.getIdTokenResult(true);
+    if (token.claims.email_verified !== true) {
+      throw new Error('PUBLICATION_CHECK:Firebase aún no reconoce el correo como verificado. Cierra sesión y vuelve a entrar después de verificarlo.');
+    }
+    if (user.email?.toLowerCase().endsWith('@dominio-temporal.com')) {
+      throw new Error('PUBLICATION_CHECK:Esta cuenta no puede publicar con un correo temporal.');
+    }
+
+    let profileSnapshot;
+    try {
+      profileSnapshot = await getDoc(doc(db, 'users', user.uid));
+    } catch (error) {
+      const code = typeof error === 'object' && error !== null && 'code' in error
+        && typeof error.code === 'string' ? error.code : '';
+      if (code === 'permission-denied') {
+        throw new Error('PUBLICATION_CHECK:Firebase no permitió leer tu perfil. El sitio podría estar conectado a otro proyecto o las reglas desplegadas podrían diferir de las del código.');
+      }
+      throw error;
+    }
+    if (!profileSnapshot.exists()) {
+      throw new Error('PUBLICATION_CHECK:No encontramos tu perfil en esta base de datos. Verifica que el sitio esté conectado al proyecto Firebase correcto.');
+    }
+    const profile = profileSnapshot.data();
+    if (profile.isBanned === true) {
+      throw new Error('PUBLICATION_CHECK:Esta cuenta no tiene permiso para publicar.');
+    }
+    if (profile.termsAcceptedVersion !== TERMS_VERSION
+      || profile.adultConfirmedVersion !== TERMS_VERSION
+      || profile.privacyConsentVersion !== PRIVACY_NOTICE_VERSION) {
+      throw new Error('PUBLICATION_CHECK:Actualiza la aceptación de Términos, mayoría de edad y Aviso de Privacidad en tu cuenta antes de publicar.');
+    }
+    if (!/^\d{10}$/.test(data.whatsapp)) {
+      throw new Error('PUBLICATION_CHECK:El WhatsApp debe tener exactamente 10 dígitos.');
+    }
+    if (photos.length < LISTING_LIMITS.photosMin || photos.length > LISTING_LIMITS.photosMax
+      || photos.some((url) => !isConfiguredCloudinaryPhotoUrl(url))) {
+      throw new Error('PUBLICATION_CHECK:Una o más fotos no corresponden a la cuenta de Cloudinary configurada para este sitio. Vuelve a seleccionarlas.');
+    }
 
     const now = Date.now();
     const listing: Omit<Listing, 'id'> = {
-      ownerId: auth.currentUser.uid,
-      ownerEmailVerified: auth.currentUser.emailVerified,
+      ownerId: user.uid,
+      ownerEmailVerified: token.claims.email_verified === true,
       title: data.title.trim(),
       description: data.description.trim(),
       category: data.category,
@@ -138,15 +183,24 @@ export function CreateListingPage() {
     const listingRef = doc(collection(db, 'listings'));
     const batch = writeBatch(db);
     batch.set(listingRef, listing);
-    if (data.address?.trim() || data.whatsapp) {
-      batch.set(doc(db, 'listingPrivateDetails', listingRef.id), {
-        ownerId: auth.currentUser.uid,
-        ...(data.address?.trim() ? { address: data.address.trim() } : {}),
-        whatsapp: data.whatsapp,
-        updatedAt: now,
-      });
+    // Las reglas de listings requieren que este documento exista en el mismo
+    // lote y contenga el WhatsApp válido (getAfter en ambas escrituras).
+    batch.set(doc(db, 'listingPrivateDetails', listingRef.id), {
+      ownerId: user.uid,
+      ...(data.address?.trim() ? { address: data.address.trim() } : {}),
+      whatsapp: data.whatsapp,
+      updatedAt: now,
+    });
+    try {
+      await batch.commit();
+    } catch (error) {
+      const code = typeof error === 'object' && error !== null && 'code' in error
+        && typeof error.code === 'string' ? error.code : '';
+      if (code === 'permission-denied') {
+        throw new Error('PUBLICATION_CHECK:Firestore negó el lote del anuncio y sus datos privados. La cuenta pasó las comprobaciones previas; revisa que el proyecto del sitio y las reglas activas de Firestore sean los esperados.');
+      }
+      throw error;
     }
-    await batch.commit();
 
     // La publicación ya se creó: un fallo del push no debe mostrarse como error
     // (el usuario reintentaría y duplicaría el anuncio).
@@ -172,11 +226,12 @@ export function CreateListingPage() {
       );
     } catch (err) {
       console.error('Error publicando anuncio:', err);
-      setPublishError(
-        err instanceof Error && err.message === 'Sesión expirada'
-          ? 'Tu sesión expiró. Inicia sesión de nuevo e intenta otra vez.'
-          : 'No se pudo publicar el anuncio. Revisa tus datos e intenta de nuevo.'
-      );
+      const errorMessage = err instanceof Error ? err.message : '';
+      if (errorMessage.startsWith('PUBLICATION_CHECK:')) {
+        setPublishError(errorMessage.slice('PUBLICATION_CHECK:'.length));
+      } else {
+        setPublishError('No se pudo guardar el anuncio. Comprueba tu conexión e inténtalo de nuevo.');
+      }
     } finally {
       setPublishing(false);
       setPendingPublish(null);

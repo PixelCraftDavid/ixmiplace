@@ -5,6 +5,12 @@ const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
+/** Confirma que una imagen guardada cumple el host que también exige Firestore. */
+export function isConfiguredCloudinaryPhotoUrl(value: string): boolean {
+  return CLOUD_NAME === 'ckaf3htn'
+    && value.startsWith('https://res.cloudinary.com/ckaf3htn/image/upload/');
+}
+
 // ============================================================
 // Tipos
 // ============================================================
