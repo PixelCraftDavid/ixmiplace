@@ -8,7 +8,7 @@ export function SiteFooter({ mobileDrawerOpen = false }: { mobileDrawerOpen?: bo
     <footer
       aria-hidden={mobileDrawerOpen}
       inert={mobileDrawerOpen}
-      className={`relative z-40 transform-gpu border-t border-cream-200 bg-cream-100 px-4 py-8 text-ink-600 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:border-[#4b5847] dark:bg-[#1c211a] dark:text-ink-300 ${mobileDrawerOpen ? 'translate-x-[70vw] scale-[0.9] origin-left rounded-[2rem] shadow-2xl pointer-events-none' : ''}`}
+      className={`relative z-40 transform-gpu border-t border-cream-200 bg-cream-100 px-4 py-8 text-ink-600 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:border-[#4b5847] dark:bg-[#1c211a] dark:text-ink-300 ${mobileDrawerOpen ? 'translate-x-[58vw] translate-y-2 scale-[0.94] origin-left rounded-[2rem] shadow-2xl pointer-events-none' : ''}`}
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>

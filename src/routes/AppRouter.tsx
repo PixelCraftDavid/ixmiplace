@@ -90,7 +90,7 @@ function AppContent() {
           id="main-content"
           aria-hidden={mobileDrawerOpen}
           inert={mobileDrawerOpen}
-          className={`relative z-40 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-[70vw] scale-[0.9] origin-left rounded-[2rem] shadow-2xl pointer-events-none' : ''}`}
+          className={`relative z-40 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-[58vw] translate-y-2 scale-[0.94] origin-left rounded-[2rem] shadow-2xl pointer-events-none' : ''}`}
         >
           <Routes>
             {/* =========================

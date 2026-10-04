@@ -129,7 +129,7 @@ export function Navbar() {
 
   return (
     <>
-    <header className={`absolute inset-x-0 top-0 z-50 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-[70vw] scale-[0.9] origin-left' : ''} ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`} inert={mobileDrawerOpen}>
+    <header className={`absolute inset-x-0 top-0 z-50 transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-[58vw] translate-y-2 scale-[0.94] origin-left' : ''} ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`} inert={mobileDrawerOpen}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="inline-flex items-center gap-2.5">
           <img
@@ -336,7 +336,7 @@ export function Navbar() {
         </nav>
       </div>
     </header>
-      <div className={`pointer-events-none fixed inset-y-0 left-0 z-[45] w-[calc(min(76vw,20rem)+18px)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:hidden ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`} aria-hidden={!mobileDrawerOpen}>
+      <div className={`pointer-events-none fixed inset-y-2 left-2 z-[45] w-[calc(min(62vw,20rem)+22px)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:hidden ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`} aria-hidden={!mobileDrawerOpen}>
         <span aria-hidden="true" className="pointer-events-none absolute inset-y-5 right-0 w-3 rounded-r-xl bg-cream-100 shadow-md dark:bg-[#3a4337]" />
         <span aria-hidden="true" className="pointer-events-none absolute inset-y-8 right-2 w-3 rounded-r-xl border-r border-white/80 bg-white shadow-md dark:border-[#4b5847] dark:bg-[#293027]" />
         <aside
@@ -345,7 +345,7 @@ export function Navbar() {
           aria-modal={mobileDrawerOpen}
           aria-label={t('nav.primary')}
           inert={!mobileDrawerOpen}
-          className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-[min(76vw,20rem)] flex-col overflow-hidden rounded-r-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.18)] dark:bg-[#26392f]"
+          className="pointer-events-auto absolute inset-y-0 left-0 z-10 flex w-[min(62vw,20rem)] flex-col overflow-hidden rounded-[2rem] bg-[#7eaa9b] text-white shadow-[12px_0_45px_rgba(19,39,31,0.18)] dark:bg-[#26392f]"
         >
           <div className="flex items-center gap-3 border-b border-white/20 px-4 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))]">
             {profile?.photoURL ? (
@@ -371,7 +371,7 @@ export function Navbar() {
             </select>
           </label>
 
-          <nav aria-label={t('nav.primary')} className="mt-3 flex-1 space-y-0.5 overflow-y-auto px-2.5 pb-3">
+          <nav aria-label={t('nav.primary')} className="mt-3 flex-1 space-y-0.5 overflow-y-auto px-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <Link to="/" aria-current={pathname === '/' ? 'page' : undefined} className={mobileNavItemClass('/')}><MapPin className="h-4 w-4" aria-hidden="true" />{t('nav.explore')}</Link>
             {fbUser ? <>
               <Link to="/perfil" aria-current={pathname === '/perfil' ? 'page' : undefined} className={mobileNavItemClass('/perfil')}><Settings className="h-4 w-4" aria-hidden="true" />{t('nav.editProfile')}</Link>
@@ -390,11 +390,13 @@ export function Navbar() {
               {darkMode ? t('nav.lightMode') : t('nav.darkMode')}
             </button>
             <Link to="/apoyar" aria-current={pathname === '/apoyar' ? 'page' : undefined} className={mobileNavItemClass('/apoyar')}><Heart className="h-4 w-4 text-rose-100" aria-hidden="true" />{t('nav.supportShort')}</Link>
+            {fbUser && <>
+              <div className="mx-4 my-3 border-t border-white/25" />
+              <button type="button" onClick={() => { closeMobileDrawer(); void logout(); }} className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left text-sm font-semibold text-white transition duration-200 hover:bg-[#a8493b]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80">
+                <LogOut className="h-4 w-4" aria-hidden="true" />{t('nav.logout')}
+              </button>
+            </>}
           </nav>
-
-          {fbUser && <div className="mt-auto shrink-0 border-t border-white/25 bg-[#739d8f] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:bg-[#203228]">
-            <button type="button" onClick={() => { closeMobileDrawer(); void logout(); }} className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left text-sm font-semibold text-white/95 transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"><LogOut className="h-4 w-4" aria-hidden="true" />{t('nav.logout')}</button>
-          </div>}
         </aside>
       </div>
     </>
