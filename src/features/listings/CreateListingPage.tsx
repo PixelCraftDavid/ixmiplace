@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, PencilLine, X } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
 import { LISTING_LIMITS, supportsHouseRules } from '../../lib/constants';
@@ -12,6 +12,7 @@ import { LISTING_CONSENT_VERSION, PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '
 import { requestPushDelivery } from '../../lib/push-notifications';
 import { isConfiguredCloudinaryPhotoUrl } from '../../lib/cloudinary';
 import { listingCreateRuleErrors } from './listingCreateRuleChecks';
+import { postAuthenticatedApi } from '../../lib/protected-api';
 
 export function CreateListingPage() {
   const nav = useNavigate();
@@ -102,7 +103,6 @@ export function CreateListingPage() {
       createdAt: now,
       updatedAt: now,
       publicationConsentVersion: LISTING_CONSENT_VERSION,
-      publicationConsentAt: serverTimestamp(),
     };
 
     // Firestore rechaza `undefined`: los opcionales solo se agregan si tienen valor.
@@ -197,28 +197,20 @@ export function CreateListingPage() {
       throw new Error(`PUBLICATION_CHECK:No se envió el anuncio porque no coincide con las reglas activas: ${ruleErrors.join(' ')}`);
     }
 
-    const listingRef = doc(collection(db, 'listings'));
-    const batch = writeBatch(db);
-    batch.set(listingRef, listing);
-    // Las reglas de listings requieren que este documento exista en el mismo
-    // lote y contenga el WhatsApp válido (getAfter en ambas escrituras).
-    batch.set(doc(db, 'listingPrivateDetails', listingRef.id), privateDetails);
-    try {
-      await batch.commit();
-    } catch (error) {
-      const code = typeof error === 'object' && error !== null && 'code' in error
-        && typeof error.code === 'string' ? error.code : '';
-      if (code === 'permission-denied') {
-        const projectId = db.app.options.projectId || 'desconocido';
-        throw new Error(`PUBLICATION_CHECK:Firestore rechazó el lote atómico del anuncio (proyecto ${projectId}). Los datos pasaron la revisión local contra las reglas del repositorio; esto apunta a que las reglas publicadas en ese proyecto no coinciden con este código, o a que el token de acceso no cumple una condición de Firebase.`);
-      }
-      throw error;
-    }
+    const { listingId } = await postAuthenticatedApi<{ listingId: string }>(
+      '/api/create-listing',
+      {
+        listing,
+        privateDetails,
+        publicationConsentAccepted: data.publicationConsentAccepted === true,
+        projectId: db.app.options.projectId,
+      },
+    );
 
     // La publicación ya se creó: un fallo del push no debe mostrarse como error
     // (el usuario reintentaría y duplicaría el anuncio).
     try {
-      await requestPushDelivery('listing_created', listingRef.id);
+      await requestPushDelivery('listing_created', listingId);
     } catch (err) {
       console.warn('No se pudo solicitar la notificación push:', err);
     }
