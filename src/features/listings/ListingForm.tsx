@@ -1,4 +1,4 @@
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, type FieldErrors, type FieldPath } from 'react-hook-form';
 import type { UseFormRegister } from 'react-hook-form';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { forwardRef, useState, type InputHTMLAttributes, type ReactNode } from 'react';
@@ -83,6 +83,7 @@ export function ListingForm({
     watch,
     control,
     setValue,
+    setFocus,
     formState: { errors, isSubmitting },
   } = useForm<ListingInput>({
     resolver: standardSchemaResolver(listingSchema),
@@ -204,6 +205,24 @@ export function ListingForm({
     }
   }
 
+  function handleInvalidSubmit(formErrors: FieldErrors<ListingInput>) {
+    const entries = Object.entries(formErrors);
+    const firstError = entries[0]?.[1];
+    const message = firstError && 'message' in firstError && typeof firstError.message === 'string'
+      ? firstError.message
+      : '';
+    setSubmitError(
+      message
+        ? `No se publicó. Revisa este campo: ${message}`
+        : 'No se publicó. Revisa los campos obligatorios marcados en el formulario.'
+    );
+
+    const firstField = entries[0]?.[0];
+    if (firstField) {
+      requestAnimationFrame(() => setFocus(firstField as FieldPath<ListingInput>));
+    }
+  }
+
   // ─────────── Estilos reutilizables ───────────
   const inputClass = `
     w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3
@@ -218,7 +237,7 @@ export function ListingForm({
     'mt-2 flex items-center gap-1.5 text-xs text-red-600';
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit, handleInvalidSubmit)} className="space-y-6">
       <HoneypotField value={website} onChange={setWebsite} />
       <PrivacyNoticeInline kind="listing" />
       {lockFixedFields && immutableFieldsMessage && (
