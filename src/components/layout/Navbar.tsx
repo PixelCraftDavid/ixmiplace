@@ -222,20 +222,6 @@ export function Navbar() {
                     <p className="truncate text-xs text-ink-400">{fbUser.email}</p>
                   </div>
 
-                  <label className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-ink-600 dark:text-ink-200">
-                    <span className="inline-flex items-center gap-2"><Languages className="h-4 w-4 text-ink-400" aria-hidden="true" />{t('language.label')}</span>
-                    <select
-                      aria-label={t('language.label')}
-                      value={locale}
-                      onChange={(event) => setLocale(event.target.value as Locale)}
-                      className="max-w-32 rounded-lg border border-cream-200 bg-cream-50 px-2 py-1.5 text-xs text-ink-700 outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
-                    >
-                      <option value="es">{t('language.spanish')}</option>
-                      <option value="en">{t('language.english')}</option>
-                      <option value="ote">{t('language.hnahnu')}</option>
-                    </select>
-                  </label>
-
                   <Link
                     to="/perfil"
                     onClick={closeMenu}
