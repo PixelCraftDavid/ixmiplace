@@ -20,7 +20,7 @@ interface LocationViewProps {
 
 export function LocationView({ position }: LocationViewProps) {
   return (
-    <div className="h-64 overflow-hidden rounded-xl border border-cream-300">
+    <div className="relative z-0 isolate h-64 overflow-hidden rounded-xl border border-cream-300">
       <MapContainer
         center={position}
         zoom={15}

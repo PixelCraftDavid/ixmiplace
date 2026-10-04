@@ -213,7 +213,15 @@ export function ListingDetailPage() {
       return;
     }
 
-    const parsed = internalMessageSchema.safeParse(data);
+    // `website` is the honeypot field, not part of the user-facing message
+    // schema (which is strict). Keep it out of client validation and send it
+    // separately so the API can reject bots that filled it in.
+    const parsed = internalMessageSchema.safeParse({
+      subject: data.subject,
+      message: data.message,
+      ...(data.visitRequestedAt ? { visitRequestedAt: data.visitRequestedAt } : {}),
+      ...(data.openHouseRsvp ? { openHouseRsvp: true } : {}),
+    });
     if (!parsed.success) {
       setContactError(parsed.error.issues[0]?.message ?? 'Revisa el formulario.');
       return;
@@ -886,8 +894,8 @@ function ContactDialog({
   const [rsvpOpenHouse, setRsvpOpenHouse] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-cream-200 bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-ink/40 p-3 backdrop-blur-sm sm:p-4">
+      <div className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-cream-200 bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6">
         {sent ? (
           <div className="text-center">
             <Mail className="mx-auto h-10 w-10 text-brand-500" />
