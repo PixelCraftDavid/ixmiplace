@@ -737,7 +737,7 @@ export function ListingDetailPage() {
         <WhatsAppContactButton
           listingId={listing.id}
           iconOnly
-          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center
+          className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-6 z-40 flex h-14 w-14 items-center justify-center sm:bottom-6
                      rounded-full bg-gradient-to-br from-green-500 to-green-600
                      text-white shadow-2xl shadow-green-500/40
                      transition hover:scale-110 lg:hidden"
@@ -747,7 +747,7 @@ export function ListingDetailPage() {
       {/* Toast copiado */}
       {copied && (
         <div
-          className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full
+          className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-1/2 z-50 -translate-x-1/2 rounded-full sm:bottom-24
                      bg-ink/90 px-5 py-2.5 text-sm font-medium text-white
                      backdrop-blur-sm"
         >

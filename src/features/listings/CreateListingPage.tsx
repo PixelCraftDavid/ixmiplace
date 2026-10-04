@@ -263,7 +263,7 @@ export function CreateListingPage() {
           <p className="mt-6 text-sm text-ink-400">Redirigiendo…</p>
 
           <div
-            className="fixed bottom-5 right-5 z-50 max-w-sm rounded-2xl border border-amber-200
+            className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-5 z-50 max-w-sm rounded-2xl border border-amber-200 sm:bottom-5
                        bg-amber-50 p-4 text-left text-sm text-amber-900 shadow-xl"
           >
             <div className="flex items-start gap-3">

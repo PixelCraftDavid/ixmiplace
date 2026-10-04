@@ -2,10 +2,10 @@ import { Heart, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/lib/i18n';
 
-export function SiteFooter() {
+export function SiteFooter({ hasMobileNav = false }: { hasMobileNav?: boolean }) {
   const { t } = useLanguage();
   return (
-    <footer className="border-t border-cream-200 bg-cream-100 px-4 py-8 text-ink-600 dark:border-[#4b5847] dark:bg-[#1c211a] dark:text-ink-300">
+    <footer className={`border-t border-cream-200 bg-cream-100 px-4 py-8 text-ink-600 dark:border-[#4b5847] dark:bg-[#1c211a] dark:text-ink-300 ${hasMobileNav ? 'pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-8' : ''}`}>
       <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-bold text-ink-700 dark:text-ink-50">

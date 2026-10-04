@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-import { AuthProvider } from '../features/auth/AuthContext';
+import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { RequireAuth } from '../features/auth/RequireAuth';
 
 import { RegisterPage } from '../features/auth/RegisterPage';
@@ -66,18 +66,17 @@ function SkipToContentLink() {
   );
 }
 
-export function AppRouter() {
+function AppContent() {
+  const { fbUser } = useAuth();
   return (
-    <AuthProvider>
-    <LanguageProvider>
-      <BrowserRouter>
+      <>
         <RouteMetadata />
         <AnalyticsConsent />
         <SkipToContentLink />
 
         <Navbar />
 
-        <div id="main-content">
+        <div id="main-content" className={fbUser ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))] sm:pb-0' : ''}>
           <Routes>
             {/* =========================
                 PÚBLICAS
@@ -168,8 +167,18 @@ export function AppRouter() {
         </div>
 
         {/* Footer global */}
-        <SiteFooter />
-      </BrowserRouter>
+        <SiteFooter hasMobileNav={Boolean(fbUser)} />
+      </>
+  );
+}
+
+export function AppRouter() {
+  return (
+    <AuthProvider>
+      <LanguageProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
     </LanguageProvider>
     </AuthProvider>
   );

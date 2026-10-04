@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, Heart, Home, ChevronDown, User, ShieldCheck, Bell, Moon, Sun, Mail, Settings, Languages } from 'lucide-react';
+import { LogOut, Heart, Home, ChevronDown, User, ShieldCheck, Bell, Moon, Sun, Mail, Settings, Languages, Plus, Menu } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/features/auth/AuthContext';
@@ -91,6 +91,7 @@ export function Navbar() {
   }
 
   return (
+    <>
     <header className={`absolute inset-x-0 top-0 z-40 ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="inline-flex items-center gap-2.5">
@@ -106,7 +107,7 @@ export function Navbar() {
         </Link>
 
         <nav aria-label={t('nav.primary')} className="flex items-center gap-2 sm:gap-3">
-          <label className={`inline-flex h-10 items-center gap-1.5 rounded-full border px-2 sm:px-3 ${overDarkHero ? 'border-white/30 bg-white/10 text-white' : 'border-cream-300 bg-white text-ink-700 dark:border-white/20 dark:bg-white/10 dark:text-ink-50'}`}>
+          <label className={`hidden h-10 items-center gap-1.5 rounded-full border px-2 sm:inline-flex sm:px-3 ${overDarkHero ? 'border-white/30 bg-white/10 text-white' : 'border-cream-300 bg-white text-ink-700 dark:border-white/20 dark:bg-white/10 dark:text-ink-50'}`}>
             <Languages className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="sr-only">{t('language.label')}</span>
             <select
@@ -133,7 +134,7 @@ export function Navbar() {
             to="/apoyar"
             aria-label={t('nav.support')}
             title={t('nav.support')}
-            className="motion-ease group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-rose-300/40 bg-[#d95848] text-white shadow-[0_4px_16px_rgba(117,35,28,0.22)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#c94d40] hover:shadow-[0_8px_22px_rgba(117,35,28,0.28)] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c211a] sm:w-auto sm:gap-1.5 sm:px-3"
+            className="motion-ease group hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-rose-300/40 bg-[#d95848] text-white shadow-[0_4px_16px_rgba(117,35,28,0.22)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#c94d40] hover:shadow-[0_8px_22px_rgba(117,35,28,0.28)] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c211a] sm:inline-flex sm:w-auto sm:gap-1.5 sm:px-3"
           >
             <Heart className="h-4 w-4 fill-current transition-transform duration-300 group-hover:scale-110 group-active:scale-95" />
             <span className="hidden text-sm font-semibold sm:inline">{t('nav.supportShort')}</span>
@@ -173,20 +174,33 @@ export function Navbar() {
               {/* Menú desplegable */}
               {menuOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl
-                             border border-cream-200 bg-white py-2 shadow-xl"
+                  className="absolute right-0 mt-2 w-64 overflow-hidden rounded-2xl border border-cream-200 bg-white py-2 text-ink-700 shadow-xl dark:border-[#4b5847] dark:bg-[#242a22] dark:text-ink-50"
                 >
-                  <div className="border-b border-cream-100 px-4 py-2">
-                    <p className="truncate text-sm font-semibold text-ink">
+                  <div className="border-b border-cream-100 px-4 py-2 dark:border-white/10">
+                    <p className="truncate text-sm font-semibold text-ink dark:text-ink-50">
                       {profile?.displayName ?? t('nav.user')}
                     </p>
                     <p className="truncate text-xs text-ink-400">{fbUser.email}</p>
                   </div>
 
+                  <label className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-ink-600 dark:text-ink-200">
+                    <span className="inline-flex items-center gap-2"><Languages className="h-4 w-4 text-ink-400" aria-hidden="true" />{t('language.label')}</span>
+                    <select
+                      aria-label={t('language.label')}
+                      value={locale}
+                      onChange={(event) => setLocale(event.target.value as Locale)}
+                      className="max-w-32 rounded-lg border border-cream-200 bg-cream-50 px-2 py-1.5 text-xs text-ink-700 outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
+                    >
+                      <option value="es">{t('language.spanish')}</option>
+                      <option value="en">{t('language.english')}</option>
+                      <option value="ote">{t('language.hnahnu')}</option>
+                    </select>
+                  </label>
+
                   <Link
                     to="/perfil"
                     onClick={closeMenu}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100 dark:text-ink-200 dark:hover:bg-white/[0.07]"
                   >
                     <Settings className="h-4 w-4 text-ink-400" />
                     {t('nav.editProfile')}
@@ -195,8 +209,7 @@ export function Navbar() {
                   <Link
                     to="/mis-publicaciones"
                     onClick={closeMenu}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm
-                               text-ink-600 transition hover:bg-cream-100"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100 dark:text-ink-200 dark:hover:bg-white/[0.07]"
                   >
                     <Home className="h-4 w-4 text-ink-400" />
                     {t('nav.myListings')}
@@ -205,8 +218,7 @@ export function Navbar() {
                   <Link
                     to="/favoritos"
                     onClick={closeMenu}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm
-                               text-ink-600 transition hover:bg-cream-100"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100 dark:text-ink-200 dark:hover:bg-white/[0.07]"
                   >
                     <Heart className="h-4 w-4 text-ink-400" />
                     {t('nav.favorites')}
@@ -215,7 +227,7 @@ export function Navbar() {
                   <Link
                     to="/notificaciones"
                     onClick={closeMenu}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100 dark:text-ink-200 dark:hover:bg-white/[0.07]"
                   >
                     <Bell className="h-4 w-4 text-ink-400" />
                     {t('nav.notifications')}
@@ -224,7 +236,7 @@ export function Navbar() {
                   <Link
                     to="/mensajes"
                     onClick={closeMenu}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100 dark:text-ink-200 dark:hover:bg-white/[0.07]"
                   >
                     <Mail className="h-4 w-4 text-ink-400" />
                     {t('nav.messages')}
@@ -234,15 +246,18 @@ export function Navbar() {
                     <Link
                       to="/admin"
                       onClick={closeMenu}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm
-                                 text-ink-600 transition hover:bg-cream-100"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100 dark:text-ink-200 dark:hover:bg-white/[0.07]"
                     >
                       <ShieldCheck className="h-4 w-4 text-ink-400" />
                       {t('nav.admin')}
                     </Link>
                   )}
 
-                  <div className="my-1 border-t border-cream-100" />
+                  <Link to="/apoyar" onClick={closeMenu} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100 dark:text-ink-200 dark:hover:bg-white/[0.07] sm:hidden">
+                    <Heart className="h-4 w-4 text-rose-500" />{t('nav.supportShort')}
+                  </Link>
+
+                  <div className="my-1 border-t border-cream-100 dark:border-white/10" />
 
                   <button
                     type="button"
@@ -250,8 +265,7 @@ export function Navbar() {
                       closeMenu();
                       logout();
                     }}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left
-                               text-sm text-red-600 transition hover:bg-red-50"
+                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/30"
                   >
                     <LogOut className="h-4 w-4" />
                     {t('nav.logout')}
@@ -261,19 +275,75 @@ export function Navbar() {
             </div>
           ) : (
             <>
-              <Link to="/login" className={`text-sm ${overDarkHero ? 'text-white' : 'text-ink-700 dark:text-ink-50'} hover:underline`}>
+              <Link to="/login" className={`hidden text-sm sm:inline ${overDarkHero ? 'text-white' : 'text-ink-700 dark:text-ink-50'} hover:underline`}>
                 {t('nav.login')}
               </Link>
               <Link
                 to="/register"
-                className="motion-ease rounded-full border border-[#e4cfaa] bg-[#f4e9d3] px-4 py-2 text-sm font-semibold text-[#263629] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#d49a4a] hover:bg-white active:translate-y-0 dark:border-[#d49a4a]/50 dark:bg-[#d49a4a] dark:text-[#1c211a] dark:hover:bg-[#e4b66e]"
+                className="motion-ease hidden rounded-full border border-[#e4cfaa] bg-[#f4e9d3] px-4 py-2 text-sm font-semibold text-[#263629] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#d49a4a] hover:bg-white active:translate-y-0 dark:border-[#d49a4a]/50 dark:bg-[#d49a4a] dark:text-[#1c211a] dark:hover:bg-[#e4b66e] sm:inline-flex"
               >
                 {t('nav.register')}
               </Link>
+              <div className="relative sm:hidden" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((open) => !open)}
+                  aria-label={t('nav.account')}
+                  aria-haspopup="true"
+                  aria-expanded={menuOpen}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition ${overDarkHero ? 'border-white/30 bg-white/10 text-white hover:bg-white/20' : 'border-cream-300 bg-white text-ink-700 shadow-sm hover:bg-cream-50 dark:border-white/20 dark:bg-white/10 dark:text-ink-50 dark:hover:bg-white/20'}`}
+                >
+                  <Menu className="h-5 w-5" aria-hidden="true" />
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-2xl border border-cream-200 bg-white py-2 text-ink-700 shadow-xl dark:border-[#4b5847] dark:bg-[#242a22] dark:text-ink-50">
+                    <label className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-ink-600 dark:text-ink-200">
+                      <span className="inline-flex items-center gap-2"><Languages className="h-4 w-4 text-ink-400" aria-hidden="true" />{t('language.label')}</span>
+                      <select aria-label={t('language.label')} value={locale} onChange={(event) => setLocale(event.target.value as Locale)} className="max-w-32 rounded-lg border border-cream-200 bg-cream-50 px-2 py-1.5 text-xs text-ink-700 outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-white/10 dark:bg-white/[0.06] dark:text-white">
+                        <option value="es">{t('language.spanish')}</option>
+                        <option value="en">{t('language.english')}</option>
+                        <option value="ote">{t('language.hnahnu')}</option>
+                      </select>
+                    </label>
+                    <Link to="/apoyar" onClick={closeMenu} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100 dark:text-ink-200 dark:hover:bg-white/[0.07]"><Heart className="h-4 w-4 text-rose-500" />{t('nav.supportShort')}</Link>
+                    <Link to="/login" onClick={closeMenu} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100 dark:text-ink-200 dark:hover:bg-white/[0.07]">{t('nav.login')}</Link>
+                    <Link to="/register" onClick={closeMenu} className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-ink-700 transition hover:bg-cream-100 dark:text-ink-50 dark:hover:bg-white/[0.07]">{t('nav.register')}</Link>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </nav>
       </div>
     </header>
+      {fbUser && (
+        <nav aria-label={t('nav.primary')} className="fixed inset-x-0 bottom-0 z-50 border-t border-cream-200 bg-cream/95 shadow-[0_-8px_28px_rgba(27,32,24,0.09)] backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95 sm:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="mx-auto grid h-[4.25rem] max-w-lg grid-cols-5 items-center px-1">
+            <Link to="/" aria-current={pathname === '/' ? 'page' : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-[10px] font-medium transition ${pathname === '/' ? 'text-brand-700 dark:text-brand-300' : 'text-ink-500 dark:text-ink-300'}`}>
+              <Home className="h-5 w-5" aria-hidden="true" />
+              <span className="truncate">{t('nav.explore')}</span>
+            </Link>
+            <Link to="/favoritos" aria-current={pathname === '/favoritos' ? 'page' : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-[10px] font-medium transition ${pathname === '/favoritos' ? 'text-brand-700 dark:text-brand-300' : 'text-ink-500 dark:text-ink-300'}`}>
+              <Heart className="h-5 w-5" aria-hidden="true" />
+              <span className="truncate">{t('nav.favorites')}</span>
+            </Link>
+            <Link to="/publicar" aria-current={pathname === '/publicar' ? 'page' : undefined} aria-label={t('nav.publish')} className="-mt-3 flex min-w-0 flex-col items-center justify-center gap-1 text-[10px] font-semibold text-ink-800 dark:text-ink-50">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-400 text-ink-900 shadow-[0_6px_16px_rgba(212,154,74,0.3)] transition active:scale-95 dark:bg-accent-300">
+                <Plus className="h-6 w-6" aria-hidden="true" />
+              </span>
+              <span className="truncate">{t('nav.publish')}</span>
+            </Link>
+            <Link to="/mensajes" aria-current={pathname === '/mensajes' ? 'page' : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-[10px] font-medium transition ${pathname === '/mensajes' ? 'text-brand-700 dark:text-brand-300' : 'text-ink-500 dark:text-ink-300'}`}>
+              <Mail className="h-5 w-5" aria-hidden="true" />
+              <span className="truncate">{t('nav.messages')}</span>
+            </Link>
+            <Link to="/perfil" aria-current={pathname === '/perfil' ? 'page' : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-[10px] font-medium transition ${pathname === '/perfil' ? 'text-brand-700 dark:text-brand-300' : 'text-ink-500 dark:text-ink-300'}`}>
+              <User className="h-5 w-5" aria-hidden="true" />
+              <span className="truncate">{t('nav.account')}</span>
+            </Link>
+          </div>
+        </nav>
+      )}
+    </>
   );
 }
