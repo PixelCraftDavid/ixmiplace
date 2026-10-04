@@ -11,6 +11,7 @@ import type { Listing } from '../../types/models';
 import { LISTING_CONSENT_VERSION, PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../legal/legalVersions';
 import { requestPushDelivery } from '../../lib/push-notifications';
 import { isConfiguredCloudinaryPhotoUrl } from '../../lib/cloudinary';
+import { listingCreateRuleErrors } from './listingCreateRuleChecks';
 
 export function CreateListingPage() {
   const nav = useNavigate();
@@ -180,24 +181,36 @@ export function CreateListingPage() {
       if (data.foodAvailable && data.foodDescription?.trim()) listing.foodDescription = data.foodDescription.trim();
     }
 
+    const privateDetails = {
+      ownerId: user.uid,
+      ...(data.address?.trim() ? { address: data.address.trim() } : {}),
+      whatsapp: data.whatsapp,
+      updatedAt: now,
+    };
+    const ruleErrors = listingCreateRuleErrors(
+      listing as unknown as Record<string, unknown>,
+      privateDetails,
+      user.uid,
+      now,
+    );
+    if (ruleErrors.length > 0) {
+      throw new Error(`PUBLICATION_CHECK:No se envió el anuncio porque no coincide con las reglas activas: ${ruleErrors.join(' ')}`);
+    }
+
     const listingRef = doc(collection(db, 'listings'));
     const batch = writeBatch(db);
     batch.set(listingRef, listing);
     // Las reglas de listings requieren que este documento exista en el mismo
     // lote y contenga el WhatsApp válido (getAfter en ambas escrituras).
-    batch.set(doc(db, 'listingPrivateDetails', listingRef.id), {
-      ownerId: user.uid,
-      ...(data.address?.trim() ? { address: data.address.trim() } : {}),
-      whatsapp: data.whatsapp,
-      updatedAt: now,
-    });
+    batch.set(doc(db, 'listingPrivateDetails', listingRef.id), privateDetails);
     try {
       await batch.commit();
     } catch (error) {
       const code = typeof error === 'object' && error !== null && 'code' in error
         && typeof error.code === 'string' ? error.code : '';
       if (code === 'permission-denied') {
-        throw new Error('PUBLICATION_CHECK:Firestore negó el lote del anuncio y sus datos privados. La cuenta pasó las comprobaciones previas; revisa que el proyecto del sitio y las reglas activas de Firestore sean los esperados.');
+        const projectId = db.app.options.projectId || 'desconocido';
+        throw new Error(`PUBLICATION_CHECK:Firestore rechazó el lote atómico del anuncio (proyecto ${projectId}). Los datos pasaron la revisión local contra las reglas del repositorio; esto apunta a que las reglas publicadas en ese proyecto no coinciden con este código, o a que el token de acceso no cumple una condición de Firebase.`);
       }
       throw error;
     }
