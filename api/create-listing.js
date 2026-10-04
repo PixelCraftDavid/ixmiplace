@@ -1,7 +1,7 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
-import { listingCreateRuleErrors } from '../src/features/listings/listingCreateRuleChecks';
+import { listingCreateRuleErrors } from '../src/features/listings/listingCreateRuleChecks.js';
 
 const EXPECTED_PROJECT_ID = 'ixmiplace';
 const TERMS_VERSION = '2026-10-03-v5';
@@ -29,7 +29,7 @@ function getAdminApp() {
   });
 }
 
-function respond(res: any, status: number, body: Record<string, unknown>) {
+function respond(res, status, body) {
   res.setHeader('Cache-Control', 'no-store');
   const error = typeof body.error === 'string' && !body.error.startsWith('PUBLICATION_CHECK:')
     ? `PUBLICATION_CHECK:${body.error}`
@@ -37,7 +37,7 @@ function respond(res: any, status: number, body: Record<string, unknown>) {
   res.status(status).json({ ...body, ...(error ? { error } : {}) });
 }
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return respond(res, 405, { error: 'Método no permitido.' });
@@ -89,6 +89,7 @@ export default async function handler(req: any, res: any) {
     return respond(res, 400, { error: 'Confirma que tienes autorización para publicar este anuncio.' });
   }
 
+  let stage = 'lectura_perfil';
   try {
     const firestore = getFirestore(app);
     const userSnapshot = await firestore.collection('users').doc(decodedToken.uid).get();
@@ -101,6 +102,7 @@ export default async function handler(req: any, res: any) {
       return respond(res, 403, { error: 'Actualiza la aceptación de Términos, mayoría de edad y Aviso de Privacidad en tu cuenta.' });
     }
 
+    stage = 'validacion_anuncio';
     const now = Date.now();
     const listing = {
       ...body.listing,
@@ -131,6 +133,7 @@ export default async function handler(req: any, res: any) {
       });
     }
 
+    stage = 'escritura_firestore';
     const listingRef = firestore.collection('listings').doc();
     const batch = firestore.batch();
     batch.create(listingRef, listing);
@@ -141,7 +144,12 @@ export default async function handler(req: any, res: any) {
     const code = typeof error === 'object' && error !== null && 'code' in error
       ? String(error.code)
       : 'unknown';
-    console.error(JSON.stringify({ event: 'listing_create_failed', code, at: new Date().toISOString() }));
-    return respond(res, 500, { error: 'El servidor no pudo guardar el anuncio. Intenta una vez más en unos minutos.' });
+    console.error(JSON.stringify({ event: 'listing_create_failed', stage, code, at: new Date().toISOString() }));
+    const detail = stage === 'lectura_perfil'
+      ? 'El servidor no pudo consultar tu perfil en Firebase.'
+      : stage === 'validacion_anuncio'
+        ? 'El servidor no pudo validar los datos del anuncio.'
+        : 'Firebase rechazó la escritura del anuncio.';
+    return respond(res, 500, { error: `${detail} (etapa ${stage}, código ${code}).` });
   }
 }

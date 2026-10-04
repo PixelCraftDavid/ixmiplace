@@ -11,7 +11,7 @@ import type { Listing } from '../../types/models';
 import { LISTING_CONSENT_VERSION, PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../legal/legalVersions';
 import { requestPushDelivery } from '../../lib/push-notifications';
 import { isConfiguredCloudinaryPhotoUrl } from '../../lib/cloudinary';
-import { listingCreateRuleErrors } from './listingCreateRuleChecks';
+import { listingCreateRuleErrors } from './listingCreateRuleChecks.js';
 import { postAuthenticatedApi } from '../../lib/protected-api';
 
 export function CreateListingPage() {
