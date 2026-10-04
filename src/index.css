@@ -22,17 +22,31 @@ body {
 }
 
 .mobile-menu-depth-tab {
-  background: linear-gradient(145deg, #e8c27f, #7eaa9b 68%);
-  box-shadow: 8px 0 26px rgb(19 39 31 / 14%);
+  border: 1px solid rgb(255 255 255 / 45%);
+  box-shadow: 8px 0 24px rgb(19 39 31 / 15%);
 }
 
-html.dark .mobile-menu-depth-tab {
-  background: linear-gradient(145deg, #c69750, #355447 68%);
+.mobile-menu-depth-tab-back {
+  background: linear-gradient(155deg, #639785, #7eaa9b);
+}
+
+.mobile-menu-depth-tab-front {
+  background: linear-gradient(155deg, #fbf7ed, #e9e0ce);
+  box-shadow: 10px 0 28px rgb(19 39 31 / 18%);
+}
+
+html.dark .mobile-menu-depth-tab-back {
+  background: linear-gradient(155deg, #2e493d, #355447);
+}
+
+html.dark .mobile-menu-depth-tab-front {
+  background: linear-gradient(155deg, #30392f, #293027);
+  border-color: rgb(255 255 255 / 18%);
 }
 
 @media (max-width: 639px) {
   .mobile-menu-screen[data-mobile-menu-open='true'] {
-    transform: perspective(1100px) translate3d(55vw, 8px, -45px) scale(0.88) rotateY(-7deg);
+    transform: perspective(1400px) translate3d(75vw, 8px, -24px) scale(0.9) rotateY(-2deg);
     border-radius: 28px;
     box-shadow: 0 24px 64px rgb(16 24 18 / 32%);
   }

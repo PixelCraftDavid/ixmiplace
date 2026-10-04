@@ -337,8 +337,9 @@ export function Navbar() {
         </nav>
       </div>
     </header>
-      {createPortal(<div className="pointer-events-none fixed inset-0 z-[40] sm:hidden" aria-hidden={!mobileDrawerOpen}>
-        <span aria-hidden="true" className={`mobile-menu-depth-tab absolute inset-y-4 left-[53vw] w-[9vw] rounded-r-2xl transition-transform duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-[70vw]'}`} />
+      {createPortal(<div className="pointer-events-none fixed inset-0 z-[49] sm:hidden" aria-hidden={!mobileDrawerOpen}>
+        <span aria-hidden="true" className={`mobile-menu-depth-tab mobile-menu-depth-tab-back absolute inset-y-5 left-[63vw] w-[18vw] rounded-r-2xl transition-transform duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-[82vw]'}`} />
+        <span aria-hidden="true" className={`mobile-menu-depth-tab mobile-menu-depth-tab-front absolute inset-y-8 left-[68vw] w-[16vw] rounded-r-2xl transition-transform duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mobileDrawerOpen ? 'translate-x-0' : '-translate-x-[82vw]'}`} />
         <aside
           id="mobile-navigation-drawer"
           aria-label={t('nav.primary')}
