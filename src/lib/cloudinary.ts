@@ -1,8 +1,9 @@
 import { LISTING_LIMITS } from './constants';
-import { auth } from './firebase';
 
 // URL base de la API de subida de Cloudinary
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
 // ============================================================
 // Tipos
@@ -80,42 +81,6 @@ export interface UploadProgress {
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 
-interface SignedUploadParameters {
-  cloudName: string;
-  apiKey: string;
-  timestamp: number;
-  upload_preset: string;
-  folder: string;
-  public_id: string;
-  overwrite: boolean;
-  signature: string;
-}
-
-async function getSignedUploadParameters(): Promise<SignedUploadParameters> {
-  const user = auth.currentUser;
-  if (!user || !user.emailVerified) {
-    throw new Error('Inicia sesión y verifica tu correo antes de subir imágenes.');
-  }
-  const idToken = await user.getIdToken();
-  const response = await fetch('/api/cloudinary-signature', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: '{}',
-    cache: 'no-store',
-  });
-  const params = await response.json().catch(() => null) as SignedUploadParameters | { error?: string } | null;
-  if (!response.ok || !params || !('signature' in params)) {
-    throw new Error(params && 'error' in params && params.error ? params.error : 'No se pudo autorizar la subida.');
-  }
-  if (params.cloudName !== CLOUD_NAME) {
-    throw new Error('La cuenta de Cloudinary no coincide con la configuración.');
-  }
-  return params;
-}
-
 export function validateImageFile(file: File): { ok: true } | { ok: false; error: string } {
   // 1. Tipo MIME
   if (!ALLOWED_TYPES.includes(file.type)) {
@@ -171,7 +136,7 @@ export async function uploadImage(
   file: File,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<CloudinaryResponse> {
-  if (!CLOUD_NAME) {
+  if (!CLOUD_NAME || !UPLOAD_PRESET) {
     throw new Error('La subida de imágenes no está configurada.');
   }
 
@@ -185,24 +150,16 @@ export async function uploadImage(
     throw new Error(`${file.name}: el contenido no coincide con un JPG, PNG o WebP válido.`);
   }
 
-  const [uploadFile, signedParams] = await Promise.all([
-    compressImage(file),
-    getSignedUploadParameters(),
-  ]);
+  const uploadFile = await compressImage(file);
 
   const formData = new FormData();
   formData.append('file', uploadFile);
-  formData.append('api_key', signedParams.apiKey);
-  formData.append('timestamp', String(signedParams.timestamp));
-  formData.append('upload_preset', signedParams.upload_preset);
-  formData.append('folder', signedParams.folder);
-  formData.append('public_id', signedParams.public_id);
-  formData.append('overwrite', String(signedParams.overwrite));
-  formData.append('signature', signedParams.signature);
+  formData.append('upload_preset', UPLOAD_PRESET);
+  formData.append('folder', 'ixmiplace/listings');
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `https://api.cloudinary.com/v1_1/${signedParams.cloudName}/image/upload`);
+    xhr.open('POST', UPLOAD_URL);
 
     // Progreso de subida
     if (onProgress) {
@@ -227,7 +184,6 @@ export async function uploadImage(
             typeof data.secure_url !== 'string'
             || !data.secure_url.startsWith(expectedPrefix)
             || typeof data.public_id !== 'string'
-            || !data.public_id.includes(signedParams.public_id)
             || data.bytes > LISTING_LIMITS.photoMaxSizeMB * 1024 * 1024
             || data.format !== 'jpg'
           ) {
