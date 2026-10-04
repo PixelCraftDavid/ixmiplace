@@ -44,7 +44,7 @@ export function SupportPage() {
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 {copied ? 'CLABE copiada' : 'Copiar CLABE de Mercado Pago'}
               </button>
-              <a href="mailto:angeld10293@gmail.com?subject=Apoyo%20voluntario%20a%20IxmiPlace" className="inline-flex items-center justify-center gap-2 rounded-xl border border-cream-300 px-5 py-3 font-semibold text-ink-600 transition hover:bg-cream-50 dark:border-[#4b5847] dark:text-ink-100 dark:hover:bg-[#323b2f]">
+              <a href="mailto:ixmiplacesupport@gmail.com?subject=Apoyo%20voluntario%20a%20IxmiPlace" className="inline-flex items-center justify-center gap-2 rounded-xl border border-cream-300 px-5 py-3 font-semibold text-ink-600 transition hover:bg-cream-50 dark:border-[#4b5847] dark:text-ink-100 dark:hover:bg-[#323b2f]">
                 <Mail className="h-4 w-4" /> Contactarme
               </a>
               <Link to="/aviso-de-privacidad" className="inline-flex items-center justify-center gap-2 rounded-xl border border-cream-300 px-5 py-3 font-semibold text-ink-600 transition hover:bg-cream-50 dark:border-[#4b5847] dark:text-ink-100 dark:hover:bg-[#323b2f]">

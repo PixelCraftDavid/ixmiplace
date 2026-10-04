@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, Heart, Home, ChevronDown, User, ShieldCheck, Bell, Moon, Sun, Mail, Settings } from 'lucide-react';
+import { LogOut, Heart, Home, ChevronDown, User, ShieldCheck, Bell, Moon, Sun, Mail, Settings, Languages } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/features/auth/AuthContext';
 import { listenForForegroundPush } from '@/lib/push-notifications';
+import { useLanguage, type Locale } from '@/lib/i18n';
 
 export function Navbar() {
+  const { locale, setLocale, t } = useLanguage();
   const { fbUser, profile } = useAuth();
   const nav = useNavigate();
   const { pathname } = useLocation();
@@ -103,24 +105,38 @@ export function Navbar() {
           </span>
         </Link>
 
-        <nav aria-label="Navegación principal" className="flex items-center gap-3">
+        <nav aria-label={t('nav.primary')} className="flex items-center gap-2 sm:gap-3">
+          <label className={`inline-flex h-10 items-center gap-1.5 rounded-full border px-2 sm:px-3 ${overDarkHero ? 'border-white/30 bg-white/10 text-white' : 'border-cream-300 bg-white text-ink-700 dark:border-white/20 dark:bg-white/10 dark:text-ink-50'}`}>
+            <Languages className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="sr-only">{t('language.label')}</span>
+            <select
+              aria-label={t('language.label')}
+              value={locale}
+              onChange={(event) => setLocale(event.target.value as Locale)}
+              className="max-w-[5.5rem] cursor-pointer appearance-none bg-transparent text-xs font-semibold outline-none sm:max-w-none sm:text-sm"
+            >
+              <option className="text-ink-800" value="es">{t('language.spanish')}</option>
+              <option className="text-ink-800" value="en">{t('language.english')}</option>
+              <option className="text-ink-800" value="ote">{t('language.hnahnu')}</option>
+            </select>
+          </label>
           <button
             type="button"
             onClick={toggleTheme}
-            aria-label={darkMode ? 'Activar modo claro' : 'Activar modo oscuro'}
-            title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+            aria-label={darkMode ? t('nav.light') : t('nav.dark')}
+            title={darkMode ? t('nav.lightMode') : t('nav.darkMode')}
             className={`flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition ${overDarkHero ? 'border-white/30 bg-white/10 text-white hover:bg-white/20' : 'border-cream-300 bg-white text-ink-700 shadow-sm hover:bg-cream-50 dark:border-white/20 dark:bg-white/10 dark:text-ink-50 dark:hover:bg-white/20'}`}
           >
             {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           <Link
             to="/apoyar"
-            aria-label="Apoyar a IxmiPlace"
-            title="Apoyar a IxmiPlace"
+            aria-label={t('nav.support')}
+            title={t('nav.support')}
             className="motion-ease group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-rose-300/40 bg-[#d95848] text-white shadow-[0_4px_16px_rgba(117,35,28,0.22)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#c94d40] hover:shadow-[0_8px_22px_rgba(117,35,28,0.28)] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c211a] sm:w-auto sm:gap-1.5 sm:px-3"
           >
             <Heart className="h-4 w-4 fill-current transition-transform duration-300 group-hover:scale-110 group-active:scale-95" />
-            <span className="hidden text-sm font-semibold sm:inline">Apoyar</span>
+            <span className="hidden text-sm font-semibold sm:inline">{t('nav.supportShort')}</span>
           </Link>
           {fbUser ? (
             <div className="relative" ref={menuRef}>
@@ -162,7 +178,7 @@ export function Navbar() {
                 >
                   <div className="border-b border-cream-100 px-4 py-2">
                     <p className="truncate text-sm font-semibold text-ink">
-                      {profile?.displayName ?? 'Usuario'}
+                      {profile?.displayName ?? t('nav.user')}
                     </p>
                     <p className="truncate text-xs text-ink-400">{fbUser.email}</p>
                   </div>
@@ -173,7 +189,7 @@ export function Navbar() {
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100"
                   >
                     <Settings className="h-4 w-4 text-ink-400" />
-                    Editar perfil
+                    {t('nav.editProfile')}
                   </Link>
 
                   <Link
@@ -183,7 +199,7 @@ export function Navbar() {
                                text-ink-600 transition hover:bg-cream-100"
                   >
                     <Home className="h-4 w-4 text-ink-400" />
-                    Mis publicaciones
+                    {t('nav.myListings')}
                   </Link>
 
                   <Link
@@ -193,7 +209,7 @@ export function Navbar() {
                                text-ink-600 transition hover:bg-cream-100"
                   >
                     <Heart className="h-4 w-4 text-ink-400" />
-                    Mis favoritos
+                    {t('nav.favorites')}
                   </Link>
 
                   <Link
@@ -202,7 +218,7 @@ export function Navbar() {
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100"
                   >
                     <Bell className="h-4 w-4 text-ink-400" />
-                    Notificaciones
+                    {t('nav.notifications')}
                   </Link>
 
                   <Link
@@ -211,7 +227,7 @@ export function Navbar() {
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-600 transition hover:bg-cream-100"
                   >
                     <Mail className="h-4 w-4 text-ink-400" />
-                    Mensajes
+                    {t('nav.messages')}
                   </Link>
 
                   {profile?.role === 'admin' && (
@@ -222,7 +238,7 @@ export function Navbar() {
                                  text-ink-600 transition hover:bg-cream-100"
                     >
                       <ShieldCheck className="h-4 w-4 text-ink-400" />
-                      Panel de administrador
+                      {t('nav.admin')}
                     </Link>
                   )}
 
@@ -238,7 +254,7 @@ export function Navbar() {
                                text-sm text-red-600 transition hover:bg-red-50"
                   >
                     <LogOut className="h-4 w-4" />
-                    Salir
+                    {t('nav.logout')}
                   </button>
                 </div>
               )}
@@ -246,13 +262,13 @@ export function Navbar() {
           ) : (
             <>
               <Link to="/login" className={`text-sm ${overDarkHero ? 'text-white' : 'text-ink-700 dark:text-ink-50'} hover:underline`}>
-                Entrar
+                {t('nav.login')}
               </Link>
               <Link
                 to="/register"
                 className="motion-ease rounded-full border border-[#e4cfaa] bg-[#f4e9d3] px-4 py-2 text-sm font-semibold text-[#263629] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#d49a4a] hover:bg-white active:translate-y-0 dark:border-[#d49a4a]/50 dark:bg-[#d49a4a] dark:text-[#1c211a] dark:hover:bg-[#e4b66e]"
               >
-                Registrarse
+                {t('nav.register')}
               </Link>
             </>
           )}

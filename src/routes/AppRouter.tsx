@@ -37,12 +37,19 @@ import { SiteFooter } from '../components/layout/SiteFooter';
 import { NotFoundPage } from '../components/layout/NotFoundPage';
 import { RouteMetadata } from '../components/seo/PageMeta';
 import { AnalyticsConsent } from '../components/seo/AnalyticsConsent';
+import { LanguageProvider, useLanguage } from '../lib/i18n';
 
 function HomePage() {
+  const { locale, t } = useLanguage();
   return (
     <main className="min-h-screen bg-cream">
       <Hero />
 
+      {locale === 'ote' && (
+        <p className="mx-auto max-w-7xl px-5 pt-4 text-xs text-ink-500 sm:px-8 lg:px-12" lang="es-MX">
+          {t('language.review')}
+        </p>
+      )}
       <section id="propiedades" className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
         <ListingsFeed />
       </section>
@@ -50,18 +57,23 @@ function HomePage() {
   );
 }
 
+function SkipToContentLink() {
+  const { t } = useLanguage();
+  return (
+    <a href="#main-content" className="sr-only z-50 rounded-lg bg-white px-4 py-3 text-ink focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+      {t('skip')}
+    </a>
+  );
+}
+
 export function AppRouter() {
   return (
     <AuthProvider>
+    <LanguageProvider>
       <BrowserRouter>
         <RouteMetadata />
         <AnalyticsConsent />
-        <a
-          href="#main-content"
-          className="sr-only z-50 rounded-lg bg-white px-4 py-3 text-ink focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
-        >
-          Saltar al contenido principal
-        </a>
+        <SkipToContentLink />
 
         <Navbar />
 
@@ -158,6 +170,7 @@ export function AppRouter() {
         {/* Footer global */}
         <SiteFooter />
       </BrowserRouter>
+    </LanguageProvider>
     </AuthProvider>
   );
 }

@@ -25,7 +25,7 @@ export function PrivacyNoticePage() {
           <NoticeSection title="1. Responsable y contacto">
             <p>El responsable del tratamiento es la persona física <strong>Ángel David Santos Pacheco</strong>, quien opera IxmiPlace por cuenta propia y no como una sociedad constituida. El proyecto se opera en Ixmiquilpan, Hidalgo, México.</p>
             <p><strong>Domicilio del responsable para oír y recibir comunicaciones: [PENDIENTE DE COMPLETAR ANTES DE PUBLICAR ESTA VERSIÓN].</strong> La ley exige identificar el domicilio del responsable; mencionar únicamente Ixmiquilpan no ofrece un lugar efectivo para localizarlo o recibir comunicaciones. No publiques esta versión hasta completar este campo con un domicilio real y operativo, o hasta obtener asesoría sobre una alternativa jurídicamente válida que proteja tu domicilio residencial.</p>
-            <p>Para consultas de privacidad y solicitudes ARCO, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a>, con el asunto “Solicitud ARCO”.</p>
+            <p>Para consultas de privacidad y solicitudes ARCO, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:ixmiplacesupport@gmail.com">ixmiplacesupport@gmail.com</a>, con el asunto “Solicitud ARCO”.</p>
           </NoticeSection>
 
           <NoticeSection title="2. Datos personales que tratamos">
@@ -74,7 +74,7 @@ export function PrivacyNoticePage() {
           </NoticeSection>
 
           <NoticeSection title="8. Derechos ARCO y procedimiento">
-            <p>Envía gratuitamente un correo a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a> con asunto “Solicitud ARCO”. Incluye: (1) tu nombre y un medio para recibir respuesta; (2) correo asociado a la cuenta; (3) derecho que ejerces —acceso, rectificación, cancelación u oposición— y descripción clara de los datos o solicitud; y (4) para rectificación, el dato correcto y documentos que la sustenten. Acredita tu identidad y, si actúas por representación, la representación e identidad correspondientes. No envíes una identificación completa salvo que se solicite de forma segura; puedes ocultar datos que no sean necesarios. Podremos pedir aclaraciones o verificación proporcional para proteger tus datos. Daremos seguimiento por el correo indicado.</p>
+            <p>Envía gratuitamente un correo a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:ixmiplacesupport@gmail.com">ixmiplacesupport@gmail.com</a> con asunto “Solicitud ARCO”. Incluye: (1) tu nombre y un medio para recibir respuesta; (2) correo asociado a la cuenta; (3) derecho que ejerces —acceso, rectificación, cancelación u oposición— y descripción clara de los datos o solicitud; y (4) para rectificación, el dato correcto y documentos que la sustenten. Acredita tu identidad y, si actúas por representación, la representación e identidad correspondientes. No envíes una identificación completa salvo que se solicite de forma segura; puedes ocultar datos que no sean necesarios. Podremos pedir aclaraciones o verificación proporcional para proteger tus datos. Daremos seguimiento por el correo indicado.</p>
             <p>La determinación se comunicará dentro de un máximo de <strong>20 días</strong> contados desde la recepción. Si procede, se hará efectiva dentro de los <strong>15 días</strong> siguientes a la comunicación. Los plazos pueden ampliarse una sola vez por un periodo igual si las circunstancias lo justifican. El acceso se entregará por medios electrónicos, previa verificación de identidad. Si se niega total o parcialmente, explicaremos la causa. El ejercicio es gratuito salvo costos de reproducción o envío permitidos por la ley.</p>
             <p>Si consideras insuficiente la respuesta o no se atiende tu solicitud, puedes acudir ante la autoridad competente en protección de datos personales conforme a la LFPDPPP vigente, actualmente la Secretaría Anticorrupción y Buen Gobierno, sin renunciar a otros derechos que te correspondan.</p>
           </NoticeSection>
@@ -84,7 +84,7 @@ export function PrivacyNoticePage() {
           </NoticeSection>
 
           <NoticeSection title="10. Cambios al aviso">
-            <p>IxmiPlace está en desarrollo. Los cambios se publicarán en esta ruta indicando versión y fecha, y se comunicarán por correo o dentro del servicio. Si un cambio modifica finalidades que requieren consentimiento, se solicitará nuevamente antes de tratar datos para ellas. Para cualquier duda o solicitud, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a>.</p>
+            <p>IxmiPlace está en desarrollo. Los cambios se publicarán en esta ruta indicando versión y fecha, y se comunicarán por correo o dentro del servicio. Si un cambio modifica finalidades que requieren consentimiento, se solicitará nuevamente antes de tratar datos para ellas. Para cualquier duda o solicitud, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:ixmiplacesupport@gmail.com">ixmiplacesupport@gmail.com</a>.</p>
           </NoticeSection>
         </div>
       </article>

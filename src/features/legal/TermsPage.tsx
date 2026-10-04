@@ -22,7 +22,7 @@ export function TermsPage() {
 
         <div className="space-y-5">
           <TermsSection title="1. Responsable, edad y aceptación">
-            <p>IxmiPlace es operado por Ángel David Santos Pacheco como persona física, desde Ixmiquilpan, Hidalgo, México. El domicilio físico para comunicaciones y notificaciones se identifica en el Aviso de Privacidad. Contacto: <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a>.</p>
+            <p>IxmiPlace es operado por Ángel David Santos Pacheco como persona física, desde Ixmiquilpan, Hidalgo, México. El domicilio físico para comunicaciones y notificaciones se identifica en el Aviso de Privacidad. Contacto: <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:ixmiplacesupport@gmail.com">ixmiplacesupport@gmail.com</a>.</p>
             <p>Las funciones con cuenta están dirigidas a personas de 18 años o más. Al registrarte declaras cumplir esa edad y tener capacidad para aceptar estos términos. No se permite que menores creen cuentas o publiquen. Si detectamos indicios razonables de una cuenta de una persona menor, podremos limitarla y atender sus datos conforme a la ley.</p>
             <p>La aceptación se realiza mediante casillas inicialmente desmarcadas y un control expreso de confirmación. Se registran la versión de los documentos y la fecha/hora del acto. El Aviso de Privacidad explica el tratamiento de datos y se acepta por separado. Si no estás de acuerdo, no uses las funciones que requieren cuenta.</p>
           </TermsSection>
@@ -47,7 +47,7 @@ export function TermsPage() {
 
           <TermsSection title="5. Moderación, reportes y medidas de cuenta">
             <p>Podemos revisar, rechazar, ocultar o retirar publicaciones y limitar o suspender cuentas cuando existan indicios razonables de fraude, riesgo, contenido ilícito, abuso, incumplimiento de estos términos o requerimiento legal. Procuraremos informar el motivo y permitir que la persona afectada solicite revisión, salvo que hacerlo comprometa una investigación, la seguridad de alguien o una obligación legal.</p>
-            <p>Un reporte es una señal para revisión, no una determinación judicial. La persona usuaria puede responder o apelar una medida escribiendo a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a> con el asunto “Revisión de moderación” y los datos que permitan localizar el caso. Las decisiones se revisarán considerando el contexto y la información disponible.</p>
+            <p>Un reporte es una señal para revisión, no una determinación judicial. La persona usuaria puede responder o apelar una medida escribiendo a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:ixmiplacesupport@gmail.com">ixmiplacesupport@gmail.com</a> con el asunto “Revisión de moderación” y los datos que permitan localizar el caso. Las decisiones se revisarán considerando el contexto y la información disponible.</p>
           </TermsSection>
 
           <TermsSection title="6. Propiedad intelectual y licencia de contenido">
@@ -82,7 +82,7 @@ export function TermsPage() {
 
           <TermsSection title="12. Cambios y contacto">
             <p>Publicaremos nuevas versiones con fecha y número de versión, y procuraremos avisar con al menos 15 días naturales antes de un cambio material. Para cambios que alteren de forma relevante las reglas de uso, pediremos aceptación expresa antes de continuar con funciones de cuenta. Si un cambio inmediato es necesario por seguridad o por una obligación legal, podremos aplicarlo de inmediato e informarlo tan pronto como sea razonable. La falta de aceptación de una nueva versión puede impedir el acceso a funciones que dependan de ella, sin afectar derechos que la ley reconozca.</p>
-            <p>Para preguntas, reclamos, reportes, solicitudes de revisión o avisos de propiedad intelectual, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:angeld10293@gmail.com">angeld10293@gmail.com</a>. El <Link className="font-semibold text-brand-700 underline dark:text-brand-300" to="/aviso-de-privacidad">Aviso de Privacidad Integral</Link> explica el tratamiento de datos y cómo ejercer derechos ARCO.</p>
+            <p>Para preguntas, reclamos, reportes, solicitudes de revisión o avisos de propiedad intelectual, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:ixmiplacesupport@gmail.com">ixmiplacesupport@gmail.com</a>. El <Link className="font-semibold text-brand-700 underline dark:text-brand-300" to="/aviso-de-privacidad">Aviso de Privacidad Integral</Link> explica el tratamiento de datos y cómo ejercer derechos ARCO.</p>
           </TermsSection>
         </div>
       </article>

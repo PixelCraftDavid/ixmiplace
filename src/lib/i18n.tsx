@@ -1,0 +1,241 @@
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+
+export type Locale = 'es' | 'en' | 'ote';
+
+const messages = {
+  es: {
+    'language.label': 'Idioma',
+    'language.spanish': 'Español',
+    'language.english': 'English',
+    'language.hnahnu': 'Hñähñu · borrador',
+    'language.review': 'Traducción hñähñu en revisión comunitaria',
+    'nav.primary': 'Navegación principal',
+    'nav.light': 'Activar modo claro',
+    'nav.dark': 'Activar modo oscuro',
+    'nav.lightMode': 'Modo claro',
+    'nav.darkMode': 'Modo oscuro',
+    'nav.support': 'Apoyar a IxmiPlace',
+    'nav.supportShort': 'Apoyar',
+    'nav.login': 'Entrar',
+    'nav.register': 'Registrarse',
+    'nav.editProfile': 'Editar perfil',
+    'nav.myListings': 'Mis publicaciones',
+    'nav.favorites': 'Mis favoritos',
+    'nav.notifications': 'Notificaciones',
+    'nav.messages': 'Mensajes',
+    'nav.admin': 'Panel de administrador',
+    'nav.logout': 'Salir',
+    'nav.user': 'Usuario',
+    'hero.eyebrow': 'Vivienda local · Ixmiquilpan, Hidalgo',
+    'hero.titleOne': 'Encuentra tu',
+    'hero.titleTwo': 'lugar en',
+    'hero.description': 'Casas, rentas y hospedaje para descubrir sin intermediarios. Explora opciones de la comunidad y habla directamente con quien publica.',
+    'hero.explore': 'Explorar propiedades',
+    'hero.publish': 'Publicar gratis',
+    'hero.rentals': 'Rentas y ventas',
+    'hero.stays': 'Hospedaje local',
+    'hero.direct': 'Trato directo',
+    'hero.scroll': 'Desplazarse a las propiedades',
+    'footer.tagline': 'Un proyecto independiente que sigue creciendo en Ixmiquilpan.',
+    'footer.privacy': 'Aviso de privacidad',
+    'footer.terms': 'Términos y condiciones',
+    'footer.support': 'Apoyar el proyecto',
+    'footer.contact': 'Contacto',
+    'footer.copyright': 'Hecho con cariño para Ixmiquilpan.',
+    'feed.eyebrow': 'Explora el valle',
+    'feed.title': 'Un lugar que se sienta tuyo.',
+    'feed.loading': 'Cargando…',
+    'feed.catalogError': 'No se pudo consultar el catálogo',
+    'feed.property': 'propiedad',
+    'feed.properties': 'propiedades',
+    'feed.available': 'disponibles',
+    'feed.community': 'Anuncios de la comunidad',
+    'feed.searchLabel': 'Buscar propiedades',
+    'feed.searchPlaceholder': 'Busca por colonia, tipo de inmueble o palabra clave',
+    'feed.filters': 'Filtros',
+    'feed.hideMap': 'Ocultar mapa',
+    'feed.showMap': 'Ver mapa',
+    'feed.dateLabel': 'Fecha de publicación',
+    'feed.all': 'Todas',
+    'feed.sort': 'Ordenar',
+    'feed.roommateOnly': 'Mostrar solo publicaciones que buscan roomie',
+    'feed.clearFilters': 'Limpiar filtros',
+    'feed.loadMore': 'Cargar más propiedades',
+    'notFound.eyebrow': 'Ruta equivocada',
+    'notFound.title': 'Parece que nos perdimos.',
+    'notFound.body': 'Esta dirección no existe o la publicación ya no está disponible. El camino sigue; volvamos a IxmiPlace.',
+    'notFound.back': 'Volver a IxmiPlace',
+    'skip': 'Saltar al contenido principal',
+  },
+  en: {
+    'language.label': 'Language',
+    'language.spanish': 'Español',
+    'language.english': 'English',
+    'language.hnahnu': 'Hñähñu · draft',
+    'language.review': 'Hñähñu translation under community review',
+    'nav.primary': 'Main navigation',
+    'nav.light': 'Switch to light mode',
+    'nav.dark': 'Switch to dark mode',
+    'nav.lightMode': 'Light mode',
+    'nav.darkMode': 'Dark mode',
+    'nav.support': 'Support IxmiPlace',
+    'nav.supportShort': 'Support',
+    'nav.login': 'Sign in',
+    'nav.register': 'Create account',
+    'nav.editProfile': 'Edit profile',
+    'nav.myListings': 'My listings',
+    'nav.favorites': 'My favorites',
+    'nav.notifications': 'Notifications',
+    'nav.messages': 'Messages',
+    'nav.admin': 'Admin panel',
+    'nav.logout': 'Sign out',
+    'nav.user': 'User',
+    'hero.eyebrow': 'Local housing · Ixmiquilpan, Hidalgo',
+    'hero.titleOne': 'Find your',
+    'hero.titleTwo': 'place in',
+    'hero.description': 'Homes, rentals, and stays to discover directly. Explore local listings and talk with the person who posted them.',
+    'hero.explore': 'Explore properties',
+    'hero.publish': 'Post for free',
+    'hero.rentals': 'Rentals and sales',
+    'hero.stays': 'Local stays',
+    'hero.direct': 'Direct contact',
+    'hero.scroll': 'Scroll to properties',
+    'footer.tagline': 'An independent project growing in Ixmiquilpan.',
+    'footer.privacy': 'Privacy notice',
+    'footer.terms': 'Terms and conditions',
+    'footer.support': 'Support the project',
+    'footer.contact': 'Contact',
+    'footer.copyright': 'Made with care for Ixmiquilpan.',
+    'feed.eyebrow': 'Explore the valley',
+    'feed.title': 'Find a place that feels like yours.',
+    'feed.loading': 'Loading…',
+    'feed.catalogError': 'Could not load listings',
+    'feed.property': 'property',
+    'feed.properties': 'properties',
+    'feed.available': 'available',
+    'feed.community': 'Community listings',
+    'feed.searchLabel': 'Search properties',
+    'feed.searchPlaceholder': 'Search by neighborhood, property type, or keyword',
+    'feed.filters': 'Filters',
+    'feed.hideMap': 'Hide map',
+    'feed.showMap': 'View map',
+    'feed.dateLabel': 'Posting date',
+    'feed.all': 'All',
+    'feed.sort': 'Sort by',
+    'feed.roommateOnly': 'Show roommate-seeking listings only',
+    'feed.clearFilters': 'Clear filters',
+    'feed.loadMore': 'Load more properties',
+    'notFound.eyebrow': 'Wrong turn',
+    'notFound.title': 'Looks like we got lost.',
+    'notFound.body': 'This address does not exist or the listing is no longer available. The road goes on; let’s head back to IxmiPlace.',
+    'notFound.back': 'Back to IxmiPlace',
+    'skip': 'Skip to main content',
+  },
+  // Primer borrador en hñähñu del Valle del Mezquital. Mantener esta marca
+  // hasta que una persona hablante de la región valide vocabulario y escritura.
+  ote: {
+    'language.label': 'Nthekwä',
+    'language.spanish': 'Español',
+    'language.english': 'English',
+    'language.hnahnu': 'Hñähñu · borrador',
+    'language.review': 'La versión hñähñu es un primer borrador; estamos buscando validación de hablantes del Valle del Mezquital.',
+    'nav.primary': 'Nthekwä',
+    'nav.light': 'Hñäki ra hyadi',
+    'nav.dark': 'Hñäki ra t’ot’e',
+    'nav.lightMode': 'Hyadi',
+    'nav.darkMode': 'T’ot’e',
+    'nav.support': 'Hñäki IxmiPlace',
+    'nav.supportShort': 'Hñäki',
+    'nav.login': 'Mät’i',
+    'nav.register': 'T’ot’e ra cuenta',
+    'nav.editProfile': 'Mpadi ra perfil',
+    'nav.myListings': 'Ya thuhu njaua',
+    'nav.favorites': 'Ya hmädi',
+    'nav.notifications': 'Ya hñäki',
+    'nav.messages': 'Ya hñäki',
+    'nav.admin': 'Ra panel administrador',
+    'nav.logout': 'Pädi',
+    'nav.user': 'Mäsu',
+    'hero.eyebrow': 'Njaua · Ixmiquilpan, Hidalgo',
+    'hero.titleOne': 'Hñäki',
+    'hero.titleTwo': 'ra hnini',
+    'hero.description': 'Nja, renta, ne mahets’i. Hñäki ya thuhu njaua ne ñäki ko ra jä’i bi t’ot’e.',
+    'hero.explore': 'Hñäki ya nja',
+    'hero.publish': 'T’ot’e njaua',
+    'hero.rentals': 'Renta ne nthogi',
+    'hero.stays': 'Mähets’i njaua',
+    'hero.direct': 'Ñäki njaua',
+    'hero.scroll': 'Hñäki ya nja',
+    'footer.tagline': 'Ra proyecto njaua pa Ixmiquilpan.',
+    'footer.privacy': 'Ra hñäki privacidad',
+    'footer.terms': 'Ya nt’ot’e ne condiciones',
+    'footer.support': 'Hñäki ra proyecto',
+    'footer.contact': 'Ñäki',
+    'footer.copyright': 'Bi t’ot’e ko ra m’ui pa Ixmiquilpan.',
+    'feed.eyebrow': 'Hñäki ra valle',
+    'feed.title': 'Hñäki ra hnini pa’i.',
+    'feed.loading': 'Hñäki…',
+    'feed.catalogError': 'Hingi hñäki ya thuhu',
+    'feed.property': 'nja',
+    'feed.properties': 'ya nja',
+    'feed.available': 'hmädi',
+    'feed.community': 'Ya thuhu ra hnini',
+    'feed.searchLabel': 'Hñäki ya nja',
+    'feed.searchPlaceholder': 'Hñäki ko ra barrio, nja, o ya ñä',
+    'feed.filters': 'Ya filtro',
+    'feed.hideMap': 'Mädi ra mapa',
+    'feed.showMap': 'Hñäki ra mapa',
+    'feed.dateLabel': 'Pa bi t’ot’e',
+    'feed.all': 'Mädi',
+    'feed.sort': 'Mbeni',
+    'feed.roommateOnly': 'Hñäki ra publicación pa roomie',
+    'feed.clearFilters': 'Mädi ya filtro',
+    'feed.loadMore': 'Hñäki ma ya nja',
+    'notFound.eyebrow': 'Ra ñu hingi ja',
+    'notFound.title': 'Nja, bi pödi ra ñu.',
+    'notFound.body': 'Ra dirección hingi ja o ra publicación ya hingi ja. Ma ra ñu; hñäki IxmiPlace.',
+    'notFound.back': 'Hñäki IxmiPlace',
+    'skip': 'Hñäki ra contenido principal',
+  },
+} as const;
+
+type MessageKey = keyof typeof messages.es;
+const localeOptions: Locale[] = ['es', 'en', 'ote'];
+const LanguageContext = createContext<{ locale: Locale; setLocale: (locale: Locale) => void; t: (key: MessageKey) => string } | null>(null);
+
+function getInitialLocale(): Locale {
+  try {
+    const stored = localStorage.getItem('ixmiplace:locale');
+    if (stored && localeOptions.includes(stored as Locale)) return stored as Locale;
+  } catch {
+    // El sitio sigue funcionando en español si el almacenamiento está bloqueado.
+  }
+  return 'es';
+}
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+
+  const setLocale = (next: Locale) => {
+    setLocaleState(next);
+    try { localStorage.setItem('ixmiplace:locale', next); } catch { /* preferencia solo en memoria */ }
+  };
+
+  useEffect(() => {
+    document.documentElement.lang = locale === 'es' ? 'es-MX' : locale === 'en' ? 'en' : 'ote';
+  }, [locale]);
+
+  const value = useMemo(() => ({
+    locale,
+    setLocale,
+    t: (key: MessageKey) => messages[locale][key] ?? messages.es[key],
+  }), [locale]);
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) throw new Error('useLanguage debe usarse dentro de LanguageProvider');
+  return context;
+}

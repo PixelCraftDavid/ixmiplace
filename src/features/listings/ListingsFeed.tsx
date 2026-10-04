@@ -8,6 +8,7 @@ import { ListingsMap } from './ListingsMap';
 import { useAuth } from '../auth/AuthContext';
 import type { Listing, ListingCategory, ListingOperation } from '../../types/models';
 import { listingExpiryMillis } from '../../lib/listing-expiration';
+import { useLanguage } from '@/lib/i18n';
 
 type SortOption = 'recent' | 'price-asc' | 'price-desc';
 type DateFilter = 'all' | 'today' | 'week' | 'month';
@@ -30,6 +31,7 @@ const MAX_RETRIES = 3;
 
 export function ListingsFeed() {
   const { fbUser } = useAuth();
+  const { locale, t } = useLanguage();
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -259,26 +261,26 @@ export function ListingsFeed() {
       <header className="flex flex-col gap-5 border-b border-ink-700/10 pb-6 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-700 dark:text-brand-200">
-            Explora el valle
+            {t('feed.eyebrow')}
           </p>
           <h2 className="text-3xl font-semibold tracking-[-0.04em] text-ink-800 dark:text-white sm:text-4xl">
-            Un lugar que se sienta tuyo.
+            {t('feed.title')}
           </h2>
           <p className="mt-2 text-sm text-ink-500 dark:text-ink-300 sm:text-base">
               {loadError
-                ? 'No se pudo consultar el catálogo'
+                ? t('feed.catalogError')
                 : loading
-                ? 'Cargando…'
+                ? t('feed.loading')
                 : `${filtered.length} ${
                     filtered.length === 1
-                      ? 'propiedad'
-                      : 'propiedades'
-                  } disponibles`}
+                      ? t('feed.property')
+                      : t('feed.properties')
+                  } ${t('feed.available')}`}
           </p>
         </div>
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-brand-700/10 bg-white/70 px-3.5 py-2 text-xs font-medium text-ink-600 dark:border-white/10 dark:bg-white/[0.06] dark:text-ink-200">
           <span className="h-2 w-2 rounded-full bg-brand-500" />
-          Anuncios de la comunidad
+          {t('feed.community')}
         </span>
       </header>
 
@@ -287,8 +289,8 @@ export function ListingsFeed() {
           <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-400" aria-hidden="true" />
           <input
             type="search"
-            aria-label="Buscar propiedades"
-            placeholder="Busca por colonia, tipo de inmueble o palabra clave"
+            aria-label={t('feed.searchLabel')}
+            placeholder={t('feed.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-12 w-full rounded-xl border border-ink-700/15 bg-white pl-11 pr-4 text-sm text-ink-800 shadow-[0_2px_10px_rgba(27,32,24,0.035)] outline-none transition duration-200 placeholder:text-ink-400 hover:border-ink-700/25 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-white/10 dark:bg-[#242a22] dark:text-white dark:placeholder:text-ink-300"
@@ -302,7 +304,7 @@ export function ListingsFeed() {
             className={`motion-ease inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 active:translate-y-0 sm:flex-none ${showFilters || activeFilters ? 'border-brand-600 bg-brand-700 text-white hover:bg-brand-800' : 'border-ink-700/15 bg-white text-ink-700 hover:border-brand-500/50 hover:bg-cream-50 dark:border-white/10 dark:bg-[#242a22] dark:text-white dark:hover:bg-white/[0.08]'}`}
           >
             <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-            Filtros
+            {t('feed.filters')}
             {activeFilters && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1 text-[10px] font-bold">
                 {[category, operation, dateFilter].filter((f) => f !== 'all').length + (search ? 1 : 0) + (roommateOnly ? 1 : 0)}
@@ -316,7 +318,7 @@ export function ListingsFeed() {
             className={`motion-ease inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 active:translate-y-0 sm:flex-none ${showMap ? 'border-ink-800 bg-ink-800 text-white hover:bg-ink-700' : 'border-ink-700/15 bg-white text-ink-700 hover:border-brand-500/50 hover:bg-cream-50 dark:border-white/10 dark:bg-[#242a22] dark:text-white dark:hover:bg-white/[0.08]'}`}
           >
             <Map className="h-4 w-4" aria-hidden="true" />
-            {showMap ? 'Ocultar mapa' : 'Ver mapa'}
+            {showMap ? t('feed.hideMap') : t('feed.showMap')}
           </button>
         </div>
       </div>
@@ -330,7 +332,7 @@ export function ListingsFeed() {
               {/* Fecha */}
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-ink-500">
-                  Fecha de publicación
+                  {locale === 'es' ? 'Fecha de publicación' : locale === 'en' ? 'Posting date' : t('feed.dateLabel')}
                 </label>
 
                 <select
@@ -350,7 +352,7 @@ export function ListingsFeed() {
                         key={date.value}
                         value={date.value}
                       >
-                        {date.label}
+                        {locale === 'es' ? date.label : locale === 'en' ? ({ all: 'Any time', today: 'Posted today', week: 'Last 7 days', month: 'Last 30 days' } as const)[date.value] : ({ all: 'Mädi', today: 'Bi t’ot’e n’a pa', week: 'Nja 7 pa', month: 'Nja 30 pa' } as const)[date.value]}
                       </option>
                     )
                   )}
@@ -360,7 +362,7 @@ export function ListingsFeed() {
               {/* Categoría */}
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-ink-500">
-                  Categoría
+                  {locale === 'en' ? 'Category' : 'Categoría'}
                 </label>
 
                 <select
@@ -377,7 +379,7 @@ export function ListingsFeed() {
                              focus:outline-none focus:ring-4 focus:ring-brand-500/15"
                 >
                   <option value="all">
-                    Todas
+                    {t('feed.all')}
                   </option>
 
                   {CATEGORIES.map((c) => (
@@ -394,7 +396,7 @@ export function ListingsFeed() {
               {/* Operación */}
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-ink-500">
-                  Operación
+                  {locale === 'en' ? 'Listing type' : 'Operación'}
                 </label>
 
                 <select
@@ -411,7 +413,7 @@ export function ListingsFeed() {
                              focus:outline-none focus:ring-4 focus:ring-brand-500/15"
                 >
                   <option value="all">
-                    Todas
+                    {t('feed.all')}
                   </option>
 
                   {OPERATIONS.map((o) => (
@@ -428,7 +430,7 @@ export function ListingsFeed() {
               {/* Ordenar */}
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-ink-500">
-                  Ordenar
+                  {t('feed.sort')}
                 </label>
 
                 <select
@@ -447,7 +449,7 @@ export function ListingsFeed() {
                       key={s.value}
                       value={s.value}
                     >
-                      {s.label}
+                      {locale === 'es' ? s.label : locale === 'en' ? ({ recent: 'Newest', 'price-asc': 'Lowest price', 'price-desc': 'Highest price' } as const)[s.value] : ({ recent: 'Mä ra ñäts’i', 'price-asc': 'Nja ma hmädi', 'price-desc': 'Nja ma m’ui' } as const)[s.value]}
                     </option>
                   ))}
                 </select>
@@ -456,7 +458,7 @@ export function ListingsFeed() {
 
             <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-ink-700 dark:text-white">
               <input type="checkbox" checked={roommateOnly} onChange={(event) => setRoommateOnly(event.target.checked)} className="h-4 w-4 accent-brand-600" />
-              Mostrar solo publicaciones que buscan roomie
+              {t('feed.roommateOnly')}
             </label>
 
             {activeFilters && (
@@ -466,7 +468,7 @@ export function ListingsFeed() {
                 className="motion-ease inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 transition duration-200 hover:text-brand-900 dark:text-brand-200 dark:hover:text-white"
               >
                 <X className="h-4 w-4" />
-                Limpiar filtros
+                {t('feed.clearFilters')}
               </button>
             )}
         </div>
@@ -518,7 +520,7 @@ export function ListingsFeed() {
               }
               className="rounded-xl border border-cream-300 bg-white px-5 py-3 text-sm font-semibold text-ink-600 shadow-sm transition hover:bg-cream-100 hover:text-ink-800"
             >
-              Cargar más propiedades
+              {t('feed.loadMore')}
             </button>
           </div>
         )}
