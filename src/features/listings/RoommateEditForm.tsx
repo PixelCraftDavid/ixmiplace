@@ -12,12 +12,15 @@ const inputClass = 'w-full rounded-xl border border-cream-300 bg-cream-50 px-4 p
 
 interface RoommateEditFormProps {
   listing: Listing;
-  onSubmit: (data: RoommateListingInput, photos: string[], photoPublicIds: string[]) => Promise<void>;
+  onSubmit: (data: RoommateListingInput, photos: string[], photoPublicIds: string[], availability: 'available' | 'unavailable') => Promise<void>;
 }
 
 export function RoommateEditForm({ listing, onSubmit }: RoommateEditFormProps) {
   const [photos, setPhotos] = useState(listing.photos ?? []);
   const [photoPublicIds, setPhotoPublicIds] = useState(listing.photoPublicIds ?? []);
+  const [availability, setAvailability] = useState<'available' | 'unavailable'>(
+    listing.availability === 'unavailable' ? 'unavailable' : 'available',
+  );
   const [submitError, setSubmitError] = useState('');
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<RoommateListingInput>({
     resolver: standardSchemaResolver(roommateListingSchema),
@@ -61,10 +64,15 @@ export function RoommateEditForm({ listing, onSubmit }: RoommateEditFormProps) {
       return;
     }
     try {
-      await onSubmit(data, photos, photoPublicIds);
+      await onSubmit(data, photos, photoPublicIds, availability);
     } catch (error) {
       console.error('No se pudo actualizar la búsqueda de roomie:', error);
-      setSubmitError(error instanceof Error ? error.message : 'No se pudieron guardar los cambios. Intenta de nuevo.');
+      const code = typeof error === 'object' && error !== null && 'code' in error
+        ? String(error.code)
+        : '';
+      setSubmitError(code === 'permission-denied'
+        ? 'Firebase rechazó la edición. Verifica que tu correo esté confirmado y que las reglas de Firestore estén publicadas. No se guardaron los cambios.'
+        : error instanceof Error ? error.message : 'No se pudieron guardar los cambios. Intenta de nuevo.');
     }
   }
 
@@ -119,6 +127,15 @@ export function RoommateEditForm({ listing, onSubmit }: RoommateEditFormProps) {
           <Utility label="Internet" field="internetBilling" costField="internetMonthlyCost" control={control} register={register} errors={errors} />
         </div>
         <Field label="WhatsApp de contacto"><input className={`${inputClass} opacity-70`} value={listing.whatsapp ?? 'No disponible'} disabled readOnly /><small className="mt-1 block text-xs text-ink-500">El contacto permanece privado y no se modifica desde esta pantalla.</small></Field>
+      </section>
+
+      <section className="space-y-3 rounded-2xl border border-ink-700/10 bg-white p-5 shadow-sm sm:p-7">
+        <h2 className="text-lg font-bold text-ink">Disponibilidad</h2>
+        <p className="text-sm text-ink-500">Indica si todavía buscas roomie. Puedes volver a activarla cuando quieras.</p>
+        <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label="Disponibilidad de la búsqueda">
+          <button type="button" aria-pressed={availability === 'available'} onClick={() => setAvailability('available')} className={`min-h-12 rounded-xl border px-4 py-3 text-sm font-semibold transition ${availability === 'available' ? 'border-brand-700 bg-brand-700 text-white' : 'border-cream-300 bg-cream-50 text-ink-700 hover:bg-cream-100'}`}>Sí, sigue disponible</button>
+          <button type="button" aria-pressed={availability === 'unavailable'} onClick={() => setAvailability('unavailable')} className={`min-h-12 rounded-xl border px-4 py-3 text-sm font-semibold transition ${availability === 'unavailable' ? 'border-ink-700 bg-ink-700 text-white' : 'border-cream-300 bg-cream-50 text-ink-700 hover:bg-cream-100'}`}>No, ya no está disponible</button>
+        </div>
       </section>
 
       <section className="space-y-4 rounded-2xl border border-ink-700/10 bg-white p-5 shadow-sm sm:p-7">

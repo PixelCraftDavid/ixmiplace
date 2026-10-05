@@ -205,13 +205,21 @@ export function EditListingPage() {
   async function handleRoommateSubmit(
     data: RoommateListingInput,
     photos: string[],
-    photoPublicIds: string[]
+    photoPublicIds: string[],
+    availability: 'available' | 'unavailable',
   ) {
     if (!id || !auth.currentUser || !listing) throw new Error('No se pudo editar');
+    await auth.currentUser.reload();
+    if (!auth.currentUser.emailVerified) {
+      throw new Error('Verifica el correo de tu cuenta antes de editar la publicación.');
+    }
 
     const updates: Record<string, unknown> = {
+      ownerEmailVerified: auth.currentUser.emailVerified,
       title: data.title.trim(),
       description: data.description.trim(),
+      availability,
+      availabilityConfirmedAt: Date.now(),
       maxGuests: data.currentOccupants + data.roommatesWantedCount,
       currentOccupants: data.currentOccupants,
       roommatesWantedCount: data.roommatesWantedCount,
