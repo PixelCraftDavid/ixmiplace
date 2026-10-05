@@ -76,9 +76,13 @@ export default async function handler(req, res) {
     if (visitRequestedAt && visitRequestedAt <= Date.now()) return respond(res, 400, { error: 'El horario solicitado debe ser futuro.' });
     if (openHouseRsvp === true && (!Number.isSafeInteger(listing.openHouseStartAt)
       || !Number.isSafeInteger(listing.openHouseEndAt)
-      || listing.openHouseStartAt <= Date.now()
+      || listing.openHouseEndAt <= Date.now()
       || listing.openHouseEndAt <= listing.openHouseStartAt)) {
       return respond(res, 400, { error: 'La casa abierta ya no está disponible.' });
+    }
+    if (openHouseRsvp === true && visitRequestedAt !== undefined
+      && (visitRequestedAt < listing.openHouseStartAt || visitRequestedAt > listing.openHouseEndAt)) {
+      return respond(res, 400, { error: 'La fecha solicitada debe estar dentro del período de la casa abierta.' });
     }
 
     const date = day();
@@ -106,8 +110,10 @@ export default async function handler(req, res) {
         || currentListing.ownerId !== listing.ownerId) return false;
       if (openHouseRsvp === true && (!Number.isSafeInteger(currentListing.openHouseStartAt)
         || !Number.isSafeInteger(currentListing.openHouseEndAt)
-        || currentListing.openHouseStartAt <= Date.now()
-        || currentListing.openHouseEndAt <= currentListing.openHouseStartAt)) return 'open_house_changed';
+        || currentListing.openHouseEndAt <= Date.now()
+        || currentListing.openHouseEndAt <= currentListing.openHouseStartAt
+        || (visitRequestedAt !== undefined
+          && (visitRequestedAt < currentListing.openHouseStartAt || visitRequestedAt > currentListing.openHouseEndAt)))) return 'open_house_changed';
       if (userCount >= MAX_DAILY_USER || listingCount >= MAX_DAILY_LISTING || (ipQuota && ipCount >= MAX_DAILY_IP)) return false;
       const quotaCommon = { expiresAt, updatedAt: FieldValue.serverTimestamp() };
       transaction.set(userQuota, { ...quotaCommon, count: userCount + 1 });
