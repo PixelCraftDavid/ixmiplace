@@ -208,14 +208,18 @@ export function EditListingPage() {
     photoPublicIds: string[],
     availability: 'available' | 'unavailable',
   ) {
-    if (!id || !auth.currentUser || !listing) throw new Error('No se pudo editar');
-    await auth.currentUser.reload();
-    if (!auth.currentUser.emailVerified) {
+    const currentUser = auth.currentUser;
+    if (!id || !currentUser || !listing) throw new Error('No se pudo editar');
+    await currentUser.reload();
+    // Las reglas de Firestore leen email_verified del token, que puede quedarse
+    // obsoleto aunque la cuenta ya aparezca verificada en el cliente.
+    await currentUser.getIdToken(true);
+    if (!currentUser.emailVerified) {
       throw new Error('Verifica el correo de tu cuenta antes de editar la publicación.');
     }
 
     const updates: Record<string, unknown> = {
-      ownerEmailVerified: auth.currentUser.emailVerified,
+      ownerEmailVerified: currentUser.emailVerified,
       title: data.title.trim(),
       description: data.description.trim(),
       availability,
@@ -252,7 +256,7 @@ export function EditListingPage() {
     batch.update(doc(db, 'listings', id), updates);
     batch.set(doc(collection(db, 'listingHistory')), {
       listingId: id,
-      actorId: auth.currentUser.uid,
+      actorId: currentUser.uid,
       actorRole: 'owner',
       action: 'updated',
       changedFields,
