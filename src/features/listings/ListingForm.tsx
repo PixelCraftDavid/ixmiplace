@@ -41,7 +41,9 @@ import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline'
 import { HoneypotField } from '../../components/ui/HoneypotField';
 
 interface ListingFormProps {
-  defaultValues?: Partial<ListingInput> & { photos?: string[]; photoPublicIds?: string[] };
+  defaultValues?: Partial<ListingInput>;
+  initialPhotos?: string[];
+  initialPhotoPublicIds?: string[];
   onSubmit: (data: ListingInput, photos: string[], photoPublicIds: string[]) => Promise<void>;
   submitLabel?: string;
   lockFixedFields?: boolean;
@@ -61,6 +63,8 @@ const optionalNumber = (v: unknown): number | undefined =>
 
 export function ListingForm({
   defaultValues,
+  initialPhotos = [],
+  initialPhotoPublicIds = [],
   onSubmit,
   submitLabel = 'Publicar propiedad',
   lockFixedFields = false,
@@ -71,8 +75,8 @@ export function ListingForm({
   onConfirmSubmit,
 }: ListingFormProps) {
   const { profile } = useAuth();
-  const [photos, setPhotos] = useState<string[]>(defaultValues?.photos ?? []);
-  const [photoPublicIds, setPhotoPublicIds] = useState<string[]>(defaultValues?.photoPublicIds ?? []);
+  const [photos, setPhotos] = useState<string[]>(initialPhotos);
+  const [photoPublicIds, setPhotoPublicIds] = useState<string[]>(initialPhotoPublicIds);
   const [photosError, setPhotosError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [website, setWebsite] = useState('');

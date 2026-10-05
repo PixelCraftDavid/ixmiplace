@@ -4,8 +4,9 @@ import { collection, doc, getDoc, deleteField, writeBatch } from 'firebase/fires
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
 import { ListingForm } from './ListingForm';
+import { RoommateEditForm } from './RoommateEditForm';
 import { supportsHouseRules } from '../../lib/constants';
-import type { ListingInput } from '../../lib/zod-schemas';
+import type { ListingInput, RoommateListingInput } from '../../lib/zod-schemas';
 import type { Listing } from '../../types/models';
 import { isSafeDocumentId } from '../../lib/document-id';
 
@@ -201,6 +202,60 @@ export function EditListingPage() {
     setTimeout(() => nav('/mis-publicaciones', { replace: true }), 1500);
   }
 
+  async function handleRoommateSubmit(
+    data: RoommateListingInput,
+    photos: string[],
+    photoPublicIds: string[]
+  ) {
+    if (!id || !auth.currentUser || !listing) throw new Error('No se pudo editar');
+
+    const updates: Record<string, unknown> = {
+      title: data.title.trim(),
+      description: data.description.trim(),
+      maxGuests: data.currentOccupants + data.roommatesWantedCount,
+      currentOccupants: data.currentOccupants,
+      roommatesWantedCount: data.roommatesWantedCount,
+      roommatePrivateRoom: data.roommatePrivateRoom,
+      roommateFurnished: data.roommateFurnished,
+      roommateSharedBathroom: data.roommateSharedBathroom,
+      roommateSharedKitchen: data.roommateSharedKitchen,
+      roommatePreferences: data.roommatePreferences?.trim() || deleteField(),
+      petsAllowed: data.petsAllowed,
+      smokingAllowed: data.smokingAllowed,
+      alcoholConsumptionAllowed: data.alcoholConsumptionAllowed,
+      alcoholSalesAllowed: data.alcoholSalesAllowed,
+      commercialActivityAllowed: data.commercialActivityAllowed,
+      commercialActivityNotes: data.commercialActivityAllowed && data.commercialActivityNotes?.trim()
+        ? data.commercialActivityNotes.trim()
+        : deleteField(),
+      waterBilling: data.waterBilling,
+      waterMonthlyCost: data.waterBilling === 'extra' ? data.waterMonthlyCost : deleteField(),
+      electricityBilling: data.electricityBilling,
+      electricityMonthlyCost: data.electricityBilling === 'extra' ? data.electricityMonthlyCost : deleteField(),
+      internetBilling: data.internetBilling,
+      internetMonthlyCost: data.internetBilling === 'extra' ? data.internetMonthlyCost : deleteField(),
+      photos,
+      photoPublicIds: photoPublicIds.length > 0 ? photoPublicIds : deleteField(),
+      updatedAt: Date.now(),
+    };
+
+    const changedFields = Object.keys(updates).filter((field) => field !== 'updatedAt');
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'listings', id), updates);
+    batch.set(doc(collection(db, 'listingHistory')), {
+      listingId: id,
+      actorId: auth.currentUser.uid,
+      actorRole: 'owner',
+      action: 'updated',
+      changedFields,
+      summary: `El propietario actualizó ${changedFields.length} campo(s) de la búsqueda de roomie.`,
+      createdAt: Date.now(),
+    });
+    await batch.commit();
+    setSuccess(true);
+    setTimeout(() => nav('/mis-publicaciones', { replace: true }), 1500);
+  }
+
   if (state === 'loading') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cream">
@@ -274,6 +329,9 @@ export function EditListingPage() {
           Volver a mis publicaciones
         </Link>
 
+        {listing!.roommateWanted ? (
+          <RoommateEditForm listing={listing!} onSubmit={handleRoommateSubmit} />
+        ) : <>
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-extrabold text-ink sm:text-5xl">
             Editar publicación
@@ -352,15 +410,16 @@ export function EditListingPage() {
             roommatePreferences: listing!.roommatePreferences ?? '',
             lat: listing!.lat ?? 20.4833,
             lng: listing!.lng ?? -99.2167,
-            photos: listing!.photos,
-            photoPublicIds: listing!.photoPublicIds ?? [],
           }}
+          initialPhotos={listing!.photos ?? []}
+          initialPhotoPublicIds={listing!.photoPublicIds ?? []}
           onSubmit={handleSubmit}
           submitLabel="Guardar cambios"
           lockFixedFields={true}
           lockPrice={listing!.category !== 'hotel' && listing!.category !== 'motel'}
           immutableFieldsMessage={listing!.category === 'hotel' || listing!.category === 'motel' ? 'Categoria, ubicacion y WhatsApp quedan fijos. Puedes actualizar la tarifa, los servicios y la disponibilidad.' : 'Estos datos quedan fijos al publicar. Crea otra publicacion si necesitas cambiarlos.'}
         />
+        </>}
       </div>
     </div>
   );
