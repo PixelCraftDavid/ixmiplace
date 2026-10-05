@@ -11,6 +11,9 @@ const plainText = (min, max) => z.string().trim().min(min).max(max)
 const optionalText = (max) => z.string().trim().max(max)
   .refine((value) => !/[\u0000-\u001F\u007F<>]/.test(value));
 const cost = z.number().finite().min(0).max(100000);
+// cloudinary-signature uploads every listing image into this folder; Cloudinary
+// returns the folder as part of public_id (for example ixmiplace/listings/<uuid>).
+const listingPhotoPublicId = z.string().regex(/^ixmiplace\/listings\/[A-Za-z0-9_-]{1,150}(?:\/[A-Za-z0-9_-]{1,150})*$/);
 const requestSchema = z.object({
   listingId: documentIdSchema,
   projectId: z.literal(EXPECTED_PROJECT_ID),
@@ -38,7 +41,7 @@ const requestSchema = z.object({
     internetMonthlyCost: cost.optional(),
   }).strict(),
   photos: z.array(z.string().regex(/^https:\/\/res\.cloudinary\.com\/ckaf3htn\/image\/upload\/.+$/)).min(1).max(5),
-  photoPublicIds: z.array(z.string().regex(/^[A-Za-z0-9_-]{1,150}$/)).max(5).optional(),
+  photoPublicIds: z.array(listingPhotoPublicId).max(5).optional(),
   availability: z.enum(['available', 'unavailable']),
 }).strict().superRefine((input, context) => {
   for (const service of ['water', 'electricity', 'internet']) {
