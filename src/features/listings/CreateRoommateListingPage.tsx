@@ -2,9 +2,8 @@ import { useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useForm, useWatch, type Control } from 'react-hook-form';
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { ArrowLeft, BedDouble, Check, Info, Loader2, MapPin, Users } from 'lucide-react';
-import { db, auth } from '../../lib/firebase';
+import { auth } from '../../lib/firebase';
 import { LISTING_LIMITS } from '../../lib/constants';
 import { roommateListingSchema, type RoommateListingInput } from '../../lib/zod-schemas';
 import type { Listing } from '../../types/models';
@@ -12,6 +11,9 @@ import { LISTING_CONSENT_VERSION } from '../legal/legalVersions';
 import { PrivacyNoticeInline } from '../../components/legal/PrivacyNoticeInline';
 import { ImageUploader } from './ImageUploader';
 import { HoneypotField } from '../../components/ui/HoneypotField';
+import { listingCreateRuleErrors } from './listingCreateRuleChecks.js';
+import { postAuthenticatedApi } from '../../lib/protected-api';
+import { requestPushDelivery } from '../../lib/push-notifications';
 
 const inputClass = 'w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-ink placeholder-ink-300 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/15';
 
@@ -106,24 +108,48 @@ export function CreateRoommateListingPage() {
       createdAt: now,
       updatedAt: now,
       publicationConsentVersion: LISTING_CONSENT_VERSION,
-      publicationConsentAt: serverTimestamp(),
     };
 
     try {
-      const listingRef = doc(collection(db, 'listings'));
-      const batch = writeBatch(db);
-      batch.set(listingRef, listing);
-      batch.set(doc(db, 'listingPrivateDetails', listingRef.id), {
+      const privateDetails = {
         ownerId: auth.currentUser.uid,
         whatsapp: data.whatsapp,
         updatedAt: now,
+      };
+      const ruleErrors = listingCreateRuleErrors(
+        listing as unknown as Record<string, unknown>,
+        privateDetails,
+        auth.currentUser.uid,
+        now,
+      );
+      if (ruleErrors.length > 0) {
+        setSubmitError(`Revisa los datos de publicación: ${ruleErrors.join(' ')}`);
+        return;
+      }
+
+      const { listingId } = await postAuthenticatedApi<{ listingId: string }>('/api/create-listing', {
+        listing,
+        privateDetails,
+        publicationConsentAccepted: data.publicationConsentAccepted === true,
+        projectId: auth.app.options.projectId,
       });
-      await batch.commit();
+      try {
+        await requestPushDelivery('listing_created', listingId);
+      } catch (notificationError) {
+        console.warn('No se pudo solicitar la notificación de búsqueda de roomie:', notificationError);
+      }
       setSuccess(true);
       window.setTimeout(() => nav('/mis-publicaciones', { replace: true }), 1200);
     } catch (error) {
       console.error('No se pudo crear la búsqueda de roomie:', error);
-      setSubmitError('No se pudo enviar la publicación. Revisa la conexión e intenta de nuevo.');
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage.startsWith('PUBLICATION_CHECK:')) {
+        setSubmitError(errorMessage.slice('PUBLICATION_CHECK:'.length));
+      } else if (errorMessage === 'Failed to fetch' || errorMessage.includes('NetworkError')) {
+        setSubmitError('No se pudo conectar con el servidor de publicaciones. Revisa tu conexión e intenta de nuevo.');
+      } else {
+        setSubmitError(errorMessage || 'No se pudo enviar la publicación. Intenta de nuevo; si persiste, contacta a soporte.');
+      }
     }
   }
 

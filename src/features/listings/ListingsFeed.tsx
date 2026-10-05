@@ -12,6 +12,7 @@ import { useLanguage } from '@/lib/i18n';
 
 type SortOption = 'recent' | 'price-asc' | 'price-desc';
 type DateFilter = 'all' | 'today' | 'week' | 'month';
+type ListingsMode = 'properties' | 'roommates';
 
 const SORTS: { value: SortOption; label: string }[] = [
   { value: 'recent', label: 'Más recientes' },
@@ -29,7 +30,7 @@ const DATE_FILTERS: { value: DateFilter; label: string }[] = [
 const PAGE_SIZE = 9;
 const MAX_RETRIES = 3;
 
-export function ListingsFeed() {
+export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
   const { fbUser } = useAuth();
   const { locale, t } = useLanguage();
 
@@ -45,7 +46,6 @@ export function ListingsFeed() {
   const [operation, setOperation] = useState<ListingOperation | 'all'>('all');
   const [sort, setSort] = useState<SortOption>('recent');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
-  const [roommateOnly, setRoommateOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -166,7 +166,9 @@ export function ListingsFeed() {
       );
     }
 
-    if (roommateOnly) result = result.filter((listing) => listing.roommateWanted === true);
+    result = mode === 'roommates'
+      ? result.filter((listing) => listing.roommateWanted === true)
+      : result.filter((listing) => listing.roommateWanted !== true);
 
     // Fecha
     if (dateFilter !== 'all') {
@@ -219,7 +221,7 @@ export function ListingsFeed() {
     operation,
     sort,
     dateFilter,
-    roommateOnly,
+    mode,
   ]);
 
   const hasActiveFilters =
@@ -227,7 +229,7 @@ export function ListingsFeed() {
     category !== 'all' ||
     operation !== 'all' ||
     dateFilter !== 'all';
-  const activeFilters = hasActiveFilters || roommateOnly;
+  const activeFilters = hasActiveFilters;
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
@@ -236,7 +238,6 @@ export function ListingsFeed() {
     category,
     operation,
     dateFilter,
-    roommateOnly,
     sort,
   ]);
 
@@ -253,7 +254,6 @@ export function ListingsFeed() {
     setCategory('all');
     setOperation('all');
     setDateFilter('all');
-    setRoommateOnly(false);
   }
 
   return (
@@ -261,10 +261,10 @@ export function ListingsFeed() {
       <header className="flex flex-col gap-5 border-b border-ink-700/10 pb-6 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-700 dark:text-brand-200">
-            {t('feed.eyebrow')}
+            {mode === 'roommates' ? t('feed.roommateEyebrow') : t('feed.eyebrow')}
           </p>
           <h2 className="text-3xl font-semibold tracking-[-0.04em] text-ink-800 dark:text-white sm:text-4xl">
-            {t('feed.title')}
+            {mode === 'roommates' ? t('feed.roommateTitle') : t('feed.title')}
           </h2>
           <p className="mt-2 text-sm text-ink-500 dark:text-ink-300 sm:text-base">
               {loadError
@@ -273,14 +273,14 @@ export function ListingsFeed() {
                 ? t('feed.loading')
                 : `${filtered.length} ${
                     filtered.length === 1
-                      ? t('feed.property')
-                      : t('feed.properties')
+                      ? (mode === 'roommates' ? t('feed.roommateSpace') : t('feed.property'))
+                      : (mode === 'roommates' ? t('feed.roommateSpaces') : t('feed.properties'))
                   } ${t('feed.available')}`}
           </p>
         </div>
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-brand-700/10 bg-white/70 px-3.5 py-2 text-xs font-medium text-ink-600 dark:border-white/10 dark:bg-white/[0.06] dark:text-ink-200">
           <span className="h-2 w-2 rounded-full bg-brand-500" />
-          {t('feed.community')}
+          {mode === 'roommates' ? t('feed.roommateCommunity') : t('feed.community')}
         </span>
       </header>
 
@@ -289,8 +289,8 @@ export function ListingsFeed() {
           <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-400" aria-hidden="true" />
           <input
             type="search"
-            aria-label={t('feed.searchLabel')}
-            placeholder={t('feed.searchPlaceholder')}
+            aria-label={mode === 'roommates' ? t('feed.roommateSearchLabel') : t('feed.searchLabel')}
+            placeholder={mode === 'roommates' ? t('feed.roommateSearchPlaceholder') : t('feed.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-12 w-full rounded-xl border border-ink-700/15 bg-white pl-11 pr-4 text-sm text-ink-800 shadow-[0_2px_10px_rgba(27,32,24,0.035)] outline-none transition duration-200 placeholder:text-ink-400 hover:border-ink-700/25 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-white/10 dark:bg-[#242a22] dark:text-white dark:placeholder:text-ink-300"
@@ -307,7 +307,7 @@ export function ListingsFeed() {
             {t('feed.filters')}
             {activeFilters && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1 text-[10px] font-bold">
-                {[category, operation, dateFilter].filter((f) => f !== 'all').length + (search ? 1 : 0) + (roommateOnly ? 1 : 0)}
+                {[category, operation, dateFilter].filter((f) => f !== 'all').length + (search ? 1 : 0)}
               </span>
             )}
           </button>
@@ -456,11 +456,6 @@ export function ListingsFeed() {
               </div>
             </div>
 
-            <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-ink-700 dark:text-white">
-              <input type="checkbox" checked={roommateOnly} onChange={(event) => setRoommateOnly(event.target.checked)} className="h-4 w-4 accent-brand-600" />
-              {t('feed.roommateOnly')}
-            </label>
-
             {activeFilters && (
               <button
                 type="button"
@@ -520,7 +515,7 @@ export function ListingsFeed() {
               }
               className="rounded-xl border border-cream-300 bg-white px-5 py-3 text-sm font-semibold text-ink-600 shadow-sm transition hover:bg-cream-100 hover:text-ink-800"
             >
-              {t('feed.loadMore')}
+              {mode === 'roommates' ? t('feed.loadMoreRoommates') : t('feed.loadMore')}
             </button>
           </div>
         )}

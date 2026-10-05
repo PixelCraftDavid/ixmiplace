@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { ArrowRight, House, Users } from 'lucide-react';
 
 import { AuthProvider } from '../features/auth/AuthContext';
 import { RequireAuth } from '../features/auth/RequireAuth';
@@ -21,6 +22,7 @@ import { EditListingPage } from '../features/listings/EditListingPage';
 import { MyListingsPage } from '../features/listings/MyListingsPage';
 import { ListingDetailPage } from '../features/listings/ListingDetailPage';
 import { ListingsFeed } from '../features/listings/ListingsFeed';
+import { RoommatesPage } from '../features/listings/RoommatesPage';
 import { ListingHistoryPage } from '../features/listings/ListingHistoryPage';
 
 import { FavoritesPage } from '../features/favorites/FavoritesPage';
@@ -51,8 +53,35 @@ function HomePage() {
           {t('language.review')}
         </p>
       )}
+      <section aria-labelledby="home-search-heading" className="mx-auto max-w-7xl px-5 pb-4 pt-10 sm:px-8 lg:px-12">
+        <h2 id="home-search-heading" className="mb-5 text-xl font-bold tracking-tight text-ink-800 dark:text-white sm:text-2xl">
+          {t('home.choose')}
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <a href="#propiedades" className="group rounded-2xl border border-ink-700/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-md dark:border-white/10 dark:bg-[#242a22] sm:p-6">
+            <span className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-800 dark:bg-brand-900/30 dark:text-brand-200">
+              <House className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h3 className="text-lg font-bold text-ink-800 dark:text-white">{t('home.propertiesTitle')}</h3>
+            <p className="mt-1 text-sm leading-relaxed text-ink-500 dark:text-ink-300">{t('home.propertiesBody')}</p>
+            <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-800 dark:text-brand-200">
+              {t('home.propertiesAction')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </span>
+          </a>
+          <Link to="/roomies" className="group rounded-2xl border border-brand-700/20 bg-brand-50/70 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-500/50 hover:shadow-md dark:border-brand-200/15 dark:bg-brand-900/10 sm:p-6">
+            <span className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-white text-brand-800 dark:bg-white/10 dark:text-brand-200">
+              <Users className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h3 className="text-lg font-bold text-ink-800 dark:text-white">{t('home.roommatesTitle')}</h3>
+            <p className="mt-1 text-sm leading-relaxed text-ink-500 dark:text-ink-300">{t('home.roommatesBody')}</p>
+            <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-800 dark:text-brand-200">
+              {t('home.roommatesAction')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </span>
+          </Link>
+        </div>
+      </section>
       <section id="propiedades" className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-        <ListingsFeed />
+        <ListingsFeed mode="properties" />
       </section>
     </main>
   );
@@ -210,6 +239,8 @@ function AppContent() {
               <Route path="/publicar" element={<CreateListingPage />} />
 
               <Route path="/publicar-roomie" element={<CreateRoommateListingPage />} />
+
+              <Route path="/roomies" element={<RoommatesPage />} />
 
               <Route path="/editar/:id" element={<EditListingPage />} />
 
