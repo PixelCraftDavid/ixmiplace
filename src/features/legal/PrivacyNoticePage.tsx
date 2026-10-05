@@ -24,7 +24,7 @@ export function PrivacyNoticePage() {
         <div className="space-y-5">
           <NoticeSection title="1. Responsable y contacto">
             <p>El responsable del tratamiento es la persona física <strong>Ángel David Santos Pacheco</strong>, quien opera IxmiPlace por cuenta propia y no como una sociedad constituida. El proyecto se opera en Ixmiquilpan, Hidalgo, México.</p>
-            <p><strong>Domicilio del responsable para oír y recibir comunicaciones: [PENDIENTE DE COMPLETAR ANTES DE PUBLICAR ESTA VERSIÓN].</strong> La ley exige identificar el domicilio del responsable; mencionar únicamente Ixmiquilpan no ofrece un lugar efectivo para localizarlo o recibir comunicaciones. No publiques esta versión hasta completar este campo con un domicilio real y operativo, o hasta obtener asesoría sobre una alternativa jurídicamente válida que proteja tu domicilio residencial.</p>
+            <p><strong>Domicilio del responsable para oír y recibir comunicaciones:</strong> La Diana, frente a la Presidencia Municipal de Ixmiquilpan, Hidalgo, México.</p>
             <p>Para consultas de privacidad y solicitudes ARCO, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:ixmiplacesupport@gmail.com">ixmiplacesupport@gmail.com</a>, con el asunto “Solicitud ARCO”.</p>
           </NoticeSection>
 
