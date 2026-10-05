@@ -9,6 +9,7 @@ import { supportsHouseRules } from '../../lib/constants';
 import type { ListingInput, RoommateListingInput } from '../../lib/zod-schemas';
 import type { Listing } from '../../types/models';
 import { isSafeDocumentId } from '../../lib/document-id';
+import { postAuthenticatedApi } from '../../lib/protected-api';
 
 type LoadState = 'loading' | 'ready' | 'not-found' | 'forbidden' | 'error';
 
@@ -217,53 +218,37 @@ export function EditListingPage() {
     if (!currentUser.emailVerified) {
       throw new Error('Verifica el correo de tu cuenta antes de editar la publicación.');
     }
-
-    const updates: Record<string, unknown> = {
-      ownerEmailVerified: currentUser.emailVerified,
-      title: data.title.trim(),
-      description: data.description.trim(),
-      availability,
-      availabilityConfirmedAt: Date.now(),
-      maxGuests: data.currentOccupants + data.roommatesWantedCount,
-      currentOccupants: data.currentOccupants,
-      roommatesWantedCount: data.roommatesWantedCount,
-      roommatePrivateRoom: data.roommatePrivateRoom,
-      roommateFurnished: data.roommateFurnished,
-      roommateSharedBathroom: data.roommateSharedBathroom,
-      roommateSharedKitchen: data.roommateSharedKitchen,
-      roommatePreferences: data.roommatePreferences?.trim() || deleteField(),
-      petsAllowed: data.petsAllowed,
-      smokingAllowed: data.smokingAllowed,
-      alcoholConsumptionAllowed: data.alcoholConsumptionAllowed,
-      alcoholSalesAllowed: data.alcoholSalesAllowed,
-      commercialActivityAllowed: data.commercialActivityAllowed,
-      commercialActivityNotes: data.commercialActivityAllowed && data.commercialActivityNotes?.trim()
-        ? data.commercialActivityNotes.trim()
-        : deleteField(),
-      waterBilling: data.waterBilling,
-      waterMonthlyCost: data.waterBilling === 'extra' ? data.waterMonthlyCost : deleteField(),
-      electricityBilling: data.electricityBilling,
-      electricityMonthlyCost: data.electricityBilling === 'extra' ? data.electricityMonthlyCost : deleteField(),
-      internetBilling: data.internetBilling,
-      internetMonthlyCost: data.internetBilling === 'extra' ? data.internetMonthlyCost : deleteField(),
-      photos,
-      photoPublicIds: photoPublicIds.length > 0 ? photoPublicIds : deleteField(),
-      updatedAt: Date.now(),
-    };
-
-    const changedFields = Object.keys(updates).filter((field) => field !== 'updatedAt');
-    const batch = writeBatch(db);
-    batch.update(doc(db, 'listings', id), updates);
-    batch.set(doc(collection(db, 'listingHistory')), {
+    const { ok } = await postAuthenticatedApi<{ ok: boolean }>('/api/update-roommate-listing', {
       listingId: id,
-      actorId: currentUser.uid,
-      actorRole: 'owner',
-      action: 'updated',
-      changedFields,
-      summary: `El propietario actualizó ${changedFields.length} campo(s) de la búsqueda de roomie.`,
-      createdAt: Date.now(),
+      projectId: auth.app.options.projectId,
+      data: {
+        title: data.title,
+        description: data.description,
+        currentOccupants: data.currentOccupants,
+        roommatesWantedCount: data.roommatesWantedCount,
+        roommatePrivateRoom: data.roommatePrivateRoom,
+        roommateFurnished: data.roommateFurnished,
+        roommateSharedBathroom: data.roommateSharedBathroom,
+        roommateSharedKitchen: data.roommateSharedKitchen,
+        petsAllowed: data.petsAllowed,
+        smokingAllowed: data.smokingAllowed,
+        alcoholConsumptionAllowed: data.alcoholConsumptionAllowed,
+        alcoholSalesAllowed: data.alcoholSalesAllowed,
+        commercialActivityAllowed: data.commercialActivityAllowed,
+        commercialActivityNotes: data.commercialActivityNotes,
+        roommatePreferences: data.roommatePreferences,
+        waterBilling: data.waterBilling,
+        waterMonthlyCost: data.waterMonthlyCost,
+        electricityBilling: data.electricityBilling,
+        electricityMonthlyCost: data.electricityMonthlyCost,
+        internetBilling: data.internetBilling,
+        internetMonthlyCost: data.internetMonthlyCost,
+      },
+      photos,
+      photoPublicIds,
+      availability,
     });
-    await batch.commit();
+    if (!ok) throw new Error('El servidor no confirmó el guardado. Intenta de nuevo.');
     setSuccess(true);
     setTimeout(() => nav('/mis-publicaciones', { replace: true }), 1500);
   }
