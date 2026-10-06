@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Store } from 'lucide-react';
+import { Store } from 'lucide-react';
 
 import { AuthProvider } from '../features/auth/AuthContext';
 import { RequireAuth } from '../features/auth/RequireAuth';
@@ -40,56 +40,20 @@ import { SiteFooter } from '../components/layout/SiteFooter';
 import { NotFoundPage } from '../components/layout/NotFoundPage';
 import { RouteMetadata } from '../components/seo/PageMeta';
 import { AnalyticsConsent } from '../components/seo/AnalyticsConsent';
+import { BusinessAdMarquee } from '../components/layout/BusinessAdMarquee';
 import { LanguageProvider, useLanguage } from '../lib/i18n';
-import { loadPublicBusinessAds, recordBusinessAdMetric, type PublicBusinessAd } from '../lib/business-ads';
+import { loadPublicBusinessAds, type PublicBusinessAd } from '../lib/business-ads';
 import type { Listing } from '../types/models';
 
 function HomePage() {
   const { locale, t } = useLanguage();
   const [mapListings, setMapListings] = useState<Listing[]>([]);
   const [businessAds, setBusinessAds] = useState<PublicBusinessAd[]>([]);
-  const [businessAdIndex, setBusinessAdIndex] = useState(0);
-  const [businessAdHovered, setBusinessAdHovered] = useState(false);
-  const [businessAdFocused, setBusinessAdFocused] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const businessAdPaused = businessAdHovered || businessAdFocused;
   useEffect(() => {
     let current = true;
     void loadPublicBusinessAds().then((ads) => { if (current) setBusinessAds(ads); }).catch(() => {});
     return () => { current = false; };
   }, []);
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
-    updatePreference();
-    mediaQuery.addEventListener('change', updatePreference);
-    return () => mediaQuery.removeEventListener('change', updatePreference);
-  }, []);
-  useEffect(() => {
-    if (businessAds.length < 2 || businessAdPaused || prefersReducedMotion) return;
-    const interval = window.setInterval(() => setBusinessAdIndex((index) => (index + 1) % businessAds.length), 12_000);
-    return () => window.clearInterval(interval);
-  }, [businessAds.length, businessAdPaused, prefersReducedMotion]);
-  const visibleBusinessAd = businessAds.length ? businessAds[businessAdIndex % businessAds.length] : undefined;
-  const changeBusinessAd = (direction: -1 | 1) => {
-    setBusinessAdIndex((index) => (index + direction + businessAds.length) % businessAds.length);
-  };
-  useEffect(() => {
-    if (!visibleBusinessAd || typeof IntersectionObserver === 'undefined') return;
-    const element = document.getElementById('business-ad-current');
-    if (!element) return;
-    const observer = new IntersectionObserver((entries) => {
-      if (!entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.5)) return;
-      const key = `ixmiplace:business-ad-seen:${visibleBusinessAd.id}`;
-      try {
-        if (sessionStorage.getItem(key)) return;
-        sessionStorage.setItem(key, '1');
-      } catch { /* Si el almacenamiento está bloqueado, el límite del servidor sigue vigente. */ }
-      void recordBusinessAdMetric(visibleBusinessAd.id, 'impressions');
-    }, { threshold: 0.5 });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [visibleBusinessAd]);
   return (
     <main className="min-h-screen bg-[#f5f0e5] dark:bg-[#1c211a]">
       <Hero />
@@ -100,6 +64,7 @@ function HomePage() {
         </p>
       )}
       <section id="negocios-locales" aria-labelledby="local-businesses-heading" className="mx-auto w-full px-5 pb-6 pt-5 sm:px-8 lg:px-12">
+        <h2 id="local-businesses-heading" className="sr-only">{t('home.businessEyebrow')}</h2>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-[#263629] dark:text-ink-100">
           <div className="flex flex-wrap items-center gap-2">
             <span>{t('home.businessEyebrow')}</span>
@@ -107,34 +72,7 @@ function HomePage() {
           </div>
           <span className="normal-case tracking-normal text-ink-500 dark:text-ink-300">{t('home.businessDirectContact')}</span>
         </div>
-        {visibleBusinessAd ? <article
-          key={visibleBusinessAd.id}
-          id="business-ad-current"
-          aria-roledescription={locale === 'en' ? 'slide' : 'anuncio'}
-          onMouseEnter={() => setBusinessAdHovered(true)}
-          onMouseLeave={() => setBusinessAdHovered(false)}
-          onFocusCapture={() => setBusinessAdFocused(true)}
-          onBlurCapture={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setBusinessAdFocused(false);
-          }}
-          className="business-ad-slide-enter group relative isolate h-[24rem] overflow-hidden rounded-[1.75rem] bg-[#223127] shadow-[0_24px_60px_rgba(31,43,31,0.16)] sm:h-[27rem] sm:rounded-[2rem] lg:h-[22rem]"
-        >
-          <picture className="absolute inset-0"><source media="(max-width: 767px)" srcSet={visibleBusinessAd.mobileImageUrl}/><img src={visibleBusinessAd.desktopImageUrl} alt={`${visibleBusinessAd.businessName}: ${visibleBusinessAd.headline}`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.015]"/></picture>
-          <div className="absolute inset-0 bg-gradient-to-t from-[#142019]/95 via-[#142019]/50 to-[#142019]/10 lg:bg-gradient-to-r lg:from-[#142019]/95 lg:via-[#142019]/75 lg:to-transparent" aria-hidden="true"/>
-          <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-start p-5 text-white sm:p-8 lg:inset-y-0 lg:right-auto lg:max-w-[58%] lg:justify-center lg:p-10">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[#f1ca85] backdrop-blur-sm"><Store className="h-3.5 w-3.5"/>{visibleBusinessAd.category} · Anuncio patrocinado</span>
-            <p className="mt-4 text-sm font-semibold text-white/80">{visibleBusinessAd.businessName}</p>
-            <h2 id="local-businesses-heading" className="mt-1 max-w-2xl text-2xl font-bold leading-tight tracking-[-0.035em] sm:text-3xl lg:text-4xl">{visibleBusinessAd.headline}</h2>
-            <p className="mt-2 line-clamp-3 max-w-xl text-sm leading-6 text-white/80 sm:text-base">{visibleBusinessAd.description}</p>
-            {visibleBusinessAd.offerText && <p className="mt-3 rounded-full bg-[#e4b66e] px-3 py-1.5 text-xs font-bold text-[#263629]">{visibleBusinessAd.offerText}</p>}
-            <a href={visibleBusinessAd.ctaUrl} target="_blank" rel="noopener noreferrer" onClick={() => void recordBusinessAdMetric(visibleBusinessAd.id, 'clicks')} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/50 bg-white px-5 py-2.5 text-sm font-bold text-[#203126] shadow-lg transition hover:-translate-y-0.5 hover:bg-[#f1ca85]">{visibleBusinessAd.ctaLabel}<span aria-hidden="true">→</span></a>
-          </div>
-          {businessAds.length > 1 && <div className="absolute right-4 top-4 z-20 flex items-center gap-1.5 rounded-full border border-white/25 bg-black/35 p-1.5 text-xs font-semibold text-white shadow-sm backdrop-blur">
-            <button type="button" aria-label={locale === 'en' ? 'Previous ad' : 'Anuncio anterior'} onClick={() => changeBusinessAd(-1)} className="grid h-8 w-8 place-items-center rounded-full transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><ChevronLeft className="h-4 w-4" aria-hidden="true"/></button>
-            <span aria-live="off" className="min-w-10 text-center">{businessAdIndex + 1} / {businessAds.length}</span>
-            <button type="button" aria-label={locale === 'en' ? 'Next ad' : 'Siguiente anuncio'} onClick={() => changeBusinessAd(1)} className="grid h-8 w-8 place-items-center rounded-full transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><ChevronRight className="h-4 w-4" aria-hidden="true"/></button>
-          </div>}
-        </article> : <div className="relative isolate grid overflow-hidden rounded-[1.75rem] bg-[#223127] shadow-[0_24px_60px_rgba(31,43,31,0.16)] sm:rounded-[2rem] lg:grid-cols-[0.9fr_1.1fr]">
+        {businessAds.length > 0 ? <BusinessAdMarquee ads={businessAds} locale={locale} /> : <div className="relative isolate grid overflow-hidden rounded-[1.75rem] bg-[#223127] shadow-[0_24px_60px_rgba(31,43,31,0.16)] sm:rounded-[2rem] lg:grid-cols-[0.9fr_1.1fr]">
           <div className="relative z-10 flex flex-col justify-center p-6 text-white sm:p-9 lg:p-11">
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.13em] text-white/90">
@@ -145,9 +83,9 @@ function HomePage() {
                 {t('home.businessComingSoon')}
               </span>
             </div>
-            <h2 id="local-businesses-heading" className="max-w-xl text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-4xl">
+            <p className="max-w-xl text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-4xl">
               {t('home.businessTitle')}
-            </h2>
+            </p>
             <p className="mt-4 max-w-lg text-sm leading-6 text-white/75 sm:text-base sm:leading-7">
               {t('home.businessBody')}
             </p>

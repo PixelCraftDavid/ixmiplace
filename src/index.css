@@ -217,21 +217,6 @@ html.dark .auth-visual-wash {
   }
 }
 
-@keyframes business-ad-slide-enter {
-  from {
-    opacity: 0.72;
-    transform: translate3d(1.5rem, 0, 0) scale(0.995);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-.business-ad-slide-enter {
-  animation: business-ad-slide-enter 850ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -242,8 +227,176 @@ html.dark .auth-visual-wash {
     animation-iteration-count: 1 !important;
   }
 
-  .business-ad-slide-enter {
-    animation: none;
+}
+
+.business-ad-marquee-viewport {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1.75rem;
+  padding-block: 1.25rem;
+}
+
+.business-ad-marquee-viewport::before,
+.business-ad-marquee-viewport::after {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  bottom: 0;
+  width: clamp(2rem, 6vw, 6rem);
+  content: '';
+  pointer-events: none;
+}
+
+.business-ad-marquee-viewport::before {
+  left: 0;
+  background: linear-gradient(to right, #f5f0e5 0%, rgb(245 240 229 / 72%) 28%, transparent 100%);
+}
+
+.business-ad-marquee-viewport::after {
+  right: 0;
+  background: linear-gradient(to left, #f5f0e5 0%, rgb(245 240 229 / 72%) 28%, transparent 100%);
+}
+
+html.dark .business-ad-marquee-viewport::before {
+  background: linear-gradient(to right, #1c211a 0%, rgb(28 33 26 / 72%) 28%, transparent 100%);
+}
+
+html.dark .business-ad-marquee-viewport::after {
+  background: linear-gradient(to left, #1c211a 0%, rgb(28 33 26 / 72%) 28%, transparent 100%);
+}
+
+.business-ad-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: business-ad-marquee var(--business-ad-marquee-duration, 30s) linear infinite;
+  will-change: transform;
+}
+
+.business-ad-marquee-track[data-reduced-motion='true'] {
+  animation: none;
+  will-change: auto;
+}
+
+.business-ad-marquee-viewport:has(.business-ad-marquee-card:hover) .business-ad-marquee-track {
+  animation-play-state: paused;
+}
+
+.business-ad-marquee-group,
+.business-ad-marquee-run {
+  display: flex;
+  flex: none;
+  gap: 1.25rem;
+}
+
+.business-ad-marquee-card {
+  position: relative;
+  isolation: isolate;
+  flex: 0 0 auto;
+  width: 82vw;
+  aspect-ratio: 1 / 1;
+  overflow: visible;
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 1.5rem;
+  background: #223127;
+  box-shadow: 0 18px 48px rgb(31 43 31 / 18%);
+  cursor: pointer;
+}
+
+.business-ad-marquee-card::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(145deg, rgb(12 22 16 / 10%), transparent 55%, rgb(12 22 16 / 22%));
+  content: '';
+  pointer-events: none;
+}
+
+.business-ad-marquee-card:focus-visible {
+  outline: 3px solid #e4b66e;
+  outline-offset: 3px;
+}
+
+.business-ad-marquee-sponsored {
+  position: absolute;
+  z-index: 2;
+  top: 0.85rem;
+  left: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgb(255 255 255 / 32%);
+  border-radius: 999px;
+  background: rgb(18 31 23 / 68%);
+  padding: 0.4rem 0.7rem;
+  color: #f1ca85;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+}
+
+.business-ad-marquee-sponsored svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.business-ad-marquee-popup {
+  position: absolute;
+  z-index: 30;
+  top: 50%;
+  left: 50%;
+  width: min(24rem, calc(100vw - 4rem));
+  max-height: calc(100% - 2rem);
+  overflow-y: auto;
+  transform: translate(-50%, -46%) scale(0.96);
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 1.25rem;
+  background: rgb(23 35 26 / 92%);
+  padding: 1.1rem 1.2rem;
+  opacity: 0;
+  box-shadow: 0 20px 50px rgb(0 0 0 / 30%);
+  backdrop-filter: blur(16px);
+  pointer-events: none;
+  transition: opacity 280ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.business-ad-marquee-popup.is-visible {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.business-ad-marquee-viewport.is-static {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+@keyframes business-ad-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@media (min-width: 768px) {
+  .business-ad-marquee-viewport {
+    border-radius: 2rem;
+  }
+
+  .business-ad-marquee-card {
+    width: min(70vw, 72rem);
+    aspect-ratio: 5120 / 1080;
+    border-radius: 1.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .business-ad-marquee-track {
+    animation: none !important;
+    transform: none !important;
+    will-change: auto;
   }
 }
 
