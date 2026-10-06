@@ -34,7 +34,7 @@ export interface BusinessAd {
 
 export type PublicBusinessAd = Pick<BusinessAd,
   'id' | 'businessName' | 'category' | 'headline' | 'description' | 'offerText' | 'ctaLabel'
-  | 'ctaUrl' | 'desktopImageUrl' | 'mobileImageUrl' | 'startsAt' | 'endsAt'>;
+  | 'ctaUrl' | 'desktopImageUrl' | 'mobileImageUrl' | 'startsAt' | 'endsAt'> & { featuredThisWeek?: boolean };
 
 export interface BusinessProfile {
   id: string;

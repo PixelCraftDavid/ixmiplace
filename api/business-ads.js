@@ -70,7 +70,7 @@ function publicProfile(snapshot) {
   };
 }
 
-function publicAd(snapshot) {
+function publicAd(snapshot, profile, now) {
   const data = snapshot.data();
   return {
     id: snapshot.id,
@@ -85,6 +85,8 @@ function publicAd(snapshot) {
     mobileImageUrl: data.mobileImageUrl,
     startsAt: data.startsAt,
     endsAt: data.endsAt,
+    featuredThisWeek: profile?.package === 'featured'
+      && Number(profile.featuredStartAt) <= now && Number(profile.featuredEndsAt) > now,
   };
 }
 
@@ -533,11 +535,16 @@ export default async function handler(req, res) {
         return respond(res, 200, { businesses: profiles });
       }
       const snapshot = await db.collection('businessAds').where('status', 'in', ['active', 'scheduled']).get();
-      const active = snapshot.docs
+      const activeDocs = snapshot.docs
         .filter((item) => item.data().startsAt <= now && item.data().endsAt > now)
         .sort((a, b) => a.data().startsAt - b.data().startsAt || a.id.localeCompare(b.id))
         .slice(0, MAX_ACTIVE_ADS)
-        .map(publicAd);
+      const profileIds = [...new Set(activeDocs.map((item) => item.data().profileId).filter((id) => typeof id === 'string' && id.length > 0))];
+      const profileSnapshots = profileIds.length
+        ? await db.getAll(...profileIds.map((id) => db.collection('businessProfiles').doc(id)))
+        : [];
+      const profilesById = new Map(profileSnapshots.filter((item) => item.exists).map((item) => [item.id, item.data()]));
+      const active = activeDocs.map((item) => publicAd(item, profilesById.get(item.data().profileId), now));
       return respond(res, 200, { ads: active });
     }
     if (req.method !== 'POST') { res.setHeader('Allow', 'GET, POST, OPTIONS'); return respond(res, 405, { error: 'Método no permitido.' }); }

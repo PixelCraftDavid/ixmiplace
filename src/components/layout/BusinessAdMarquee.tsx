@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { Store } from 'lucide-react';
+import { Sparkles, Store } from 'lucide-react';
 
 import { recordBusinessAdMetric, type PublicBusinessAd } from '../../lib/business-ads';
 
@@ -143,7 +143,7 @@ export function BusinessAdMarquee({ ads, locale }: BusinessAdMarqueeProps) {
                     setFocusedCard(null);
                   }
                 }}
-                className="business-ad-marquee-card"
+                className={`business-ad-marquee-card${ad.featuredThisWeek ? ' is-featured' : ''}`}
               >
                 <picture className="absolute inset-0 overflow-hidden rounded-[inherit]">
                   <source media="(max-width: 767px)" srcSet={ad.mobileImageUrl} />
@@ -154,7 +154,7 @@ export function BusinessAdMarquee({ ads, locale }: BusinessAdMarqueeProps) {
                     className="h-full w-full object-cover"
                   />
                 </picture>
-                <span className="business-ad-marquee-sponsored"><Store aria-hidden="true" />{locale === 'en' ? 'Sponsored' : 'Patrocinado'}</span>
+                <span className={`business-ad-marquee-sponsored${ad.featuredThisWeek ? ' is-featured' : ''}`}>{ad.featuredThisWeek ? <Sparkles aria-hidden="true" /> : <Store aria-hidden="true" />}{ad.featuredThisWeek ? (locale === 'en' ? 'Featured this week' : 'Destacado esta semana') : (locale === 'en' ? 'Sponsored' : 'Patrocinado')}</span>
                 <div className={`business-ad-marquee-popup${popupVisible ? ' is-visible' : ''}`} aria-hidden={!popupVisible}>
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#f1ca85]">{ad.businessName} · {ad.category}</p>
                   <h3 className="mt-2 text-xl font-bold leading-tight tracking-tight text-white">{ad.headline}</h3>
