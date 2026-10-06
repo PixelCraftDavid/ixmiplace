@@ -3,6 +3,14 @@ import { ArrowRight, MapPin, Search, Store } from 'lucide-react';
 import { BUSINESS_PACKAGE_PRICES, businessPackageTotal, loadPublicBusinessDirectory, recordBusinessProfileMetric, type BusinessPackage, type PublicBusinessProfile } from '../../lib/business-ads';
 import { useLanguage } from '../../lib/i18n';
 
+function businessInquiryUrl(english: boolean) {
+  const subject = english ? 'IxmiPlace local business listing' : 'Quiero anunciar mi negocio en IxmiPlace';
+  const body = english
+    ? 'Hello IxmiPlace, I would like information about a local business listing.\n\nBusiness name:\nContact name:\nPhone or WhatsApp:\nPackage of interest:\nPreferred period: 1, 3, or 6 months:\n'
+    : 'Hola IxmiPlace, quiero información para agregar mi negocio al directorio.\n\nNombre del negocio:\nNombre de contacto:\nTeléfono o WhatsApp:\nPaquete de interés (Ficha local, Anuncio rotativo o Anuncio destacado):\nPeriodo de interés (1, 3 o 6 meses):\n';
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=ixmiplacesupport@gmail.com&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 function isFeaturedNow(profile: PublicBusinessProfile, now: number) {
   return profile.package === 'featured' && Boolean(profile.featuredStartAt && profile.featuredEndsAt)
     && Number(profile.featuredStartAt) <= now && Number(profile.featuredEndsAt) > now;
@@ -148,7 +156,7 @@ export function BusinessDirectoryPage() {
         <section aria-labelledby="local-packages-heading" className="mt-14 overflow-hidden rounded-[2rem] border border-[#ded7c5] bg-white/80 p-5 shadow-[0_16px_48px_rgba(31,43,31,.06)] dark:border-white/10 dark:bg-[#242a22] sm:p-8 lg:p-10">
           <div className="flex flex-wrap items-end justify-between gap-5">
             <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-[#477450] dark:text-[#c4d5bd]">{english ? 'For local businesses' : 'Para los negocios locales'}</p><h2 id="local-packages-heading" className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{english ? 'Let the community find you' : 'Haz que la comunidad te encuentre'}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-[#6f746b] dark:text-white/60">{english ? 'Clear packages, fixed periods, and direct contact with IxmiPlace to arrange your listing.' : 'Paquetes claros, periodos definidos y trato directo con IxmiPlace para acordar tu ficha.'}</p></div>
-            <a href="mailto:ixmiplacesupport@gmail.com?subject=Quiero%20anunciar%20mi%20negocio" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#365b43] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2d4c38]">{english ? 'Ask about a listing' : 'Preguntar por mi ficha'}<ArrowRight className="h-4 w-4" aria-hidden="true"/></a>
+            <a href={businessInquiryUrl(english)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#365b43] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2d4c38] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d5a954]">{english ? 'Ask about a listing' : 'Preguntar por mi ficha'}<ArrowRight className="h-4 w-4" aria-hidden="true"/></a>
           </div>
           <div className="mt-7 grid gap-4 lg:grid-cols-3">
             {([

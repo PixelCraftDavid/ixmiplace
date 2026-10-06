@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Store } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { ArrowRight, Store } from 'lucide-react';
 
 import { AuthProvider } from '../features/auth/AuthContext';
 import { RequireAuth } from '../features/auth/RequireAuth';
@@ -109,6 +109,11 @@ function HomePage() {
             </div>
           </div>
         </div>}
+        <div className="mt-4 sm:hidden">
+          <Link to="/negocios-locales" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#365b43]/20 bg-white/90 px-5 py-3 text-sm font-semibold text-[#365b43] shadow-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#365b43] dark:border-white/15 dark:bg-[#242a22] dark:text-[#c4d5bd] dark:hover:bg-[#2b3229]">
+            {locale === 'en' ? 'See local businesses' : 'Ver negocios locales'}<ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
       </section>
 
       <section id="propiedades" className="mx-auto w-full px-5 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16">
