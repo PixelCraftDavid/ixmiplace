@@ -3,6 +3,9 @@ import { Store } from 'lucide-react';
 
 import { recordBusinessAdMetric, type PublicBusinessAd } from '../../lib/business-ads';
 
+const MARQUEE_SPEED_PX_PER_SECOND = 58;
+const MIN_MARQUEE_CYCLE_SECONDS = 20;
+
 interface BusinessAdMarqueeProps {
   ads: PublicBusinessAd[];
   locale: string;
@@ -62,7 +65,7 @@ export function BusinessAdMarquee({ ads, locale }: BusinessAdMarqueeProps) {
       const neededCopies = Math.max(1, Math.ceil(viewport.clientWidth / stride));
       setCopiesPerGroup((current) => current === neededCopies ? current : neededCopies);
       const groupWidth = group.scrollWidth || stride * neededCopies;
-      setDurationSeconds(Math.max(24, groupWidth / 42));
+      setDurationSeconds(Math.max(MIN_MARQUEE_CYCLE_SECONDS, groupWidth / MARQUEE_SPEED_PX_PER_SECOND));
     };
 
     updateMeasurements();

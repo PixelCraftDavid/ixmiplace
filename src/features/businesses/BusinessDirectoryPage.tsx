@@ -186,10 +186,11 @@ function BusinessCard({ profile, now, featured = false, onContact, english }: {
   english: boolean;
 }) {
   const highlighted = featured || isFeaturedNow(profile, now);
-  const hasBanner = highlighted && Boolean(profile.desktopImageUrl);
+  const hasBanner = profile.package !== 'listing' && Boolean(profile.desktopImageUrl);
+  const bannerAspect = highlighted ? 'aspect-[4/5] bg-[#203126] sm:aspect-[5120/1080]' : 'aspect-[16/10] bg-[#203126] sm:aspect-[16/7]';
   return (
     <article data-profile-impression="" data-profile-id={profile.id} className={`overflow-hidden rounded-3xl border bg-white shadow-[0_10px_32px_rgba(31,43,31,.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(31,43,31,.12)] dark:border-white/10 dark:bg-[#242a22] ${highlighted ? 'border-[#d5a954] ring-1 ring-[#d5a954]/40 xl:col-span-2' : 'border-[#e6dfcf]'}`}>
-      <div className={`relative flex items-center justify-center overflow-hidden ${hasBanner ? 'aspect-[4/5] bg-[#203126] sm:aspect-[5120/1080]' : 'h-36 bg-[radial-gradient(circle_at_75%_5%,#d9e5d2,transparent_45%),linear-gradient(135deg,#f8f4e9,#e8eee3)] dark:bg-[radial-gradient(circle_at_75%_5%,#445441,transparent_45%),linear-gradient(135deg,#2b3027,#20281f)]'}`}>
+      <div className={`relative flex items-center justify-center overflow-hidden ${hasBanner ? bannerAspect : 'h-36 bg-[radial-gradient(circle_at_75%_5%,#d9e5d2,transparent_45%),linear-gradient(135deg,#f8f4e9,#e8eee3)] dark:bg-[radial-gradient(circle_at_75%_5%,#445441,transparent_45%),linear-gradient(135deg,#2b3027,#20281f)]'}`}>
         {hasBanner ? <picture className="absolute inset-0"><source media="(max-width: 767px)" srcSet={profile.mobileImageUrl} /><img src={profile.desktopImageUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /></picture>
           : <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/80 bg-white/75 text-[#426b4d] shadow-sm backdrop-blur dark:border-white/10 dark:bg-[#1c211a]/75 dark:text-[#c4d5bd]"><Store className="h-7 w-7" aria-hidden="true" /></div>}
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
