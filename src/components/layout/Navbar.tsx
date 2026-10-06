@@ -13,12 +13,15 @@ export function Navbar() {
   const { fbUser, profile } = useAuth();
   const nav = useNavigate();
   const { pathname } = useLocation();
-  const overDarkHero = pathname === '/';
+  const isHome = pathname === '/';
+  // En la portada la cabecera sigue el tema global.
+  const overDarkHero = false;
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const menuRef = useRef<HTMLDivElement>(null);
   const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null);
+  const themeTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function logout() {
     await signOut(auth);
@@ -119,8 +122,23 @@ export function Navbar() {
 
   function toggleTheme() {
     const nextDarkMode = !darkMode;
+    const root = document.documentElement;
+
+    if (themeTransitionTimerRef.current !== null) {
+      window.clearTimeout(themeTransitionTimerRef.current);
+      themeTransitionTimerRef.current = null;
+    }
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      root.classList.add('theme-transitioning');
+      themeTransitionTimerRef.current = window.setTimeout(() => {
+        root.classList.remove('theme-transitioning');
+        themeTransitionTimerRef.current = null;
+      }, 520);
+    }
+
     setDarkMode(nextDarkMode);
-    document.documentElement.classList.toggle('dark', nextDarkMode);
+    root.classList.toggle('dark', nextDarkMode);
     localStorage.setItem('ixmiplace:theme', nextDarkMode ? 'dark' : 'light');
   }
 
@@ -131,8 +149,8 @@ export function Navbar() {
 
   return (
     <>
-    <header className={`absolute inset-x-0 top-0 z-[60] ${overDarkHero ? 'bg-transparent' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}>
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+    <header style={isHome ? { backgroundColor: darkMode ? 'rgba(28,33,26,0.96)' : 'rgba(245,240,229,0.96)', borderColor: darkMode ? '#4b5847' : '#e3ddce' } : undefined} className={`absolute inset-x-0 top-0 z-[60] ${overDarkHero ? 'bg-transparent' : isHome ? 'border-b shadow-sm backdrop-blur-xl' : 'border-b border-cream-200 bg-cream/95 shadow-sm backdrop-blur-xl dark:border-[#4b5847] dark:bg-[#1c211a]/95'}`}>
+      <div className="mx-auto flex w-full items-center justify-between gap-2 px-5 py-4 sm:px-8 lg:gap-3 lg:px-8 xl:px-12">
         <Link to="/" className="inline-flex items-center gap-2.5">
           <img
             src="/logo-ixmiplace.jpg"
@@ -140,20 +158,38 @@ export function Navbar() {
             aria-hidden="true"
             className="h-10 w-10 rounded-xl border border-cream-200 bg-cream object-cover object-[center_34%] shadow-sm"
           />
-          <span className={`text-xl font-extrabold ${overDarkHero ? 'text-white drop-shadow-md' : 'text-ink-700 dark:text-ink-50'}`}>
-            Ixmi<span className={overDarkHero ? 'text-brand-400' : 'text-brand-600 dark:text-brand-300'}>Place</span>
+          <span className={`text-xl font-extrabold ${overDarkHero ? 'text-white drop-shadow-md' : isHome ? (darkMode ? 'text-ink-50' : 'text-[#1e3023]') : 'text-ink-700 dark:text-ink-50'}`}>
+            Ixmi<span className={overDarkHero ? 'text-brand-400' : isHome ? (darkMode ? 'text-brand-300' : 'text-[#477450]') : 'text-brand-600 dark:text-brand-300'}>Place</span>
           </span>
         </Link>
 
-        <nav aria-label={t('nav.primary')} className="flex items-center gap-2 sm:gap-3">
-          <label className={`hidden h-10 items-center gap-1.5 rounded-full border px-2 sm:inline-flex sm:px-3 ${overDarkHero ? 'border-white/30 bg-white/10 text-white' : 'border-cream-300 bg-white text-ink-700 dark:border-white/20 dark:bg-white/10 dark:text-ink-50'}`}>
+        <nav aria-label={t('nav.primary')} className="hidden items-center gap-1 lg:flex xl:gap-4">
+          <Link to="/" aria-current={pathname === '/' ? 'page' : undefined} className={`whitespace-nowrap text-xs font-semibold transition hover:text-[#e4b66e] xl:text-sm ${overDarkHero ? 'text-white' : isHome ? (darkMode ? 'text-ink-50' : 'text-[#1e3023]') : 'text-ink-700 dark:text-ink-100'}`}>
+            {t('nav.home')}
+          </Link>
+          <Link to="/propiedades" className={`whitespace-nowrap text-xs font-medium transition hover:text-[#e4b66e] xl:text-sm ${overDarkHero ? 'text-white/85' : isHome ? (darkMode ? 'text-ink-200' : 'text-[#555b54]') : 'text-ink-600 dark:text-ink-200'}`}>
+            {t('nav.properties')}
+          </Link>
+          <Link to="/roomies" className={`whitespace-nowrap text-xs font-medium transition hover:text-[#e4b66e] xl:text-sm ${overDarkHero ? 'text-white/85' : isHome ? (darkMode ? 'text-ink-200' : 'text-[#555b54]') : 'text-ink-600 dark:text-ink-200'}`}>
+            {t('nav.roommates')}
+          </Link>
+          <Link to="/#negocios-locales" className={`whitespace-nowrap text-xs font-medium transition hover:text-[#e4b66e] xl:text-sm ${overDarkHero ? 'text-white/85' : isHome ? (darkMode ? 'text-ink-200' : 'text-[#555b54]') : 'text-ink-600 dark:text-ink-200'}`}>
+            {t('nav.businesses')}
+          </Link>
+          <Link to="/publicar" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#477450] px-3 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#385f40] xl:px-5 xl:text-sm">
+            <Plus className="h-4 w-4" aria-hidden="true" />{t('nav.publish')}
+          </Link>
+        </nav>
+
+        <nav aria-label={t('nav.primary')} className="flex items-center gap-2">
+          <label className={`hidden h-10 items-center gap-1.5 rounded-full border px-2 sm:inline-flex sm:px-3 ${overDarkHero ? 'border-white/30 bg-white/10 text-white' : isHome ? (darkMode ? 'border-white/20 bg-white/10 text-ink-50' : 'border-[#d9d3c4] bg-white/80 text-[#28352a]') : 'border-cream-300 bg-white text-ink-700 dark:border-white/20 dark:bg-white/10 dark:text-ink-50'}`}>
             <Languages className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="sr-only">{t('language.label')}</span>
             <select
               aria-label={t('language.label')}
               value={locale}
               onChange={(event) => setLocale(event.target.value as Locale)}
-              className="max-w-[5.5rem] cursor-pointer appearance-none bg-transparent text-xs font-semibold outline-none sm:max-w-none sm:text-sm"
+              className="max-w-[4rem] cursor-pointer appearance-none bg-transparent text-xs font-semibold outline-none sm:max-w-[5.5rem] sm:text-sm xl:max-w-none"
             >
               <option className="text-ink-800" value="es">{t('language.spanish')}</option>
               <option className="text-ink-800" value="en">{t('language.english')}</option>
@@ -165,9 +201,9 @@ export function Navbar() {
             onClick={toggleTheme}
             aria-label={darkMode ? t('nav.light') : t('nav.dark')}
             title={darkMode ? t('nav.lightMode') : t('nav.darkMode')}
-            className={`flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition ${overDarkHero ? 'border-white/30 bg-white/10 text-white hover:bg-white/20' : 'border-cream-300 bg-white text-ink-700 shadow-sm hover:bg-cream-50 dark:border-white/20 dark:bg-white/10 dark:text-ink-50 dark:hover:bg-white/20'}`}
+            className={`flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition ${overDarkHero ? 'border-white/30 bg-white/10 text-white hover:bg-white/20' : isHome ? (darkMode ? 'border-white/20 bg-white/10 text-ink-50 shadow-sm hover:bg-white/20' : 'border-[#d9d3c4] bg-white/80 text-[#28352a] shadow-sm hover:bg-white') : 'border-cream-300 bg-white text-ink-700 shadow-sm hover:bg-cream-50 dark:border-white/20 dark:bg-white/10 dark:text-ink-50 dark:hover:bg-white/20'}`}
           >
-            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {darkMode ? <Sun key="sun" className="theme-icon-enter h-4 w-4" /> : <Moon key="moon" className="theme-icon-enter h-4 w-4" />}
           </button>
           <Link
             to="/apoyar"
@@ -176,7 +212,7 @@ export function Navbar() {
             className="motion-ease group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-rose-300/40 bg-[#d95848] text-white shadow-[0_4px_16px_rgba(117,35,28,0.22)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#c94d40] hover:shadow-[0_8px_22px_rgba(117,35,28,0.28)] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c211a] sm:w-auto sm:gap-1.5 sm:px-3"
           >
             <Heart className="h-4 w-4 fill-current transition-transform duration-300 group-hover:scale-110 group-active:scale-95" />
-            <span className="sr-only sm:not-sr-only sm:text-sm sm:font-semibold">{t('nav.supportShort')}</span>
+            <span className="sr-only xl:not-sr-only xl:text-sm xl:font-semibold">{t('nav.supportShort')}</span>
           </Link>
           {fbUser ? (
             <div className="relative hidden sm:block" ref={menuRef}>
@@ -186,7 +222,7 @@ export function Navbar() {
                 onClick={() => setMenuOpen((v) => !v)}
                 aria-haspopup="true"
                 aria-expanded={menuOpen}
-                className={`flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3 text-sm backdrop-blur-md transition ${overDarkHero ? 'border-white/30 bg-white/10 text-white hover:bg-white/20' : 'border-cream-300 bg-white text-ink-700 shadow-sm hover:bg-cream-50 dark:border-white/20 dark:bg-white/10 dark:text-ink-50 dark:hover:bg-white/20'}`}
+                className={`flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3 text-sm backdrop-blur-md transition ${overDarkHero ? 'border-white/30 bg-white/10 text-white hover:bg-white/20' : isHome ? (darkMode ? 'border-white/20 bg-white/10 text-ink-50 shadow-sm hover:bg-white/20' : 'border-[#d9d3c4] bg-white/80 text-[#28352a] shadow-sm hover:bg-white') : 'border-cream-300 bg-white text-ink-700 shadow-sm hover:bg-cream-50 dark:border-white/20 dark:bg-white/10 dark:text-ink-50 dark:hover:bg-white/20'}`}
               >
                 {profile?.photoURL ? (
                   <img
@@ -200,7 +236,7 @@ export function Navbar() {
                     <User className="h-4 w-4" />
                   </span>
                 )}
-                <span className="hidden sm:inline">
+                <span className="hidden 2xl:inline">
                   {profile?.displayName ?? fbUser.email}
                 </span>
                 <ChevronDown
@@ -323,6 +359,11 @@ export function Navbar() {
             {mobileDrawerOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
           </button>
         </nav>
+        {isHome && (
+          <p className="hidden shrink-0 -rotate-3 font-serif text-[0.9rem] italic leading-tight text-[#243b2b] dark:text-[#f1ca85] 2xl:block">
+            Ixmiquilpan<br />también es hogar ♡
+          </p>
+        )}
       </div>
     </header>
       {createPortal(<div data-open={mobileDrawerOpen} className="mobile-menu-stage pointer-events-none fixed inset-0 z-[49] sm:hidden" aria-hidden={!mobileDrawerOpen}>
@@ -372,7 +413,7 @@ export function Navbar() {
             </>}
             <div className="mx-4 my-3 border-t border-white/25" />
             <button type="button" onClick={toggleTheme} className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left text-sm text-white/95 transition duration-200 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80">
-              {darkMode ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
+              {darkMode ? <Sun key="sun" className="theme-icon-enter h-4 w-4" aria-hidden="true" /> : <Moon key="moon" className="theme-icon-enter h-4 w-4" aria-hidden="true" />}
               {darkMode ? t('nav.lightMode') : t('nav.darkMode')}
             </button>
             <Link to="/apoyar" aria-current={pathname === '/apoyar' ? 'page' : undefined} className={mobileNavItemClass('/apoyar')}><Heart className="h-4 w-4 text-rose-100" aria-hidden="true" />{t('nav.supportShort')}</Link>

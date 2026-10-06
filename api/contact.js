@@ -9,7 +9,7 @@ const GLOBAL_DAILY_LIMIT = 30;
 const PER_LISTING_DAILY_LIMIT = 2;
 const IP_DAILY_LIMIT = 80;
 const RATE_LIMIT_RETENTION_MS = 8 * 24 * 60 * 60 * 1000;
-const PHONE_CONSENT_VERSIONS = new Set(['2026-09-30-v4', '2026-10-03-v8', '2026-10-03-v9']);
+const PHONE_CONSENT_VERSIONS = new Set(['2026-09-30-v4', '2026-10-03-v8', '2026-10-06-v11']);
 
 function respond(res, status, body) {
   return res.status(status).json(body);
@@ -114,7 +114,7 @@ export default async function handler(req, res) {
     const db = getFirestore(app);
     const userSnap = await db.collection('users').doc(decoded.uid).get();
     const user = userSnap.data();
-    if (!user || user.isBanned === true || user.privacyConsentVersion !== '2026-10-03-v9') {
+    if (!user || user.isBanned === true || user.privacyConsentVersion !== '2026-10-06-v11') {
       return respond(res, 403, { error: 'Cuenta no autorizada.' });
     }
 

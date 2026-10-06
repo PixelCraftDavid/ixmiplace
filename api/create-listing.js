@@ -4,8 +4,8 @@ import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { listingCreateRuleErrors } from '../src/features/listings/listingCreateRuleChecks.js';
 
 const EXPECTED_PROJECT_ID = 'ixmiplace';
-const TERMS_VERSION = '2026-10-03-v5';
-const PRIVACY_NOTICE_VERSION = '2026-10-03-v9';
+const TERMS_VERSION = '2026-10-06-v7';
+const PRIVACY_NOTICE_VERSION = '2026-10-06-v11';
 const LISTING_CONSENT_VERSION = '2026-09-26';
 const LISTING_LIFETIME_DAYS = 30;
 

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { ArrowRight, House, Users } from 'lucide-react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Store } from 'lucide-react';
 
 import { AuthProvider } from '../features/auth/AuthContext';
 import { RequireAuth } from '../features/auth/RequireAuth';
@@ -21,7 +21,7 @@ import { CreateRoommateListingPage } from '../features/listings/CreateRoommateLi
 import { EditListingPage } from '../features/listings/EditListingPage';
 import { MyListingsPage } from '../features/listings/MyListingsPage';
 import { ListingDetailPage } from '../features/listings/ListingDetailPage';
-import { ListingsFeed } from '../features/listings/ListingsFeed';
+import { HomeCompleteMapSection, ListingsFeed } from '../features/listings/ListingsFeed';
 import { RoommatesPage } from '../features/listings/RoommatesPage';
 import { ListingHistoryPage } from '../features/listings/ListingHistoryPage';
 
@@ -41,48 +41,117 @@ import { NotFoundPage } from '../components/layout/NotFoundPage';
 import { RouteMetadata } from '../components/seo/PageMeta';
 import { AnalyticsConsent } from '../components/seo/AnalyticsConsent';
 import { LanguageProvider, useLanguage } from '../lib/i18n';
+import { loadPublicBusinessAds, recordBusinessAdMetric, type PublicBusinessAd } from '../lib/business-ads';
+import type { Listing } from '../types/models';
 
 function HomePage() {
   const { locale, t } = useLanguage();
+  const [mapListings, setMapListings] = useState<Listing[]>([]);
+  const [businessAds, setBusinessAds] = useState<PublicBusinessAd[]>([]);
+  const [businessAdIndex, setBusinessAdIndex] = useState(0);
+  useEffect(() => {
+    let current = true;
+    void loadPublicBusinessAds().then((ads) => { if (current) setBusinessAds(ads); }).catch(() => {});
+    return () => { current = false; };
+  }, []);
+  useEffect(() => {
+    if (businessAds.length < 2) return;
+    const interval = window.setInterval(() => setBusinessAdIndex((index) => (index + 1) % businessAds.length), 12_000);
+    return () => window.clearInterval(interval);
+  }, [businessAds.length]);
+  const visibleBusinessAd = businessAds.length ? businessAds[businessAdIndex % businessAds.length] : undefined;
+  useEffect(() => {
+    if (!visibleBusinessAd || typeof IntersectionObserver === 'undefined') return;
+    const element = document.getElementById('business-ad-current');
+    if (!element) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.5)) return;
+      const key = `ixmiplace:business-ad-seen:${visibleBusinessAd.id}`;
+      try {
+        if (sessionStorage.getItem(key)) return;
+        sessionStorage.setItem(key, '1');
+      } catch { /* Si el almacenamiento está bloqueado, el límite del servidor sigue vigente. */ }
+      void recordBusinessAdMetric(visibleBusinessAd.id, 'impressions');
+    }, { threshold: 0.5 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [visibleBusinessAd]);
   return (
-    <main className="min-h-screen bg-cream">
+    <main className="min-h-screen bg-[#f5f0e5] dark:bg-[#1c211a]">
       <Hero />
 
       {locale === 'ote' && (
-        <p className="mx-auto max-w-7xl px-5 pt-4 text-xs text-ink-500 sm:px-8 lg:px-12" lang="es-MX">
+        <p className="mx-auto w-full px-5 pt-4 text-xs text-ink-500 sm:px-8 lg:px-12" lang="es-MX">
           {t('language.review')}
         </p>
       )}
-      <section aria-labelledby="home-search-heading" className="mx-auto max-w-7xl px-5 pb-4 pt-10 sm:px-8 lg:px-12">
-        <h2 id="home-search-heading" className="mb-5 text-xl font-bold tracking-tight text-ink-800 dark:text-white sm:text-2xl">
-          {t('home.choose')}
-        </h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <a href="#propiedades" className="group rounded-2xl border border-ink-700/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-md dark:border-white/10 dark:bg-[#242a22] sm:p-6">
-            <span className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-800 dark:bg-brand-900/30 dark:text-brand-200">
-              <House className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <h3 className="text-lg font-bold text-ink-800 dark:text-white">{t('home.propertiesTitle')}</h3>
-            <p className="mt-1 text-sm leading-relaxed text-ink-500 dark:text-ink-300">{t('home.propertiesBody')}</p>
-            <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-800 dark:text-brand-200">
-              {t('home.propertiesAction')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-            </span>
-          </a>
-          <Link to="/roomies" className="group rounded-2xl border border-brand-700/20 bg-brand-50/70 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-500/50 hover:shadow-md dark:border-brand-200/15 dark:bg-brand-900/10 sm:p-6">
-            <span className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-white text-brand-800 dark:bg-white/10 dark:text-brand-200">
-              <Users className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <h3 className="text-lg font-bold text-ink-800 dark:text-white">{t('home.roommatesTitle')}</h3>
-            <p className="mt-1 text-sm leading-relaxed text-ink-500 dark:text-ink-300">{t('home.roommatesBody')}</p>
-            <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-800 dark:text-brand-200">
-              {t('home.roommatesAction')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-            </span>
-          </Link>
+      <section id="negocios-locales" aria-labelledby="local-businesses-heading" className="mx-auto w-full px-5 pb-6 pt-5 sm:px-8 lg:px-12">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-[#263629] dark:text-ink-100">
+          <div className="flex flex-wrap items-center gap-2">
+            <span>{t('home.businessEyebrow')}</span>
+            <span className="rounded-full bg-[#dce5d7] px-3 py-1 text-[0.62rem] tracking-[0.08em] text-[#365b43] dark:bg-white/10 dark:text-[#f1ca85]">{t('home.businessSponsored')}</span>
+          </div>
+          <span className="normal-case tracking-normal text-ink-500 dark:text-ink-300">{t('home.businessDirectContact')}</span>
         </div>
+        {visibleBusinessAd ? <article id="business-ad-current" className="group relative isolate h-[24rem] overflow-hidden rounded-[1.75rem] bg-[#223127] shadow-[0_24px_60px_rgba(31,43,31,0.16)] sm:h-[27rem] sm:rounded-[2rem] lg:h-[22rem]">
+          <picture className="absolute inset-0"><source media="(max-width: 767px)" srcSet={visibleBusinessAd.mobileImageUrl}/><img src={visibleBusinessAd.desktopImageUrl} alt={`${visibleBusinessAd.businessName}: ${visibleBusinessAd.headline}`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.015]"/></picture>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#142019]/95 via-[#142019]/50 to-[#142019]/10 lg:bg-gradient-to-r lg:from-[#142019]/95 lg:via-[#142019]/75 lg:to-transparent" aria-hidden="true"/>
+          <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-start p-5 text-white sm:p-8 lg:inset-y-0 lg:right-auto lg:max-w-[58%] lg:justify-center lg:p-10">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[#f1ca85] backdrop-blur-sm"><Store className="h-3.5 w-3.5"/>{visibleBusinessAd.category} · Anuncio patrocinado</span>
+            <p className="mt-4 text-sm font-semibold text-white/80">{visibleBusinessAd.businessName}</p>
+            <h2 id="local-businesses-heading" className="mt-1 max-w-2xl text-2xl font-bold leading-tight tracking-[-0.035em] sm:text-3xl lg:text-4xl">{visibleBusinessAd.headline}</h2>
+            <p className="mt-2 line-clamp-3 max-w-xl text-sm leading-6 text-white/80 sm:text-base">{visibleBusinessAd.description}</p>
+            {visibleBusinessAd.offerText && <p className="mt-3 rounded-full bg-[#e4b66e] px-3 py-1.5 text-xs font-bold text-[#263629]">{visibleBusinessAd.offerText}</p>}
+            <a href={visibleBusinessAd.ctaUrl} target="_blank" rel="noopener noreferrer" onClick={() => void recordBusinessAdMetric(visibleBusinessAd.id, 'clicks')} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/50 bg-white px-5 py-2.5 text-sm font-bold text-[#203126] shadow-lg transition hover:-translate-y-0.5 hover:bg-[#f1ca85]">{visibleBusinessAd.ctaLabel}<span aria-hidden="true">→</span></a>
+          </div>
+          {businessAds.length > 1 && <div className="absolute right-4 top-4 z-10 rounded-full border border-white/25 bg-black/30 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">{businessAdIndex + 1} / {businessAds.length}</div>}
+        </article> : <div className="relative isolate grid overflow-hidden rounded-[1.75rem] bg-[#223127] shadow-[0_24px_60px_rgba(31,43,31,0.16)] sm:rounded-[2rem] lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="relative z-10 flex flex-col justify-center p-6 text-white sm:p-9 lg:p-11">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.13em] text-white/90">
+                <Store className="h-3.5 w-3.5 text-[#e4b66e]" aria-hidden="true" />
+                {t('home.businessEyebrow')}
+              </span>
+              <span className="rounded-full bg-[#e4b66e] px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-[#263629]">
+                {t('home.businessComingSoon')}
+              </span>
+            </div>
+            <h2 id="local-businesses-heading" className="max-w-xl text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-4xl">
+              {t('home.businessTitle')}
+            </h2>
+            <p className="mt-4 max-w-lg text-sm leading-6 text-white/75 sm:text-base sm:leading-7">
+              {t('home.businessBody')}
+            </p>
+            <div className="mt-7 inline-flex w-fit items-center gap-2 border-t border-white/15 pt-4 text-xs font-medium text-white/65 sm:text-sm">
+              <span className="h-2 w-2 rounded-full bg-[#e4b66e]" aria-hidden="true" />
+              {t('home.businessNote')}
+            </div>
+          </div>
+          <div className="relative min-h-52 overflow-hidden sm:min-h-64 lg:min-h-[22rem]">
+            <img
+              src="/images/ixmiquilpan-hero.jpg"
+              alt="Plaza principal de Ixmiquilpan"
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover object-center opacity-90"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#15221a]/75 via-[#15221a]/15 to-transparent lg:bg-gradient-to-r lg:from-[#223127] lg:via-[#223127]/25 lg:to-transparent" aria-hidden="true" />
+            <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-white/20 bg-[#17231a]/65 p-4 text-white shadow-lg backdrop-blur-md sm:bottom-6 sm:left-6 sm:right-6 sm:p-5 lg:bottom-8 lg:left-8">
+              <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-[#f1ca85]">{t('home.businessPreviewLabel')}</p>
+              <p className="mt-1 text-lg font-semibold tracking-tight sm:text-xl">{t('home.businessPreviewTitle')}</p>
+            </div>
+          </div>
+        </div>}
       </section>
-      <section id="propiedades" className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-        <ListingsFeed mode="properties" />
+
+      <section id="propiedades" className="mx-auto w-full px-5 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16">
+        <ListingsFeed mode="properties" preview viewAllHref="/propiedades" viewAllLabel={t('home.viewAllProperties')} onListingsChange={setMapListings} />
       </section>
+
+      <section id="roomies-destacados" className="mx-auto w-full px-5 pb-14 sm:px-8 sm:pb-20 lg:px-12 lg:pb-24">
+        <ListingsFeed mode="roommates" preview viewAllHref="/roomies" viewAllLabel={t('home.viewRoommates')} />
+      </section>
+
+      <HomeCompleteMapSection listings={mapListings} />
     </main>
   );
 }
@@ -93,6 +162,16 @@ function SkipToContentLink() {
     <a href="#main-content" className="sr-only z-50 rounded-lg bg-white px-4 py-3 text-ink focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
       {t('skip')}
     </a>
+  );
+}
+
+function AllPropertiesPage() {
+  return (
+    <main className="min-h-screen bg-cream px-5 pb-16 pt-28 dark:bg-[#1c211a] sm:px-8 lg:px-12">
+      <section id="propiedades" className="mx-auto max-w-7xl">
+        <ListingsFeed mode="properties" />
+      </section>
+    </main>
   );
 }
 
@@ -239,6 +318,8 @@ function AppContent() {
               <Route path="/publicar" element={<CreateListingPage />} />
 
               <Route path="/publicar-roomie" element={<CreateRoommateListingPage />} />
+
+              <Route path="/propiedades" element={<AllPropertiesPage />} />
 
               <Route path="/roomies" element={<RoommatesPage />} />
 

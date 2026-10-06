@@ -72,7 +72,7 @@ export function RouteMetadata() {
   const { pathname } = useLocation();
   // Keep the raw pathname: malformed percent-encoding must not break rendering.
   const path = pathname;
-  const protectedRoute = /^\/(?:login|register|recuperar-contrasena|verify-email|complete-profile|perfil|publicar|publicar-roomie|roomies|editar|mis-publicaciones|favoritos|notificaciones|mensajes|historial|admin|aceptacion-legal|cuenta-suspendida)(?:\/|$)/.test(path);
+  const protectedRoute = /^\/(?:login|register|recuperar-contrasena|verify-email|complete-profile|perfil|publicar|publicar-roomie|propiedades|roomies|editar|mis-publicaciones|favoritos|notificaciones|mensajes|historial|admin|aceptacion-legal|cuenta-suspendida)(?:\/|$)/.test(path);
   const routeCopy: Array<[RegExp, string, string]> = [
     [/^\/login\/?$/, 'Inicia sesión | IxmiPlace', 'Inicia sesión para consultar y publicar opciones de vivienda en Ixmiquilpan.'],
     [/^\/register\/?$/, 'Crea tu cuenta | IxmiPlace', 'Crea una cuenta para publicar y guardar opciones de vivienda en IxmiPlace.'],
@@ -82,6 +82,7 @@ export function RouteMetadata() {
     [/^\/aviso-de-privacidad\/?$/, 'Aviso de privacidad | IxmiPlace', 'Conoce cómo IxmiPlace trata los datos personales y protege la información de sus usuarios.'],
     [/^\/terminos\/?$/, 'Términos y condiciones | IxmiPlace', 'Consulta las reglas para publicar y consultar opciones de vivienda en IxmiPlace.'],
     [/^\/apoyar\/?$/, 'Apoya IxmiPlace | Vivienda local en Ixmiquilpan', 'Conoce el proyecto IxmiPlace y cómo puedes apoyarlo de forma voluntaria.'],
+    [/^\/propiedades\/?$/, 'Propiedades en Ixmiquilpan | IxmiPlace', 'Explora propiedades y anuncios de vivienda en Ixmiquilpan, Hidalgo.'],
     [/^\/propietario\/[^/]+\/?$/, 'Perfil público | IxmiPlace', 'Consulta el perfil público de una persona anunciante en IxmiPlace.'],
     [/^\/listing\/[^/]+\/?$/, 'Publicación de vivienda en Ixmiquilpan | IxmiPlace', 'Consulta los detalles de esta opción de renta, venta o hospedaje en Ixmiquilpan, Hidalgo.'],
     [/^\/roomies\/?$/, 'Espacios compartidos | IxmiPlace', 'Encuentra anuncios de espacios compartidos y personas que buscan roomie en Ixmiquilpan, Hidalgo.'],

@@ -11,6 +11,7 @@ import { formatPrice } from '../../lib/utils';
 import { optimizedUrl } from '../../lib/cloudinary';
 import { categoryEmoji, priceUnitLabel } from '../../lib/constants';
 import type { Listing } from '../../types/models';
+import { useLanguage } from '../../lib/i18n';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -23,9 +24,11 @@ const DEFAULT_CENTER: LatLngLiteral = { lat: 20.4833, lng: -99.2167 };
 
 interface ListingsMapProps {
   listings: Listing[];
+  mode?: 'properties' | 'roommates';
 }
 
-export function ListingsMap({ listings }: ListingsMapProps) {
+export function ListingsMap({ listings, mode = 'properties' }: ListingsMapProps) {
+  const { t } = useLanguage();
   const mappedListings = listings.filter(
     (listing) => Number.isFinite(listing.lat) && Number.isFinite(listing.lng)
   );
@@ -33,23 +36,25 @@ export function ListingsMap({ listings }: ListingsMapProps) {
   const bounds = getBounds(mappedListings);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-cream-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-cream-200 px-4 py-3">
+    <div className="overflow-hidden rounded-2xl border border-cream-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#242a22]">
+      <div className="flex items-center justify-between border-b border-cream-200 px-4 py-3 dark:border-white/10">
         <div>
-          <h3 className="font-bold text-ink">Propiedades en el mapa</h3>
-          <p className="mt-0.5 text-xs text-ink-400">
-            {mappedListings.length} {mappedListings.length === 1 ? 'ubicación' : 'ubicaciones'} disponibles
+          <h3 className="font-bold text-ink dark:text-ink-50">
+            {mode === 'roommates' ? t('feed.mapRoommatesTitle') : t('feed.mapPropertiesTitle')}
+          </h3>
+          <p className="mt-0.5 text-xs text-ink-400 dark:text-ink-300">
+            {mappedListings.length} {mappedListings.length === 1 ? t('feed.mapLocation') : t('feed.mapLocations')}
           </p>
         </div>
         <MapPin className="h-5 w-5 text-brand-500" />
       </div>
 
       {mappedListings.length === 0 ? (
-        <div className="flex h-72 items-center justify-center px-6 text-center text-sm text-ink-500">
-          Las propiedades de este resultado todavía no tienen una ubicación en el mapa.
+        <div className="flex h-72 items-center justify-center px-6 text-center text-sm text-ink-500 dark:text-ink-300">
+          {t('feed.mapNoLocations')}
         </div>
       ) : (
-        <div className="h-[28rem]">
+        <div className="h-[min(72svh,48rem)] min-h-[24rem]">
           <MapContainer
             center={center}
             zoom={13}

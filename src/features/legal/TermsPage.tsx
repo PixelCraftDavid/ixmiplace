@@ -60,27 +60,32 @@ export function TermsPage() {
             <p>El apoyo mostrado en la página correspondiente es voluntario, se transfiere fuera de IxmiPlace y está destinado a apoyar a la mamá del creador. No es requisito para usar la plataforma ni compra una publicación, posición preferente o servicio. IxmiPlace no inicia, procesa, confirma ni revierte transferencias. Las gestiona el banco o Mercado Pago según sus propias condiciones. El apoyo es entre particulares y no se ofrece como donativo deducible ni genera recibo fiscal de IxmiPlace.</p>
           </TermsSection>
 
-          <TermsSection title="8. Disponibilidad, terceros y responsabilidad">
+          <TermsSection title="8. Publicidad de negocios locales">
+            <p>IxmiPlace puede mostrar anuncios patrocinados de negocios locales. La publicidad es general y no se selecciona mediante perfiles personales. Cada negocio es responsable de la veracidad y autorización de su nombre, imágenes, promociones, precios y enlaces. El responsable de IxmiPlace revisa y administra las campañas, pero no garantiza productos, servicios, disponibilidad, resultados ni ofertas del negocio.</p>
+            <p>Las campañas se acuerdan directamente con el responsable de IxmiPlace por periodo y precio, y no se contratan ni cobran dentro de la aplicación. Un botón del anuncio puede llevar a un sitio o canal externo del negocio; al abrirlo, el visitante queda sujeto también a las condiciones y avisos de ese tercero. Las estadísticas informan conteos aproximados de impresiones y clics, no personas únicas ni resultados de venta.</p>
+          </TermsSection>
+
+          <TermsSection title="9. Disponibilidad, terceros y responsabilidad">
             <p>El servicio está en desarrollo y puede experimentar errores, mantenimiento, interrupciones, pérdida temporal de acceso o cambios de funciones. Procuraremos restablecerlo y proteger la información conforme a las medidas razonables disponibles, pero no ofrecemos disponibilidad ininterrumpida ni un servicio de respaldo o archivo permanente. Conserva copias de la información que necesites.</p>
             <p>IxmiPlace depende de proveedores externos de autenticación, alojamiento, base de datos, mapas, imágenes, mensajería y pagos. Sus servicios pueden variar o interrumpirse; los sitios externos se rigen por sus propios términos y avisos. No controlamos sus decisiones o disponibilidad. Esta cláusula no excluye la responsabilidad que legalmente corresponda al responsable de IxmiPlace por sus propios actos u omisiones.</p>
             <p>En la medida permitida por la ley, no respondemos por la veracidad de declaraciones de usuarios, actos de terceros ni acuerdos celebrados directamente entre ellos. Cada persona es responsable de sus actos, publicaciones y obligaciones. Nada en estos términos pretende excluir responsabilidad por dolo, negligencia atribuible, incumplimiento de deberes legales, daños que no puedan limitarse por ley, ni derechos irrenunciables de consumidores.</p>
           </TermsSection>
 
-          <TermsSection title="9. Indemnización limitada">
+          <TermsSection title="10. Indemnización limitada">
             <p>Si una persona usuaria incumple materialmente estos términos, infringe derechos de terceros o realiza una conducta ilícita y ello genera un reclamo contra el responsable, se obliga, en la medida permitida por la legislación aplicable, a cooperar razonablemente y a responder por los daños directos que sean consecuencia comprobable de su conducta. Esta cláusula no impone renuncia a derechos, no cubre daños causados por el propio responsable y no obliga a pagar multas, sanciones o gastos que legalmente no puedan trasladarse.</p>
           </TermsSection>
 
-          <TermsSection title="10. Cuenta, terminación y conservación">
+          <TermsSection title="11. Cuenta, terminación y conservación">
             <p>Puedes dejar de usar IxmiPlace y solicitar eliminar tu cuenta desde el perfil. La eliminación desactiva el acceso y suprime o desasocia datos operativos conforme al Aviso de Privacidad; cierta información puede conservarse bloqueada por el tiempo necesario para obligaciones legales, seguridad o controversias. Publicaciones retiradas, mensajes enviados o copias descargadas previamente por terceros pueden no desaparecer de sus sistemas.</p>
             <p>Podemos suspender o terminar el acceso por incumplimientos, riesgos de seguridad o requerimiento legal, considerando la gravedad y procurando comunicar el motivo y la vía de revisión cuando sea legal y seguro hacerlo.</p>
           </TermsSection>
 
-          <TermsSection title="11. Ley, jurisdicción y derechos de consumidores">
+          <TermsSection title="12. Ley, jurisdicción y derechos de consumidores">
             <p>Estos términos se rigen por las leyes aplicables de los Estados Unidos Mexicanos. Si una controversia corresponde a tribunales, podrán conocer los órganos jurisdiccionales competentes de Hidalgo, incluido Ixmiquilpan cuando legalmente corresponda. Esta cláusula no impide acudir a PROFECO u otra autoridad competente, ni limita reglas imperativas de competencia territorial o derechos de consumidores.</p>
             <p>IxmiPlace no busca excluir la aplicación de la Ley Federal de Protección al Consumidor cuando resulte aplicable. Cualquier información sobre condiciones del servicio debe entenderse sin perjuicio de los derechos reconocidos por esa ley.</p>
           </TermsSection>
 
-          <TermsSection title="12. Cambios y contacto">
+          <TermsSection title="13. Cambios y contacto">
             <p>Publicaremos nuevas versiones con fecha y número de versión, y procuraremos avisar con al menos 15 días naturales antes de un cambio material. Para cambios que alteren de forma relevante las reglas de uso, pediremos aceptación expresa antes de continuar con funciones de cuenta. Si un cambio inmediato es necesario por seguridad o por una obligación legal, podremos aplicarlo de inmediato e informarlo tan pronto como sea razonable. La falta de aceptación de una nueva versión puede impedir el acceso a funciones que dependan de ella, sin afectar derechos que la ley reconozca.</p>
             <p>Para preguntas, reclamos, reportes, solicitudes de revisión o avisos de propiedad intelectual, escribe a <a className="font-semibold text-brand-700 underline dark:text-brand-300" href="mailto:ixmiplacesupport@gmail.com">ixmiplacesupport@gmail.com</a>. El <Link className="font-semibold text-brand-700 underline dark:text-brand-300" to="/aviso-de-privacidad">Aviso de Privacidad Integral</Link> explica el tratamiento de datos y cómo ejercer derechos ARCO.</p>
           </TermsSection>

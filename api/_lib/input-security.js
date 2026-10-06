@@ -4,6 +4,8 @@ import { z } from 'zod';
 const DOC_ID_PATTERN = /^[A-Za-z0-9_-]{1,150}$/;
 const CONTROL_CHARACTERS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 const HTML_TAG = /<\s*\/?\s*[a-z][^>]*>/i;
+const BUSINESS_AD_IMAGE_URL = /^https:\/\/res\.cloudinary\.com\/ckaf3htn\/image\/upload\/.{1,1800}$/;
+const BUSINESS_AD_IMAGE_ID = /^ixmiplace\/business-ads\/[A-Za-z0-9_-]{1,100}$/;
 
 export const documentIdSchema = z.string().regex(DOC_ID_PATTERN);
 
@@ -31,6 +33,41 @@ export const requestSchemas = {
     website: z.string().trim().max(200).optional().default(''),
   }).strict(),
   metric: z.object({ listingId: documentIdSchema, metric: z.literal('viewsCount') }).strict(),
+  businessAdMetric: z.object({
+    adId: documentIdSchema,
+    metric: z.enum(['impressions', 'clicks']),
+  }).strict(),
+  businessAdAdmin: z.discriminatedUnion('action', [
+    z.object({ action: z.literal('list') }).strict(),
+    z.object({
+      action: z.literal('save'),
+      adId: documentIdSchema.optional(),
+      businessName: plainText(2, 80),
+      category: plainText(2, 40),
+      headline: plainText(4, 80),
+      description: plainText(10, 320),
+      offerText: plainText(0, 160).optional().default(''),
+      ctaLabel: plainText(2, 32),
+      ctaUrl: z.string().url().max(500).refine((value) => value.startsWith('https://')),
+      desktopImageUrl: z.string().regex(BUSINESS_AD_IMAGE_URL),
+      desktopImagePublicId: z.string().regex(BUSINESS_AD_IMAGE_ID),
+      mobileImageUrl: z.string().regex(BUSINESS_AD_IMAGE_URL),
+      mobileImagePublicId: z.string().regex(BUSINESS_AD_IMAGE_ID),
+      startsAt: z.number().int().positive(),
+      endsAt: z.number().int().positive(),
+      status: z.enum(['draft', 'scheduled', 'active', 'paused']),
+      contactName: plainText(2, 80),
+      contactPhone: z.string().trim().regex(/^\+?[0-9 ()-]{8,24}$/),
+      contactEmail: z.string().trim().email().max(160).or(z.literal('')),
+      agreedPriceMxn: z.number().min(0).max(1000000),
+      paymentStatus: z.enum(['unpaid', 'paid', 'complimentary']),
+      consentConfirmed: z.literal(true),
+    }).strict(),
+    z.object({
+      action: z.literal('archive'),
+      adId: documentIdSchema,
+    }).strict(),
+  ]),
   push: z.object({
     type: z.enum(['listing_created', 'message_created', 'notification_created', 'favorite_created', 'report_created']),
     id: documentIdSchema,

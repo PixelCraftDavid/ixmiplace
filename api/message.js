@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     ]);
     const profile = userSnap.data();
     const listing = listingSnap.data();
-    if (!profile || profile.isBanned === true || profile.privacyConsentVersion !== '2026-10-03-v9') {
+    if (!profile || profile.isBanned === true || profile.privacyConsentVersion !== '2026-10-06-v11') {
       return respond(res, 403, { error: 'Cuenta no autorizada.' });
     }
     if (!listingSnap.exists || listing.status !== 'published' || !Number.isSafeInteger(listing.expiresAt) || listing.expiresAt <= Date.now()) return respond(res, 404, { error: 'Anuncio no disponible.' });
@@ -137,7 +137,7 @@ export default async function handler(req, res) {
         } : {}),
         status: 'unread',
         createdAt: now.toMillis(),
-        privacyConsentVersion: '2026-10-03-v9',
+        privacyConsentVersion: '2026-10-06-v11',
         privacyConsentAt: now,
       });
       return true;

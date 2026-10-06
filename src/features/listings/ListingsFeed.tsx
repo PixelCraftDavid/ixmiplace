@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { CircleAlert, Map, Search, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowRight, CircleAlert, Map, Search, SlidersHorizontal, X } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { CATEGORIES, OPERATIONS } from '../../lib/constants';
 import { ListingCard } from './ListingCard';
@@ -30,9 +31,19 @@ const DATE_FILTERS: { value: DateFilter; label: string }[] = [
 const PAGE_SIZE = 9;
 const MAX_RETRIES = 3;
 
-export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
+type ListingsFeedProps = {
+  mode?: ListingsMode;
+  preview?: boolean;
+  forceLight?: boolean;
+  viewAllHref?: string;
+  viewAllLabel?: string;
+  onListingsChange?: (listings: Listing[]) => void;
+};
+
+export function ListingsFeed({ mode = 'properties', preview = false, forceLight = false, viewAllHref, viewAllLabel, onListingsChange }: ListingsFeedProps) {
   const { fbUser } = useAuth();
   const { locale, t } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +54,7 @@ export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
   // Filtros
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<ListingCategory | 'all'>('all');
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [operation, setOperation] = useState<ListingOperation | 'all'>('all');
   const [sort, setSort] = useState<SortOption>('recent');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
@@ -50,6 +62,15 @@ export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
   const [showMap, setShowMap] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [clock, setClock] = useState(Date.now());
+
+  useEffect(() => {
+    const requestedCategory = searchParams.get('category');
+    const isValidCategory = requestedCategory === 'all' || CATEGORIES.some((item) => item.value === requestedCategory);
+    const requestedPrice = Number(searchParams.get('maxPrice'));
+    setCategory(isValidCategory && requestedCategory ? requestedCategory as ListingCategory | 'all' : 'all');
+    setSearch(searchParams.get('search') ?? '');
+    setMaxPrice(Number.isFinite(requestedPrice) && requestedPrice > 0 ? requestedPrice : null);
+  }, [searchParams]);
 
   useEffect(() => {
     const interval = setInterval(() => setClock(Date.now()), 60_000);
@@ -166,6 +187,10 @@ export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
       );
     }
 
+    if (maxPrice !== null) {
+      result = result.filter((listing) => listing.price <= maxPrice);
+    }
+
     result = mode === 'roommates'
       ? result.filter((listing) => listing.roommateWanted === true)
       : result.filter((listing) => listing.roommateWanted !== true);
@@ -218,6 +243,7 @@ export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
     clock,
     search,
     category,
+    maxPrice,
     operation,
     sort,
     dateFilter,
@@ -227,24 +253,27 @@ export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
   const hasActiveFilters =
     search.length > 0 ||
     category !== 'all' ||
+    maxPrice !== null ||
     operation !== 'all' ||
     dateFilter !== 'all';
   const activeFilters = hasActiveFilters;
+
+  useEffect(() => {
+    onListingsChange?.(filtered);
+  }, [filtered, onListingsChange]);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
   }, [
     search,
     category,
+    maxPrice,
     operation,
     dateFilter,
     sort,
   ]);
 
-  const visibleListings = filtered.slice(
-    0,
-    visibleCount
-  );
+  const visibleListings = filtered.slice(0, preview ? 4 : visibleCount);
 
   const hasMoreListings =
     visibleCount < filtered.length;
@@ -252,12 +281,35 @@ export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
   function clearFilters() {
     setSearch('');
     setCategory('all');
+    setMaxPrice(null);
     setOperation('all');
     setDateFilter('all');
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('category');
+    nextParams.delete('search');
+    nextParams.delete('maxPrice');
+    setSearchParams(nextParams, { replace: true });
   }
 
   return (
     <div className="space-y-8">
+      {preview ? (
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1 lg:flex-nowrap">
+          <h2 className={`text-3xl font-bold tracking-[-0.04em] sm:text-4xl lg:whitespace-nowrap ${forceLight ? 'text-[#1b211b]' : 'text-ink-800 dark:text-white'}`}>
+            {mode === 'roommates' ? t('home.featuredRoommatesTitle') : t('home.featuredPropertiesTitle')}
+          </h2>
+          <p className={`text-sm sm:text-base lg:whitespace-nowrap ${forceLight ? 'text-[#64695f]' : 'text-ink-500 dark:text-ink-300'}`}>
+            {mode === 'roommates' ? t('home.featuredRoommatesBody') : t('home.featuredPropertiesBody')}
+          </p>
+        </div>
+        {viewAllHref && viewAllLabel && (
+          <Link to={viewAllHref} className="group inline-flex min-h-11 w-fit shrink-0 items-center gap-2 rounded-full px-3 text-sm font-semibold text-[#3f7049] transition hover:bg-[#e7ecdf] hover:text-[#294d32] dark:text-[#e4b66e] dark:hover:bg-white/[0.08] dark:hover:text-[#f1ca85]">
+            {viewAllLabel}<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+          </Link>
+        )}
+      </header>
+      ) : (
       <header className="flex flex-col gap-5 border-b border-ink-700/10 pb-6 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-700 dark:text-brand-200">
@@ -283,8 +335,9 @@ export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
           {mode === 'roommates' ? t('feed.roommateCommunity') : t('feed.community')}
         </span>
       </header>
+      )}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      {!preview && <div className="flex flex-col gap-3 sm:flex-row">
         <label className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-400" aria-hidden="true" />
           <input
@@ -311,20 +364,11 @@ export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
               </span>
             )}
           </button>
-          <button
-            type="button"
-            onClick={() => setShowMap((visible) => !visible)}
-            aria-pressed={showMap}
-            className={`motion-ease inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 active:translate-y-0 sm:flex-none ${showMap ? 'border-ink-800 bg-ink-800 text-white hover:bg-ink-700' : 'border-ink-700/15 bg-white text-ink-700 hover:border-brand-500/50 hover:bg-cream-50 dark:border-white/10 dark:bg-[#242a22] dark:text-white dark:hover:bg-white/[0.08]'}`}
-          >
-            <Map className="h-4 w-4" aria-hidden="true" />
-            {showMap ? t('feed.hideMap') : t('feed.showMap')}
-          </button>
         </div>
-      </div>
+      </div>}
 
       {/* Panel de filtros */}
-      {showFilters && (
+      {!preview && showFilters && (
         <div className="space-y-4 rounded-2xl border border-ink-700/10 bg-white p-4 shadow-[0_8px_28px_rgba(27,32,24,0.055)] dark:border-white/10 dark:bg-[#242a22] sm:p-5">
 
             {/* Categoría + Operación + Fecha + Orden */}
@@ -469,39 +513,72 @@ export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
         </div>
       )}
 
+      {!preview && <section aria-labelledby="complete-map-heading" className={`overflow-hidden rounded-[1.5rem] border p-5 shadow-[0_10px_35px_rgba(31,43,31,0.06)] sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-6 ${forceLight ? 'border-[#dfe3d8] bg-gradient-to-br from-[#f2f3ea] via-white to-[#e5ecdf]' : 'border-brand-800/10 bg-gradient-to-br from-[#f5f2e9] via-white to-[#e9efe7] dark:border-white/10 dark:from-[#242a22] dark:via-[#293027] dark:to-[#25332a]'}`}>
+        <div className="flex items-start gap-4">
+          <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl shadow-sm ${forceLight ? 'bg-[#e8b969] text-[#263629]' : 'bg-[#24372b] text-[#f0c77d] dark:bg-[#d49a4a] dark:text-[#1c211a]'}`}>
+            <Map className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h3 id="complete-map-heading" className={`text-lg font-semibold tracking-tight sm:text-xl ${forceLight ? 'text-[#1b211b]' : 'text-ink-800 dark:text-white'}`}>
+              {t('feed.completeMap')}
+            </h3>
+            <p className={`mt-1 max-w-2xl text-sm leading-6 ${forceLight ? 'text-[#596157]' : 'text-ink-500 dark:text-ink-300'}`}>
+              {t('feed.completeMapBody')}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowMap((visible) => !visible)}
+          aria-expanded={showMap}
+          aria-controls="complete-map-panel"
+          className={`motion-ease mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 active:translate-y-0 sm:mt-0 sm:w-auto sm:shrink-0 ${forceLight ? 'bg-[#477450] text-white hover:bg-[#385f40]' : 'bg-[#26392d] text-white hover:bg-[#34533d] dark:bg-[#e4b66e] dark:text-[#1c291e] dark:hover:bg-[#f0ca88]'}`}
+        >
+          <Map className="h-4 w-4" aria-hidden="true" />
+          {showMap ? t('feed.hideMap') : t('feed.openCompleteMap')}
+        </button>
+      </section>
+      }
+
       {/* Mapa */}
-      {showMap && (
-        <ListingsMap listings={filtered} />
+      {!preview && showMap && (
+        <div id="complete-map-panel">
+          <ListingsMap listings={filtered} mode={mode} />
+        </div>
       )}
 
       {/* Grid de resultados */}
       {loading ? (
-        <FeedSkeleton />
+        <FeedSkeleton count={preview ? 4 : 6} />
       ) : loadError ? (
         <ErrorFeed
           onRetry={() =>
             setRetryKey((k) => k + 1)
           }
           detail={errorDetail}
+          forceLight={forceLight}
         />
       ) : filtered.length === 0 ? (
         <EmptyFeed
           hasActiveFilters={activeFilters}
           onClear={clearFilters}
+          mode={mode}
+          forceLight={forceLight}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
+        <div className={`grid gap-4 sm:grid-cols-2 sm:gap-5 ${preview ? 'lg:grid-cols-4' : 'xl:grid-cols-3'}`}>
           {visibleListings.map((listing) => (
             <ListingCard
               key={listing.id}
               listing={listing}
+              forceLight={forceLight}
             />
           ))}
         </div>
       )}
 
       {/* Cargar más */}
-      {!loading &&
+      {!preview && !loading &&
         filtered.length > 0 &&
         hasMoreListings && (
           <div className="flex justify-center pt-2">
@@ -523,14 +600,46 @@ export function ListingsFeed({ mode = 'properties' }: { mode?: ListingsMode }) {
   );
 }
 
+export function HomeCompleteMapSection({ listings }: { listings: Listing[] }) {
+  const { t } = useLanguage();
+  const [showMap, setShowMap] = useState(false);
+
+  return (
+    <section aria-labelledby="complete-map-heading" className="mx-auto w-full px-5 pb-14 sm:px-8 sm:pb-20 lg:px-12">
+      <div className="overflow-hidden rounded-[1.5rem] border border-[#dfe3d8] bg-gradient-to-br from-[#f2f3ea] via-white to-[#e5ecdf] p-5 shadow-[0_10px_35px_rgba(31,43,31,0.06)] dark:border-white/10 dark:from-[#242a22] dark:via-[#293027] dark:to-[#25332a] sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-6">
+        <div className="flex items-start gap-4">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#e8b969] text-[#263629] shadow-sm">
+            <Map className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 id="complete-map-heading" className="text-lg font-semibold tracking-tight text-[#1b211b] dark:text-white sm:text-xl">{t('feed.completeMap')}</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-[#596157] dark:text-ink-300">{t('feed.completeMapBody')}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowMap((visible) => !visible)}
+          aria-expanded={showMap}
+          aria-controls="home-complete-map-panel"
+          className="motion-ease mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#477450] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#385f40] active:translate-y-0 dark:bg-[#e4b66e] dark:text-[#1c291e] dark:hover:bg-[#f0ca88] sm:mt-0 sm:w-auto sm:shrink-0"
+        >
+          <Map className="h-4 w-4" aria-hidden="true" />
+          {showMap ? t('feed.hideMap') : t('feed.openCompleteMap')}
+        </button>
+      </div>
+      {showMap && <div id="home-complete-map-panel" className="mt-5"><ListingsMap listings={listings} mode="properties" /></div>}
+    </section>
+  );
+}
+
 // ─────────────────────────────────────────────────
 // Skeleton de carga
 // ─────────────────────────────────────────────────
 
-function FeedSkeleton() {
+function FeedSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map(
+      {Array.from({ length: count }).map(
         (_, i) => (
           <div
             key={i}
@@ -558,20 +667,22 @@ function FeedSkeleton() {
 function ErrorFeed({
   onRetry,
   detail,
+  forceLight = false,
 }: {
   onRetry: () => void;
   detail?: string;
+  forceLight?: boolean;
 }) {
   return (
-    <div className="rounded-3xl border border-ink-700/10 bg-white/65 px-6 py-12 text-center shadow-[0_10px_32px_rgba(27,32,24,0.04)] dark:border-white/10 dark:bg-white/[0.035] sm:px-10 sm:py-16">
+    <div className={`rounded-3xl border px-6 py-12 text-center shadow-[0_10px_32px_rgba(27,32,24,0.04)] sm:px-10 sm:py-16 ${forceLight ? 'border-[#e3dfd3] bg-white/80' : 'border-ink-700/10 bg-white/65 dark:border-white/10 dark:bg-white/[0.035]'}`}>
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-700/15 bg-amber-500/10 text-amber-800 dark:border-amber-200/15 dark:text-amber-200">
         <CircleAlert className="h-5 w-5" aria-hidden="true" />
       </div>
       <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-400">Catálogo temporalmente inaccesible</p>
-      <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-ink-800 dark:text-white sm:text-2xl">
+      <h3 className={`mt-2 text-xl font-semibold tracking-[-0.03em] sm:text-2xl ${forceLight ? 'text-[#202820]' : 'text-ink-800 dark:text-white'}`}>
         No pudimos traer las propiedades.
       </h3>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-500 dark:text-ink-300">
+      <p className={`mx-auto mt-2 max-w-md text-sm leading-6 ${forceLight ? 'text-[#62695e]' : 'text-ink-500 dark:text-ink-300'}`}>
         Puede ser una interrupción breve. Vuelve a intentarlo en un momento.
       </p>
 
@@ -604,27 +715,31 @@ function ErrorFeed({
 function EmptyFeed({
   hasActiveFilters,
   onClear,
+  mode,
+  forceLight = false,
 }: {
   hasActiveFilters: boolean;
   onClear: () => void;
+  mode: ListingsMode;
+  forceLight?: boolean;
 }) {
   return (
-    <div className="rounded-3xl border border-ink-700/10 bg-white/65 px-6 py-12 text-center dark:border-white/10 dark:bg-white/[0.035] sm:px-10 sm:py-16">
+    <div className={`rounded-3xl border px-6 py-12 text-center sm:px-10 sm:py-16 ${forceLight ? 'border-[#e3dfd3] bg-white/80' : 'border-ink-700/10 bg-white/65 dark:border-white/10 dark:bg-white/[0.035]'}`}>
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-brand-700/10 bg-brand-700/[0.06] text-brand-800 dark:border-white/10 dark:bg-white/[0.06] dark:text-brand-200">
         <Search className="h-5 w-5" aria-hidden="true" />
       </div>
 
       <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-700 dark:text-brand-200">Explora sin prisa</p>
-      <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-ink-800 dark:text-white sm:text-2xl">
+      <h3 className={`mt-2 text-xl font-semibold tracking-[-0.03em] sm:text-2xl ${forceLight ? 'text-[#202820]' : 'text-ink-800 dark:text-white'}`}>
         {hasActiveFilters
-          ? 'No encontramos propiedades'
-          : 'Aún no hay propiedades publicadas'}
+          ? (mode === 'roommates' ? 'No encontramos espacios para compartir' : 'No encontramos propiedades')
+          : (mode === 'roommates' ? 'Aún no hay búsquedas de roomie publicadas' : 'Aún no hay propiedades publicadas')}
       </h3>
 
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-500 dark:text-ink-300">
+      <p className={`mx-auto mt-2 max-w-md text-sm leading-6 ${forceLight ? 'text-[#62695e]' : 'text-ink-500 dark:text-ink-300'}`}>
         {hasActiveFilters
           ? 'Prueba ajustando los filtros o la búsqueda.'
-          : 'Sé el primero en publicar una propiedad en Ixmiquilpan.'}
+          : (mode === 'roommates' ? 'Publica una búsqueda para encontrar a alguien con quien compartir.' : 'Sé el primero en publicar una propiedad en Ixmiquilpan.')}
       </p>
 
       {hasActiveFilters && (

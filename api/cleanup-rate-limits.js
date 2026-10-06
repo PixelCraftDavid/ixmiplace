@@ -5,7 +5,7 @@ import { Timestamp, getFirestore } from 'firebase-admin/firestore';
 import { logApiFailure, logSecurityEvent } from './_lib/input-security.js';
 
 const APP_ORIGIN = process.env.APP_ORIGIN || 'https://ixmiplace.vercel.app';
-const COLLECTIONS = ['contactRateLimits', 'abuseRateLimits', 'metricRateLimits', 'uploadSignatureLimits'];
+const COLLECTIONS = ['contactRateLimits', 'abuseRateLimits', 'metricRateLimits', 'uploadSignatureLimits', 'businessAdMetricLimits'];
 const PAGE_SIZE = 400;
 const MAX_PAGES_PER_REQUEST = 2;
 

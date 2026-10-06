@@ -13,15 +13,16 @@ import { WhatsAppContactButton } from './WhatsAppContactButton';
 
 interface Props {
   listing: Listing;
+  forceLight?: boolean;
 }
 
-export function ListingCard({ listing }: Props) {
+export function ListingCard({ listing, forceLight = false }: Props) {
   const meta = availabilityMeta(listing.availability);
-  const cover = optimizedUrl(listing.photos[0], 800, 600);
+  const cover = optimizedUrl(listing.photos[0], 960, 540);
 
   return (
-    <article className="listing-card motion-ease group overflow-hidden rounded-2xl border border-ink-700/10 bg-white shadow-[0_2px_12px_rgba(27,32,24,0.045)] transition duration-300 hover:-translate-y-1 hover:border-brand-300/70 hover:shadow-[0_16px_36px_rgba(27,32,24,0.12)] dark:border-white/10 dark:bg-[#242a22]">
-      <div className="relative aspect-[4/3] overflow-hidden bg-cream-200 dark:bg-ink-600">
+    <article className={`listing-card motion-ease group overflow-hidden rounded-2xl border shadow-[0_2px_12px_rgba(27,32,24,0.045)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(27,32,24,0.12)] ${forceLight ? 'border-[#e3dfd3] bg-[#ffffff] hover:border-[#b6c8b4]' : 'border-ink-700/10 bg-white dark:border-white/10 dark:bg-[#242a22]'}`}>
+      <div className="relative aspect-[16/9] overflow-hidden bg-cream-200 dark:bg-ink-600">
         <Link to={`/listing/${listing.id}`} className="block h-full" aria-label={`Ver ${listing.title}`}>
           {listing.photos.length > 0 ? (
             <img
@@ -29,7 +30,7 @@ export function ListingCard({ listing }: Props) {
               alt={listing.title}
               loading="lazy"
               decoding="async"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]"
             />
           ) : (
@@ -39,7 +40,15 @@ export function ListingCard({ listing }: Props) {
           )}
         </Link>
 
-        <span className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/95 px-3 py-1.5 text-xs font-semibold text-ink-700 shadow-sm backdrop-blur-sm dark:border-white/15 dark:bg-[#20251f]/95 dark:text-white">
+        <span
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-x-0 bottom-0 h-[34%] backdrop-blur-[3px] ${forceLight
+            ? 'bg-gradient-to-b from-transparent via-white/45 to-white/95'
+            : 'bg-gradient-to-b from-transparent via-white/45 to-white/95 dark:via-[#242a22]/55 dark:to-[#242a22]'
+          }`}
+        />
+
+        <span className={`absolute left-3 top-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm backdrop-blur-sm ${forceLight ? 'border-white/70 bg-white/95 text-[#384239]' : 'border-white/70 bg-white/95 text-ink-700 dark:border-white/15 dark:bg-[#20251f]/95 dark:text-white'}`}>
           <span className={`h-2 w-2 rounded-full ${availabilityColor(listing.availability)}`} />
           {meta.label}
         </span>
@@ -47,30 +56,30 @@ export function ListingCard({ listing }: Props) {
 
         {listing.roommateWanted && <span className="absolute right-3 top-14 rounded-full border border-white/30 bg-brand-700/90 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">{listing.roommatesWantedCount ? `Busca ${listing.roommatesWantedCount} roomie${listing.roommatesWantedCount === 1 ? '' : 's'}` : 'Busca roomie'}</span>}
 
-        <span className="absolute bottom-3 left-3 rounded-lg border border-white/20 bg-ink-900/75 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+        <span className="absolute bottom-3 left-3 rounded-lg border border-white/25 bg-ink-900/55 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-md">
           {categoryEmoji(listing.category)} <span className="capitalize">{listing.operation}</span>
         </span>
       </div>
 
       <div className="p-4 sm:p-5">
         <Link to={`/listing/${listing.id}`} className="block rounded-sm focus-visible:outline-none">
-          <h3 className="line-clamp-2 min-h-[3.25rem] text-[15px] font-semibold leading-[1.55] tracking-[-0.015em] text-ink-800 transition-colors duration-200 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-200">
+          <h3 className={`line-clamp-2 min-h-[3.25rem] text-[15px] font-semibold leading-[1.55] tracking-[-0.015em] transition-colors duration-200 group-hover:text-brand-700 ${forceLight ? 'text-[#202820]' : 'text-ink-800 dark:text-white dark:group-hover:text-brand-200'}`}>
             {listing.title}
           </h3>
-          <p className="mt-2 flex items-center gap-1.5 truncate text-xs text-ink-500 dark:text-ink-300">
-            <MapPin className="h-3.5 w-3.5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />
+          <p className={`mt-2 flex items-center gap-1.5 truncate text-xs ${forceLight ? 'text-[#63695f]' : 'text-ink-500 dark:text-ink-300'}`}>
+            <MapPin className={`h-3.5 w-3.5 shrink-0 ${forceLight ? 'text-[#477450]' : 'text-brand-600 dark:text-brand-300'}`} aria-hidden="true" />
             <span className="truncate">{listing.colonia}, Ixmiquilpan</span>
           </p>
         </Link>
 
-        <div className="mt-4 flex items-end justify-between gap-3 border-t border-ink-700/10 pt-4 dark:border-white/10">
-          <p className="text-xl font-semibold tracking-tight text-brand-700 dark:text-brand-200">
+        <div className={`mt-4 flex items-end justify-between gap-3 border-t pt-4 ${forceLight ? 'border-[#e7e4da]' : 'border-ink-700/10 dark:border-white/10'}`}>
+          <p className={`text-xl font-semibold tracking-tight ${forceLight ? 'text-[#3f7049]' : 'text-brand-700 dark:text-brand-200'}`}>
             {formatPrice(listing.price)}
-            <span className="ml-1.5 text-xs font-medium tracking-normal text-ink-500 dark:text-ink-300">
+            <span className={`ml-1.5 text-xs font-medium tracking-normal ${forceLight ? 'text-[#63695f]' : 'text-ink-500 dark:text-ink-300'}`}>
               {priceUnitLabel(listing.priceUnit)}
             </span>
           </p>
-          <div className="flex items-center gap-3 pb-0.5 text-xs text-ink-500 dark:text-ink-300">
+          <div className={`flex items-center gap-3 pb-0.5 text-xs ${forceLight ? 'text-[#63695f]' : 'text-ink-500 dark:text-ink-300'}`}>
             {listing.bedrooms ? (
               <span className="inline-flex items-center gap-1" title={`${listing.bedrooms} recámaras`}>
                 <Bed className="h-3.5 w-3.5" aria-hidden="true" />{listing.bedrooms}
@@ -91,7 +100,7 @@ export function ListingCard({ listing }: Props) {
 
         <WhatsAppContactButton
           listingId={listing.id}
-          className="motion-ease mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#365b43] px-4 py-2.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#2f503b] active:translate-y-0 dark:bg-[#587b5e] dark:hover:bg-[#66896b]"
+          className={`motion-ease mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 active:translate-y-0 ${forceLight ? 'bg-[#365b43] hover:bg-[#2f503b]' : 'bg-[#365b43] hover:bg-[#2f503b] dark:bg-[#587b5e] dark:hover:bg-[#66896b]'}`}
           label="Contactar por WhatsApp"
         />
       </div>
