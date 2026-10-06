@@ -27,14 +27,13 @@ export function BusinessAdMarquee({ ads, locale }: BusinessAdMarqueeProps) {
   const groupRef = useRef<HTMLDivElement>(null);
   const firstRunRef = useRef<HTMLDivElement>(null);
   const seenImpressionsRef = useRef(new Set<string>());
+  const pointerActivatedRef = useRef(false);
   const [copiesPerGroup, setCopiesPerGroup] = useState(1);
   const [durationSeconds, setDurationSeconds] = useState(30);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [focusedCard, setFocusedCard] = useState<string | null>(null);
-  const [tappedCard, setTappedCard] = useState<string | null>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const isPaused = Boolean(focusedCard || tappedCard);
-  const activeCard = hoveredCard ?? focusedCard ?? tappedCard;
+  const activeCard = hoveredCard ?? focusedCard;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -55,6 +54,7 @@ export function BusinessAdMarquee({ ads, locale }: BusinessAdMarqueeProps) {
     }
 
     const updateMeasurements = () => {
+      viewport.style.setProperty('--business-ad-card-width', `${viewport.clientWidth}px`);
       const runWidth = firstRun.getBoundingClientRect().width;
       if (!runWidth) return;
       const gap = Number.parseFloat(window.getComputedStyle(group).columnGap) || 0;
@@ -125,19 +125,19 @@ export function BusinessAdMarquee({ ads, locale }: BusinessAdMarqueeProps) {
                 onPointerLeave={(event) => {
                   if (event.pointerType !== 'touch') setHoveredCard(null);
                 }}
-                onPointerDown={(event) => {
-                  if (event.pointerType === 'touch' && !(event.target instanceof Element && event.target.closest('a'))) {
-                    setTappedCard((current) => current === cardKey ? null : cardKey);
-                  }
+                onPointerDown={() => {
+                  pointerActivatedRef.current = true;
+                  window.setTimeout(() => { pointerActivatedRef.current = false; }, 0);
                 }}
-                onFocusCapture={() => setFocusedCard(cardKey)}
+                onFocusCapture={() => {
+                  if (!pointerActivatedRef.current) setFocusedCard(cardKey);
+                }}
                 onBlurCapture={(event) => {
                   if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusedCard(null);
                 }}
                 onKeyDown={(event) => {
                   if (event.key === 'Escape') {
                     setFocusedCard(null);
-                    setTappedCard(null);
                   }
                 }}
                 className="business-ad-marquee-card"
@@ -179,11 +179,8 @@ export function BusinessAdMarquee({ ads, locale }: BusinessAdMarqueeProps) {
   return (
     <div
       ref={viewportRef}
-      className={`business-ad-marquee-viewport${prefersReducedMotion ? ' is-static' : ''}`}
+      className={`business-ad-marquee-viewport${prefersReducedMotion ? ' is-static' : ''}${hoveredCard ? ' is-hover-paused' : ''}${focusedCard ? ' is-focus-paused' : ''}`}
       role="region"
-      onPointerDownCapture={(event) => {
-        if (event.pointerType === 'touch' && !(event.target instanceof Element && event.target.closest('[data-ad-card]'))) setTappedCard(null);
-      }}
       tabIndex={prefersReducedMotion ? 0 : undefined}
       aria-label={locale === 'en' ? 'Local business advertisements' : 'Anuncios de negocios locales'}
     >
@@ -192,7 +189,6 @@ export function BusinessAdMarquee({ ads, locale }: BusinessAdMarqueeProps) {
         data-reduced-motion={prefersReducedMotion}
         style={{
           '--business-ad-marquee-duration': `${durationSeconds}s`,
-          animationPlayState: isPaused || prefersReducedMotion ? 'paused' : 'running',
         } as CSSProperties}
       >
         {renderGroup(0)}
