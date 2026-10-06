@@ -48,10 +48,10 @@ export async function loadPublicBusinessAds(): Promise<PublicBusinessAd[]> {
 export async function recordBusinessAdMetric(adId: string, metric: 'impressions' | 'clicks'): Promise<void> {
   try {
     const token = await appCheckToken();
-    await fetch('/api/business-ad-metric', {
+    await fetch('/api/business-ads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Firebase-AppCheck': token },
-      body: JSON.stringify({ adId, metric }),
+      body: JSON.stringify({ action: 'metric', adId, metric }),
       keepalive: true,
     });
   } catch {
@@ -87,9 +87,10 @@ export async function uploadBusinessAdImage(file: File): Promise<{ url: string; 
   const user = auth.currentUser;
   if (!user || !user.emailVerified) throw new Error('Inicia sesión con una cuenta administradora verificada.');
   const idToken = await user.getIdToken();
-  const signatureResponse = await fetch('/api/business-ad-upload-signature', {
+  const signatureResponse = await fetch('/api/business-ads', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${idToken}`, 'X-Firebase-AppCheck': checkToken },
+    headers: { Authorization: `Bearer ${idToken}`, 'X-Firebase-AppCheck': checkToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'uploadSignature' }),
     cache: 'no-store',
   });
   const signature = await signatureResponse.json().catch(() => null) as {

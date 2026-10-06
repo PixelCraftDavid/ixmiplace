@@ -1,12 +1,15 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAppCheck } from 'firebase-admin/app-check';
 import { getAuth } from 'firebase-admin/auth';
-import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore';
+import { v2 as cloudinary } from 'cloudinary';
 import { logApiFailure, logSecurityEvent, parseBody, requestSchemas } from './_lib/input-security.js';
 
 const APP_ORIGIN = process.env.APP_ORIGIN || 'https://ixmiplace.vercel.app';
 const MAX_ACTIVE_ADS = 10;
+const MAX_METRICS_PER_IP_AD_DAILY = 40;
+const MAX_UPLOAD_SIGNATURES_DAILY = 20;
 
 function respond(res, status, body) { return res.status(status).json(body); }
 
@@ -68,6 +71,78 @@ async function authenticateAdmin(req, app) {
     return { error: 'Solo una cuenta administradora con avisos vigentes puede gestionar publicidad.', status: 403 };
   }
   return { decoded };
+}
+
+async function verifyAppCheck(req, app) {
+  const token = req.headers['x-firebase-appcheck'];
+  if (typeof token !== 'string') return false;
+  try {
+    await getAppCheck(app).verifyToken(token);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function recordMetric(req, db, input) {
+  const appCheckToken = req.headers['x-firebase-appcheck'];
+  if (typeof appCheckToken !== 'string') return { status: 401, error: 'App Check requerido.' };
+  const app = getApps()[0];
+  if (!await verifyAppCheck(req, app)) return { status: 401, error: 'No se pudo verificar esta solicitud.' };
+
+  const adRef = db.collection('businessAds').doc(input.adId);
+  const day = new Date().toISOString().slice(0, 10);
+  const ip = typeof req.headers['x-real-ip'] === 'string' ? req.headers['x-real-ip'].trim() : '';
+  const ipHash = ip ? createHash('sha256').update(`${day}:${ip}`).digest('hex').slice(0, 32) : 'unknown';
+  const limitRef = db.collection('businessAdMetricLimits').doc(`${input.adId}_${ipHash}_${day}`);
+  await db.runTransaction(async (transaction) => {
+    const [adSnapshot, limitSnapshot] = await Promise.all([transaction.get(adRef), transaction.get(limitRef)]);
+    const ad = adSnapshot.data();
+    const now = Date.now();
+    if (!adSnapshot.exists || !['active', 'scheduled'].includes(ad.status)
+      || ad.startsAt > now || ad.endsAt <= now) return;
+    const count = limitSnapshot.data()?.count ?? 0;
+    if (count >= MAX_METRICS_PER_IP_AD_DAILY) return;
+    transaction.set(limitRef, {
+      count: count + 1,
+      expiresAt: Timestamp.fromMillis(Date.now() + 8 * 24 * 60 * 60 * 1000),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    transaction.update(adRef, { [`metrics.${input.metric}`]: FieldValue.increment(1) });
+  });
+  return { status: 204 };
+}
+
+async function createUploadSignature(uid, db) {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  const uploadPreset = process.env.CLOUDINARY_SIGNED_UPLOAD_PRESET;
+  if (!cloudName || !apiKey || !apiSecret || !uploadPreset) {
+    return { status: 503, error: 'La subida segura no está configurada.' };
+  }
+  const day = new Date().toISOString().slice(0, 10);
+  const quotaRef = db.collection('uploadSignatureLimits').doc(`business_ads_user_${uid}_${day}`);
+  const permitted = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(quotaRef);
+    const count = snapshot.data()?.count ?? 0;
+    if (count >= MAX_UPLOAD_SIGNATURES_DAILY) return false;
+    transaction.set(quotaRef, {
+      count: count + 1,
+      expiresAt: Timestamp.fromMillis(Date.now() + 8 * 24 * 60 * 60 * 1000),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    return true;
+  });
+  if (!permitted) return { status: 429, error: 'Se alcanzó el límite diario de subidas para publicidad.' };
+  const params = {
+    timestamp: Math.floor(Date.now() / 1000),
+    upload_preset: uploadPreset,
+    folder: 'ixmiplace/business-ads',
+    public_id: randomUUID(),
+    overwrite: false,
+  };
+  return { status: 200, body: { cloudName, apiKey, ...params, signature: cloudinary.utils.api_sign_request(params, apiSecret) } };
 }
 
 function cleanSlotMap(input, docsById, now) {
@@ -191,6 +266,14 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') { res.setHeader('Allow', 'GET, POST, OPTIONS'); return respond(res, 405, { error: 'Método no permitido.' }); }
 
     res.setHeader('Cache-Control', 'no-store, private');
+    if (req.body?.action === 'metric') {
+      const metricInput = parseBody(requestSchemas.businessAdMetric, req.body);
+      if (!metricInput) return respond(res, 400, { error: 'Métrica inválida.' });
+      const result = await recordMetric(req, db, metricInput);
+      if (result.status !== 204) return respond(res, result.status, { error: result.error });
+      return res.status(204).end();
+    }
+
     const authResult = await authenticateAdmin(req, app);
     if (authResult.error) return respond(res, authResult.status, { error: authResult.error });
     const input = parseBody(requestSchemas.businessAdAdmin, req.body);
@@ -204,6 +287,11 @@ export default async function handler(req, res) {
       await archiveAd(db, input.adId);
       return respond(res, 200, { archived: true });
     }
+    if (input.action === 'uploadSignature') {
+      const result = await createUploadSignature(authResult.decoded.uid, db);
+      if (result.status !== 200) return respond(res, result.status, { error: result.error });
+      return respond(res, 200, result.body);
+    }
     if (input.action === 'save') {
       const saved = await saveAd(db, input, authResult.decoded.uid);
       return respond(res, 200, { id: saved.id, saved: true });
@@ -212,6 +300,6 @@ export default async function handler(req, res) {
   } catch (error) {
     if (error?.status) return respond(res, error.status, { error: error.message });
     logApiFailure(req, 'business-ads', 'request', error);
-    return respond(res, 500, { error: 'No se pudieron cargar o guardar los anuncios locales.' });
+    return respond(res, 500, { error: 'No se pudo completar la solicitud de publicidad local.' });
   }
 }

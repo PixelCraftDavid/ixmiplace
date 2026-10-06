@@ -34,11 +34,13 @@ export const requestSchemas = {
   }).strict(),
   metric: z.object({ listingId: documentIdSchema, metric: z.literal('viewsCount') }).strict(),
   businessAdMetric: z.object({
+    action: z.literal('metric'),
     adId: documentIdSchema,
     metric: z.enum(['impressions', 'clicks']),
   }).strict(),
   businessAdAdmin: z.discriminatedUnion('action', [
     z.object({ action: z.literal('list') }).strict(),
+    z.object({ action: z.literal('uploadSignature') }).strict(),
     z.object({
       action: z.literal('save'),
       adId: documentIdSchema.optional(),
