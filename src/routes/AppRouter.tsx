@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Store } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Store } from 'lucide-react';
 
 import { AuthProvider } from '../features/auth/AuthContext';
 import { RequireAuth } from '../features/auth/RequireAuth';
@@ -49,17 +49,31 @@ function HomePage() {
   const [mapListings, setMapListings] = useState<Listing[]>([]);
   const [businessAds, setBusinessAds] = useState<PublicBusinessAd[]>([]);
   const [businessAdIndex, setBusinessAdIndex] = useState(0);
+  const [businessAdHovered, setBusinessAdHovered] = useState(false);
+  const [businessAdFocused, setBusinessAdFocused] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const businessAdPaused = businessAdHovered || businessAdFocused;
   useEffect(() => {
     let current = true;
     void loadPublicBusinessAds().then((ads) => { if (current) setBusinessAds(ads); }).catch(() => {});
     return () => { current = false; };
   }, []);
   useEffect(() => {
-    if (businessAds.length < 2) return;
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
+    updatePreference();
+    mediaQuery.addEventListener('change', updatePreference);
+    return () => mediaQuery.removeEventListener('change', updatePreference);
+  }, []);
+  useEffect(() => {
+    if (businessAds.length < 2 || businessAdPaused || prefersReducedMotion) return;
     const interval = window.setInterval(() => setBusinessAdIndex((index) => (index + 1) % businessAds.length), 12_000);
     return () => window.clearInterval(interval);
-  }, [businessAds.length]);
+  }, [businessAds.length, businessAdPaused, prefersReducedMotion]);
   const visibleBusinessAd = businessAds.length ? businessAds[businessAdIndex % businessAds.length] : undefined;
+  const changeBusinessAd = (direction: -1 | 1) => {
+    setBusinessAdIndex((index) => (index + direction + businessAds.length) % businessAds.length);
+  };
   useEffect(() => {
     if (!visibleBusinessAd || typeof IntersectionObserver === 'undefined') return;
     const element = document.getElementById('business-ad-current');
@@ -93,7 +107,18 @@ function HomePage() {
           </div>
           <span className="normal-case tracking-normal text-ink-500 dark:text-ink-300">{t('home.businessDirectContact')}</span>
         </div>
-        {visibleBusinessAd ? <article id="business-ad-current" className="group relative isolate h-[24rem] overflow-hidden rounded-[1.75rem] bg-[#223127] shadow-[0_24px_60px_rgba(31,43,31,0.16)] sm:h-[27rem] sm:rounded-[2rem] lg:h-[22rem]">
+        {visibleBusinessAd ? <article
+          key={visibleBusinessAd.id}
+          id="business-ad-current"
+          aria-roledescription={locale === 'en' ? 'slide' : 'anuncio'}
+          onMouseEnter={() => setBusinessAdHovered(true)}
+          onMouseLeave={() => setBusinessAdHovered(false)}
+          onFocusCapture={() => setBusinessAdFocused(true)}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setBusinessAdFocused(false);
+          }}
+          className="business-ad-slide-enter group relative isolate h-[24rem] overflow-hidden rounded-[1.75rem] bg-[#223127] shadow-[0_24px_60px_rgba(31,43,31,0.16)] sm:h-[27rem] sm:rounded-[2rem] lg:h-[22rem]"
+        >
           <picture className="absolute inset-0"><source media="(max-width: 767px)" srcSet={visibleBusinessAd.mobileImageUrl}/><img src={visibleBusinessAd.desktopImageUrl} alt={`${visibleBusinessAd.businessName}: ${visibleBusinessAd.headline}`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.015]"/></picture>
           <div className="absolute inset-0 bg-gradient-to-t from-[#142019]/95 via-[#142019]/50 to-[#142019]/10 lg:bg-gradient-to-r lg:from-[#142019]/95 lg:via-[#142019]/75 lg:to-transparent" aria-hidden="true"/>
           <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-start p-5 text-white sm:p-8 lg:inset-y-0 lg:right-auto lg:max-w-[58%] lg:justify-center lg:p-10">
@@ -104,7 +129,11 @@ function HomePage() {
             {visibleBusinessAd.offerText && <p className="mt-3 rounded-full bg-[#e4b66e] px-3 py-1.5 text-xs font-bold text-[#263629]">{visibleBusinessAd.offerText}</p>}
             <a href={visibleBusinessAd.ctaUrl} target="_blank" rel="noopener noreferrer" onClick={() => void recordBusinessAdMetric(visibleBusinessAd.id, 'clicks')} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/50 bg-white px-5 py-2.5 text-sm font-bold text-[#203126] shadow-lg transition hover:-translate-y-0.5 hover:bg-[#f1ca85]">{visibleBusinessAd.ctaLabel}<span aria-hidden="true">→</span></a>
           </div>
-          {businessAds.length > 1 && <div className="absolute right-4 top-4 z-10 rounded-full border border-white/25 bg-black/30 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">{businessAdIndex + 1} / {businessAds.length}</div>}
+          {businessAds.length > 1 && <div className="absolute right-4 top-4 z-20 flex items-center gap-1.5 rounded-full border border-white/25 bg-black/35 p-1.5 text-xs font-semibold text-white shadow-sm backdrop-blur">
+            <button type="button" aria-label={locale === 'en' ? 'Previous ad' : 'Anuncio anterior'} onClick={() => changeBusinessAd(-1)} className="grid h-8 w-8 place-items-center rounded-full transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><ChevronLeft className="h-4 w-4" aria-hidden="true"/></button>
+            <span aria-live="off" className="min-w-10 text-center">{businessAdIndex + 1} / {businessAds.length}</span>
+            <button type="button" aria-label={locale === 'en' ? 'Next ad' : 'Siguiente anuncio'} onClick={() => changeBusinessAd(1)} className="grid h-8 w-8 place-items-center rounded-full transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><ChevronRight className="h-4 w-4" aria-hidden="true"/></button>
+          </div>}
         </article> : <div className="relative isolate grid overflow-hidden rounded-[1.75rem] bg-[#223127] shadow-[0_24px_60px_rgba(31,43,31,0.16)] sm:rounded-[2rem] lg:grid-cols-[0.9fr_1.1fr]">
           <div className="relative z-10 flex flex-col justify-center p-6 text-white sm:p-9 lg:p-11">
             <div className="mb-5 flex flex-wrap items-center gap-2">
