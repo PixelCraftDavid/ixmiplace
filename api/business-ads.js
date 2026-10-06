@@ -224,7 +224,7 @@ async function saveAd(db, input, uid) {
   if (isReserved(input.status) && !['paid', 'complimentary'].includes(input.paymentStatus)) {
     throw Object.assign(new Error('Confirma el pago o registra la campaña como cortesía antes de activarla.'), { status: 400 });
   }
-  if (input.startsAt < now - 5 * 60 * 1000) throw Object.assign(new Error('La fecha inicial no puede estar en el pasado.'), { status: 400 });
+  if (input.status !== 'active' && input.startsAt < now - 5 * 60 * 1000) throw Object.assign(new Error('La fecha inicial no puede estar en el pasado.'), { status: 400 });
   if (input.status === 'active' && input.startsAt > now) throw Object.assign(new Error('Para una fecha futura, guarda el anuncio como programado.'), { status: 400 });
   if (input.status === 'scheduled' && input.startsAt <= now) throw Object.assign(new Error('Una campaña con inicio actual debe guardarse como activa.'), { status: 400 });
 
@@ -293,7 +293,7 @@ async function saveAd(db, input, uid) {
 async function saveBusinessProfile(db, input, uid) {
   const now = Date.now();
   const endsAt = addCalendarMonths(input.startsAt, input.months);
-  if (input.startsAt < now - 5 * 60 * 1000) throw Object.assign(new Error('La fecha inicial no puede estar en el pasado.'), { status: 400 });
+  if (input.status !== 'active' && input.startsAt < now - 5 * 60 * 1000) throw Object.assign(new Error('La fecha inicial no puede estar en el pasado.'), { status: 400 });
   if (input.status === 'active' && input.startsAt > now) throw Object.assign(new Error('Para una fecha futura, guarda la ficha como programada.'), { status: 400 });
   if (input.status === 'scheduled' && input.startsAt <= now) throw Object.assign(new Error('Una ficha con inicio actual debe guardarse como activa.'), { status: 400 });
   if (isReserved(input.status) && !['paid', 'complimentary'].includes(input.paymentStatus)) {
