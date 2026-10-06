@@ -2,6 +2,12 @@ import { getToken as getAppCheckToken } from 'firebase/app-check';
 import { appCheck, auth } from './firebase';
 
 export type BusinessAdStatus = 'draft' | 'scheduled' | 'active' | 'paused' | 'archived';
+export type BusinessPackage = 'listing' | 'rotating' | 'featured';
+export const BUSINESS_PACKAGE_PRICES: Record<BusinessPackage, number> = { listing: 99, rotating: 199, featured: 349 };
+export function businessPackageTotal(packageName: BusinessPackage, months: 1 | 3 | 6) {
+  const discount = months === 3 ? 0.10 : months === 6 ? 0.15 : 0;
+  return Math.round(BUSINESS_PACKAGE_PRICES[packageName] * months * (1 - discount));
+}
 export interface BusinessAd {
   id: string;
   businessName: string;
@@ -30,6 +36,42 @@ export type PublicBusinessAd = Pick<BusinessAd,
   'id' | 'businessName' | 'category' | 'headline' | 'description' | 'offerText' | 'ctaLabel'
   | 'ctaUrl' | 'desktopImageUrl' | 'mobileImageUrl' | 'startsAt' | 'endsAt'>;
 
+export interface BusinessProfile {
+  id: string;
+  businessName: string;
+  category: string;
+  description: string;
+  location: string;
+  mapUrl: string;
+  contactUrl: string;
+  contactLabel: string;
+  package: BusinessPackage;
+  months: 1 | 3 | 6;
+  startsAt: number;
+  endsAt: number;
+  featuredStartAt?: number | null;
+  featuredEndsAt?: number | null;
+  status: BusinessAdStatus;
+  agreedPriceMxn: number;
+  paymentStatus: 'unpaid' | 'paid' | 'complimentary';
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  desktopImageUrl: string;
+  desktopImagePublicId: string;
+  mobileImageUrl: string;
+  mobileImagePublicId: string;
+  headline: string;
+  adDescription: string;
+  offerText: string;
+  metrics: { profileViews: number; contactClicks: number };
+  adMetrics?: { impressions: number; clicks: number };
+}
+
+export type PublicBusinessProfile = Pick<BusinessProfile,
+  'id' | 'businessName' | 'category' | 'description' | 'location' | 'mapUrl' | 'contactUrl' | 'contactLabel'
+  | 'package' | 'featuredStartAt' | 'featuredEndsAt' | 'desktopImageUrl' | 'mobileImageUrl'>;
+
 const AD_IMAGE_PREFIX = 'https://res.cloudinary.com/ckaf3htn/image/upload/';
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -43,6 +85,27 @@ export async function loadPublicBusinessAds(): Promise<PublicBusinessAd[]> {
   if (!response.ok) throw new Error('No se pudieron cargar los anuncios locales.');
   const result = await response.json() as { ads?: BusinessAd[] };
   return Array.isArray(result.ads) ? result.ads : [];
+}
+
+export async function loadPublicBusinessDirectory(): Promise<PublicBusinessProfile[]> {
+  const response = await fetch('/api/business-ads?view=directory', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+  if (!response.ok) throw new Error('No se pudo cargar el directorio de negocios.');
+  const result = await response.json() as { businesses?: PublicBusinessProfile[] };
+  return Array.isArray(result.businesses) ? result.businesses : [];
+}
+
+export async function recordBusinessProfileMetric(profileId: string, metric: 'profileViews' | 'contactClicks'): Promise<void> {
+  try {
+    const token = await appCheckToken();
+    await fetch('/api/business-ads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Firebase-AppCheck': token },
+      body: JSON.stringify({ action: 'metric', profileId, metric }),
+      keepalive: true,
+    });
+  } catch {
+    // El registro de métricas es auxiliar; el directorio debe seguir funcionando.
+  }
 }
 
 export async function recordBusinessAdMetric(adId: string, metric: 'impressions' | 'clicks'): Promise<void> {

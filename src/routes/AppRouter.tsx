@@ -41,6 +41,7 @@ import { NotFoundPage } from '../components/layout/NotFoundPage';
 import { RouteMetadata } from '../components/seo/PageMeta';
 import { AnalyticsConsent } from '../components/seo/AnalyticsConsent';
 import { BusinessAdMarquee } from '../components/layout/BusinessAdMarquee';
+import { BusinessDirectoryPage } from '../features/businesses/BusinessDirectoryPage';
 import { LanguageProvider, useLanguage } from '../lib/i18n';
 import { loadPublicBusinessAds, type PublicBusinessAd } from '../lib/business-ads';
 import type { Listing } from '../types/models';
@@ -242,6 +243,7 @@ function AppContent() {
 
             <Route path="/listing/:id" element={<ListingDetailPage />} />
             <Route path="/propietario/:id" element={<PublicProfilePage />} />
+            <Route path="/negocios-locales" element={<BusinessDirectoryPage />} />
 
             <Route path="/cuenta-suspendida" element={<SuspendedPage />} />
 

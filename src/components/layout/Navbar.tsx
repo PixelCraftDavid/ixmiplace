@@ -173,7 +173,7 @@ export function Navbar() {
           <Link to="/roomies" className={`whitespace-nowrap text-xs font-medium transition hover:text-[#e4b66e] xl:text-sm ${overDarkHero ? 'text-white/85' : isHome ? (darkMode ? 'text-ink-200' : 'text-[#555b54]') : 'text-ink-600 dark:text-ink-200'}`}>
             {t('nav.roommates')}
           </Link>
-          <Link to="/#negocios-locales" className={`whitespace-nowrap text-xs font-medium transition hover:text-[#e4b66e] xl:text-sm ${overDarkHero ? 'text-white/85' : isHome ? (darkMode ? 'text-ink-200' : 'text-[#555b54]') : 'text-ink-600 dark:text-ink-200'}`}>
+          <Link to="/negocios-locales" className={`whitespace-nowrap text-xs font-medium transition hover:text-[#e4b66e] xl:text-sm ${overDarkHero ? 'text-white/85' : isHome ? (darkMode ? 'text-ink-200' : 'text-[#555b54]') : 'text-ink-600 dark:text-ink-200'}`}>
             {t('nav.businesses')}
           </Link>
           <Link to="/publicar" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#477450] px-3 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#385f40] xl:px-5 xl:text-sm">

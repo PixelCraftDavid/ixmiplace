@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { Archive, BarChart3, ImagePlus, LoaderCircle, Megaphone, Pencil, Plus, ShieldCheck, Upload } from 'lucide-react';
+import { Archive, BarChart3, ImagePlus, LoaderCircle, Megaphone, Pencil, ShieldCheck, Upload } from 'lucide-react';
 import { businessAdAdminRequest, uploadBusinessAdImage, type BusinessAd, type BusinessAdStatus } from '../../lib/business-ads';
 
 const blank = (): Partial<BusinessAd> => ({
@@ -20,8 +20,9 @@ function statusName(status: BusinessAdStatus) {
   return ({ draft: 'Borrador', scheduled: 'Programado', active: 'Activo', paused: 'Pausado', archived: 'Archivado' })[status];
 }
 
-export function BusinessAdsAdmin() {
+export function BusinessAdsAdmin({ onOpenDirectory }: { onOpenDirectory: () => void }) {
   const [ads, setAds] = useState<BusinessAd[]>([]);
+  const [occupiedSlots, setOccupiedSlots] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<BusinessAd>>(blank());
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(0);
@@ -33,8 +34,9 @@ export function BusinessAdsAdmin() {
 
   async function refresh() {
     try {
-      const result = await businessAdAdminRequest<{ ads: BusinessAd[] }>({ action: 'list' });
+      const result = await businessAdAdminRequest<{ ads: BusinessAd[]; occupiedSlots: number }>({ action: 'list' });
       setAds(result.ads ?? []);
+      setOccupiedSlots(result.occupiedSlots ?? 0);
       setNow(Date.now());
       setError('');
     } catch (loadError) {
@@ -63,12 +65,17 @@ export function BusinessAdsAdmin() {
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setSaving(true); setError(''); setNotice('');
+    event.preventDefault();
+    if (!form.id) {
+      setError('Los anuncios nuevos se crean desde Negocios locales para vincular la ficha, el paquete y sus espacios.');
+      return;
+    }
+    setSaving(true); setError(''); setNotice('');
     try {
       const start = Number(form.startsAt);
       const end = Number(form.endsAt);
       await businessAdAdminRequest({
-        action: 'save', ...(form.id ? { adId: form.id } : {}),
+        action: 'save', adId: form.id,
         businessName: form.businessName, category: form.category, headline: form.headline,
         description: form.description, offerText: form.offerText || '', ctaLabel: form.ctaLabel,
         ctaUrl: form.ctaUrl, desktopImageUrl: form.desktopImageUrl, desktopImagePublicId: form.desktopImagePublicId,
@@ -99,7 +106,7 @@ export function BusinessAdsAdmin() {
     } catch (archiveError) { setError(archiveError instanceof Error ? archiveError.message : 'No se pudo archivar.'); }
   }
 
-  const activeCount = ads.filter((ad) => ['active', 'scheduled'].includes(ad.status) && ad.endsAt > now).length;
+  const activeCount = occupiedSlots ?? ads.filter((ad) => ['active', 'scheduled'].includes(ad.status) && ad.startsAt <= now && ad.endsAt > now).length;
   const editMode = Boolean(form.id);
 
   return <div className="space-y-6">
@@ -107,7 +114,7 @@ export function BusinessAdsAdmin() {
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div className="max-w-2xl"><span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-[#f2cb86]"><Megaphone className="h-4 w-4"/> PUBLICIDAD LOCAL</span>
           <h2 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">Anuncios de negocios de Ixmiquilpan</h2>
-          <p className="mt-2 text-sm leading-6 text-white/75">Administra las campañas, las dos imágenes por formato y su alcance agregado. Cada negocio puede ocupar un espacio durante sus fechas contratadas.</p>
+          <p className="mt-2 text-sm leading-6 text-white/75">Consulta los banners y sus métricas. Las nuevas fichas y los paquetes se crean desde “Negocios locales” para mantener precio, vigencia, ficha y anuncio conectados.</p>
         </div>
         <div className="rounded-2xl border border-white/15 bg-white/[.07] px-5 py-4"><p className="text-xs uppercase tracking-wider text-white/65">Espacios ocupados</p><p className="mt-1 text-3xl font-bold">{activeCount}<span className="text-lg text-white/60"> / 10</span></p></div>
       </div>
@@ -117,8 +124,8 @@ export function BusinessAdsAdmin() {
     {(error || notice) && <p role={error ? 'alert' : 'status'} className={`rounded-2xl border px-4 py-3 text-sm ${error ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>{error || notice}</p>}
 
     <section id="business-ad-form" className="scroll-mt-24 rounded-3xl border border-cream-200 bg-white p-5 shadow-sm sm:p-7">
-      <div className="mb-6 flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-widest text-brand-700">{editMode ? 'Editar campaña' : 'Nueva campaña'}</p><h2 className="mt-1 text-xl font-bold text-ink-900">Información y creatividad</h2></div>{!editMode && <button type="button" onClick={() => { setForm(blank()); setError(''); }} className="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-3 py-2 text-sm font-semibold text-ink-700"><Plus className="h-4 w-4"/>Limpiar</button>}</div>
-      <form onSubmit={(event) => void submit(event)} className="space-y-6">
+      <div className="mb-6"><p className="text-xs font-semibold uppercase tracking-widest text-brand-700">{editMode ? 'Editar campaña' : 'Gestión de campañas'}</p><h2 className="mt-1 text-xl font-bold text-ink-900">{editMode ? 'Información y creatividad' : 'Las campañas nuevas se crean desde Negocios locales'}</h2></div>
+      {editMode ? <form onSubmit={(event) => void submit(event)} className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Nombre del negocio"><input required maxLength={80} value={form.businessName ?? ''} onChange={(e) => update('businessName', e.target.value)} /></Field>
           <Field label="Categoría"><input required maxLength={40} placeholder="Café, comida, servicios…" value={form.category ?? ''} onChange={(e) => update('category', e.target.value)} /></Field>
@@ -145,7 +152,7 @@ export function BusinessAdsAdmin() {
         </div>
         <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-cream-300 bg-cream-50 p-4 text-sm leading-5 text-ink-700"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} required className="mt-0.5 h-4 w-4 accent-[#52634a]"/><span>Confirmo que el negocio autorizó publicar su nombre, promoción, imágenes y enlace, y que acordamos las fechas y el precio indicados.</span></label>
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">{editMode && <button type="button" onClick={() => { setForm(blank()); setConsent(false); }} className="rounded-xl border border-cream-300 px-5 py-3 text-sm font-semibold text-ink-700">Cancelar edición</button>}<button type="submit" disabled={saving || Boolean(uploading)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#426b4d] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#34583f] disabled:cursor-not-allowed disabled:opacity-60">{saving ? <LoaderCircle className="h-4 w-4 animate-spin"/> : <ShieldCheck className="h-4 w-4"/>}{saving ? 'Guardando…' : editMode ? 'Guardar campaña' : 'Guardar anuncio'}</button></div>
-      </form>
+      </form> : <div className="rounded-2xl border border-cream-200 bg-cream-50 p-5 sm:p-6"><p className="max-w-2xl text-sm leading-6 text-ink-600">Registra el negocio y su paquete en el directorio. Así la disponibilidad, la vigencia, el precio y el anuncio quedan conectados en un solo flujo.</p><button type="button" onClick={onOpenDirectory} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#426b4d] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#34583f]">Abrir Negocios locales <span aria-hidden="true">→</span></button></div>}
     </section>
 
     <section className="rounded-3xl border border-cream-200 bg-white p-5 shadow-sm sm:p-7">

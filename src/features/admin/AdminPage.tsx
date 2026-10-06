@@ -20,6 +20,7 @@ import {
   Wrench,
   ArrowUpRight,
   Megaphone,
+  Store,
 } from 'lucide-react';
 import {
   collection,
@@ -42,14 +43,16 @@ import { requestPushDelivery } from '../../lib/push-notifications';
 import { migratePrivateContacts } from '../../lib/contact-migration';
 import { postProtectedApi } from '../../lib/protected-api';
 import { BusinessAdsAdmin } from './BusinessAdsAdmin';
+import { BusinessDirectoryAdmin } from './BusinessDirectoryAdmin';
 
 type AdminFilter = 'all' | 'pending' | 'published' | 'rejected' | 'archived';
-type AdminSection = 'overview' | 'listings' | 'ads' | 'reports' | 'users' | 'tools';
+type AdminSection = 'overview' | 'listings' | 'directory' | 'ads' | 'reports' | 'users' | 'tools';
 
 function sectionHeading(section: AdminSection) {
   const headings: Record<AdminSection, { title: string; description: string }> = {
     overview: { title: 'Panel de administración', description: 'Una vista rápida de la actividad y las tareas pendientes.' },
     listings: { title: 'Publicaciones', description: 'Busca, filtra y modera los anuncios de IxmiPlace.' },
+    directory: { title: 'Negocios locales', description: 'Administra las fichas, paquetes, vigencias y métricas del directorio.' },
     ads: { title: 'Publicidad local', description: 'Gestiona campañas, espacios disponibles y métricas agregadas.' },
     reports: { title: 'Reportes', description: 'Revisa los avisos de la comunidad y registra una resolución.' },
     users: { title: 'Usuarios', description: 'Consulta cuentas y administra suspensiones.' },
@@ -61,6 +64,7 @@ function sectionHeading(section: AdminSection) {
 const ADMIN_SECTIONS: { id: AdminSection; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Resumen', icon: LayoutDashboard },
   { id: 'listings', label: 'Publicaciones', icon: Building2 },
+  { id: 'directory', label: 'Negocios locales', icon: Store },
   { id: 'ads', label: 'Publicidad', icon: Megaphone },
   { id: 'reports', label: 'Reportes', icon: Flag },
   { id: 'users', label: 'Usuarios', icon: UsersRound },
@@ -517,7 +521,7 @@ export function AdminPage() {
             <p className="mt-2 text-sm text-ink-500 sm:text-base">{sectionHeading(activeSection).description}</p>
           </div>
 
-          {activeSection !== 'overview' && activeSection !== 'tools' && activeSection !== 'ads' && <label className="relative block w-full lg:w-80">
+          {activeSection !== 'overview' && activeSection !== 'tools' && activeSection !== 'ads' && activeSection !== 'directory' && <label className="relative block w-full lg:w-80">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
             <input
               value={search}
@@ -539,7 +543,8 @@ export function AdminPage() {
           })}
         </nav>
 
-        {activeSection === 'ads' && <BusinessAdsAdmin />}
+        {activeSection === 'ads' && <BusinessAdsAdmin onOpenDirectory={() => setActiveSection('directory')} />}
+        {activeSection === 'directory' && <BusinessDirectoryAdmin />}
 
         {activeSection === 'tools' && <div className="space-y-4">
         <section className="flex flex-col gap-3 rounded-2xl border border-amber-300/50 bg-amber-50/80 p-5 sm:flex-row sm:items-center sm:justify-between">
