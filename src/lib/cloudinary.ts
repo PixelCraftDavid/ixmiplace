@@ -1,9 +1,20 @@
 import { LISTING_LIMITS } from './constants';
+import { postAuthenticatedApi } from './protected-api';
 
 // URL base de la API de subida de Cloudinary
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+
+interface CloudinaryUploadSignature {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  upload_preset: string;
+  folder: string;
+  public_id: string;
+  overwrite: boolean;
+  signature: string;
+}
 
 /** Confirma que una imagen guardada cumple el host que también exige Firestore. */
 export function isConfiguredCloudinaryPhotoUrl(value: string): boolean {
@@ -142,7 +153,7 @@ export async function uploadImage(
   file: File,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<CloudinaryResponse> {
-  if (!CLOUD_NAME || !UPLOAD_PRESET) {
+  if (!CLOUD_NAME) {
     throw new Error('La subida de imágenes no está configurada.');
   }
 
@@ -157,11 +168,29 @@ export async function uploadImage(
   }
 
   const uploadFile = await compressImage(file);
+  const signedParams = await postAuthenticatedApi<CloudinaryUploadSignature>(
+    '/api/cloudinary-signature',
+    {}
+  );
+  if (signedParams.cloudName !== CLOUD_NAME
+    || !signedParams.apiKey
+    || !signedParams.signature
+    || !signedParams.upload_preset
+    || !Number.isSafeInteger(signedParams.timestamp)
+    || signedParams.folder !== 'ixmiplace/listings'
+    || signedParams.overwrite !== false) {
+    throw new Error('El servidor devolvió una firma de subida inválida.');
+  }
 
   const formData = new FormData();
   formData.append('file', uploadFile);
-  formData.append('upload_preset', UPLOAD_PRESET);
-  formData.append('folder', 'ixmiplace/listings');
+  formData.append('api_key', signedParams.apiKey);
+  formData.append('timestamp', String(signedParams.timestamp));
+  formData.append('upload_preset', signedParams.upload_preset);
+  formData.append('folder', signedParams.folder);
+  formData.append('public_id', signedParams.public_id);
+  formData.append('overwrite', String(signedParams.overwrite));
+  formData.append('signature', signedParams.signature);
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();

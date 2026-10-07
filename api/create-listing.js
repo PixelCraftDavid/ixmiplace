@@ -2,6 +2,7 @@ import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { listingCreateRuleErrors } from '../src/features/listings/listingCreateRuleChecks.js';
+import { hasUnsafeObjectKeys } from './_lib/input-security.js';
 
 const EXPECTED_PROJECT_ID = 'ixmiplace';
 const TERMS_VERSION = '2026-10-06-v7';
@@ -51,6 +52,7 @@ export default async function handler(req, res) {
 
   const body = req.body;
   if (!body || typeof body !== 'object' || Array.isArray(body)
+    || hasUnsafeObjectKeys(body)
     || Object.keys(body).some((key) => !['listing', 'privateDetails', 'publicationConsentAccepted', 'projectId'].includes(key))
     || !body.listing || typeof body.listing !== 'object' || Array.isArray(body.listing)
     || !body.privateDetails || typeof body.privateDetails !== 'object' || Array.isArray(body.privateDetails)) {
@@ -66,7 +68,7 @@ export default async function handler(req, res) {
 
   let decodedToken;
   try {
-    decodedToken = await getAuth(app).verifyIdToken(tokenMatch[1]);
+    decodedToken = await getAuth(app).verifyIdToken(tokenMatch[1], true);
   } catch {
     return respond(res, 401, { error: 'La sesión no es válida o expiró. Inicia sesión de nuevo.' });
   }

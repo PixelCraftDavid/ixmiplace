@@ -6,8 +6,34 @@ const CONTROL_CHARACTERS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 const HTML_TAG = /<\s*\/?\s*[a-z][^>]*>/i;
 const BUSINESS_AD_IMAGE_URL = /^https:\/\/res\.cloudinary\.com\/ckaf3htn\/image\/upload\/.{1,1800}$/;
 const BUSINESS_AD_IMAGE_ID = /^ixmiplace\/business-ads\/[A-Za-z0-9_-]{1,100}$/;
+const DANGEROUS_OBJECT_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
-export const documentIdSchema = z.string().regex(DOC_ID_PATTERN);
+export const documentIdSchema = z.string().regex(DOC_ID_PATTERN)
+  .refine((value) => !DANGEROUS_OBJECT_KEYS.has(value));
+
+export function hasUnsafeObjectKeys(value) {
+  const pending = [value];
+  const visited = new WeakSet();
+
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current || typeof current !== 'object') continue;
+    if (visited.has(current)) return true;
+    visited.add(current);
+
+    if (!Array.isArray(current)) {
+      const prototype = Object.getPrototypeOf(current);
+      if (prototype !== Object.prototype && prototype !== null) return true;
+    }
+
+    for (const key of Object.keys(current)) {
+      if (DANGEROUS_OBJECT_KEYS.has(key)) return true;
+      pending.push(current[key]);
+    }
+  }
+
+  return false;
+}
 
 const plainText = (min, max) => z.string()
   .trim()
@@ -114,6 +140,7 @@ export const requestSchemas = {
 
 export function parseBody(schema, body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
+  if (hasUnsafeObjectKeys(body)) return null;
   const result = schema.safeParse(body);
   return result.success ? result.data : null;
 }

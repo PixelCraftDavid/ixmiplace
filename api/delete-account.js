@@ -122,7 +122,7 @@ export default async function handler(req, res) {
 
     const app = getAdminApp();
     const [decoded] = await Promise.all([
-      getAuth(app).verifyIdToken(idToken),
+      getAuth(app).verifyIdToken(idToken, true),
       getAppCheck(app).verifyToken(appCheckToken),
     ]);
     if (!Number.isInteger(decoded.auth_time) || Date.now() / 1000 - decoded.auth_time > 5 * 60) {
