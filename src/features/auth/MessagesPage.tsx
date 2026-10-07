@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { CalendarDays, Check, Mail, Printer, X, Loader2 } from 'lucide-react';
 import { collection, doc, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from './AuthContext';
 import type { InternalMessage } from '../../types/models';
+import { PrintDocument, printDocument } from '../../components/ui/PrintDocument';
 
 type MessageFolder = 'received' | 'sent';
 
@@ -15,6 +17,12 @@ export function MessagesPage() {
   const [folder, setFolder] = useState<MessageFolder>('received');
   const [printTarget, setPrintTarget] = useState('');
   const [actionError, setActionError] = useState('');
+
+  useEffect(() => {
+    const clearPrintTarget = () => setPrintTarget('');
+    window.addEventListener('afterprint', clearPrintTarget);
+    return () => window.removeEventListener('afterprint', clearPrintTarget);
+  }, []);
 
   useEffect(() => {
     if (!fbUser) return;
@@ -63,8 +71,8 @@ export function MessagesPage() {
   }
 
   function printAppointment(messageId: string) {
-    setPrintTarget(messageId);
-    window.setTimeout(() => window.print(), 100);
+    flushSync(() => setPrintTarget(messageId));
+    void printDocument();
   }
 
   const activeMessages = folder === 'received' ? received : sent;
@@ -98,7 +106,7 @@ export function MessagesPage() {
             {activeMessages.map((message) => {
               const isPrintTarget = printTarget === message.id;
               return (
-                <article key={message.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${isPrintTarget ? 'print-target' : ''} ${message.status === 'unread' && folder === 'received' ? 'border-brand-200 ring-2 ring-brand-500/10' : 'border-cream-200'}`}>
+                <article key={message.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${message.status === 'unread' && folder === 'received' ? 'border-brand-200 ring-2 ring-brand-500/10' : 'border-cream-200'}`}>
                   <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600"><Mail className="h-5 w-5" /></div>
                     <div className="min-w-0 flex-1">
@@ -131,7 +139,7 @@ export function MessagesPage() {
                           <p className="mt-2 text-xs text-emerald-800">A nombre de: {message.senderName} · Folio: {message.id.slice(0, 8).toUpperCase()}</p>
                           <p className="mt-2 text-xs text-emerald-800">Esta confirmación no acredita identidad. No incluye dirección exacta, teléfono ni correo; acuerda el punto de encuentro con el propietario.</p>
                           {folder === 'sent' && <button type="button" onClick={() => printAppointment(message.id)} className="print-hide mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-800 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-900 print:hidden"><Printer className="h-4 w-4" />Imprimir confirmación</button>}
-                          <section className="appointment-print-sheet" aria-hidden="true">
+                          {isPrintTarget && <PrintDocument><section className="appointment-print-sheet">
                             <img className="appointment-print-watermark" src="/logo-ixmiplace.jpg" alt="" />
                             <header className="appointment-print-header">
                               <div className="appointment-print-brand"><img src="/logo-ixmiplace.jpg" alt="" /><div><strong>IxmiPlace</strong><span>COMPROBANTE DE VISITA</span></div></div>
@@ -151,7 +159,7 @@ export function MessagesPage() {
                             </div>
                             <p className="appointment-print-note">Presenta este comprobante al coordinar tu visita. La dirección exacta y el punto de encuentro deben confirmarse directamente con quien publica.</p>
                             <footer className="appointment-print-footer"><strong>IxmiPlace</strong><span>Tu comunidad, tu hogar · ixmiplace.vercel.app</span></footer>
-                          </section>
+                          </section></PrintDocument>}
                         </div>
                       )}
                       {message.visitStatus === 'cancelled' && <p className="mt-3 rounded-lg bg-cream-100 p-3 text-sm text-ink-600">La solicitud no fue confirmada.</p>}

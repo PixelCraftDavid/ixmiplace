@@ -36,6 +36,7 @@ import {
   availabilityMeta,
 } from '../../lib/constants';
 import { HouseLoader } from '../../components/ui/HouseLoader';
+import { PrintDocument, printDocument } from '../../components/ui/PrintDocument';
 import { FavoriteButton } from '../favorites/FavoriteButton';
 import { LocationView } from './LocationView';
 import type { Listing, PublicProfile } from '../../types/models';
@@ -827,12 +828,12 @@ function InspectionChecklist({ listing }: { listing: Listing }) {
   }
   return <>
     <section className="rounded-2xl border border-cream-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-ink">Lista para revisar antes de decidir</h2><button type="button" onClick={() => window.print()} className="text-sm font-semibold text-brand-700 underline print:hidden">Imprimir guía</button></div>
+      <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-ink">Lista para revisar antes de decidir</h2><button type="button" onClick={() => void printDocument()} className="text-sm font-semibold text-brand-700 underline print:hidden">Imprimir guía</button></div>
       <p className="mt-1 text-xs text-ink-400">Se guarda solo en este dispositivo; no se envía al propietario ni a IxmiPlace.</p>
       <ul className="mt-4 space-y-3">{checklist.map((item, index) => <li key={item}><label className="flex cursor-pointer items-start gap-3 text-sm text-ink-700"><input type="checkbox" checked={checked[index]} onChange={() => toggle(index)} className="mt-0.5 h-4 w-4 accent-brand-600" /><span className={checked[index] ? 'text-ink-400 line-through' : ''}>{item}</span></label></li>)}</ul>
     </section>
 
-    <section className="listing-print-sheet" aria-hidden="true">
+    <PrintDocument><section className="listing-print-sheet">
       <img className="listing-print-watermark" src="/logo-ixmiplace.jpg" alt="" />
       <header className="listing-print-header">
         <div className="listing-print-brand">
@@ -877,7 +878,7 @@ function InspectionChecklist({ listing }: { listing: Listing }) {
         <span>La ubicación mostrada es aproximada. Confirma el punto de encuentro directamente con quien publica.</span>
         <strong>ixmiplace.vercel.app</strong>
       </footer>
-    </section>
+    </section></PrintDocument>
   </>;
 }
 
