@@ -77,7 +77,7 @@ export default async function handler(req, res) {
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
-    const uploadPreset = process.env.CLOUDINARY_SIGNED_UPLOAD_PRESET;
+    const uploadPreset = process.env.CLOUDINARY_LISTINGS_UPLOAD_PRESET;
     if (!cloudName || !apiKey || !apiSecret || !uploadPreset) {
       return respond(res, 503, { error: 'La subida segura no está configurada.' });
     }

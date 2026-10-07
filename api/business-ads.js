@@ -182,7 +182,7 @@ async function createUploadSignature(uid, db) {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
-  const uploadPreset = process.env.CLOUDINARY_SIGNED_UPLOAD_PRESET;
+  const uploadPreset = process.env.CLOUDINARY_BUSINESS_ADS_UPLOAD_PRESET;
   if (!cloudName || !apiKey || !apiSecret || !uploadPreset) {
     return { status: 503, error: 'La subida segura no está configurada.' };
   }
