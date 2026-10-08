@@ -53,11 +53,9 @@ export function VerifyEmailPage() {
     setMessage('');
 
     try {
-      await auth.currentUser.reload();
+      await refreshUser();
 
-      if (auth.currentUser.emailVerified) {
-        // Actualizar el estado en AuthContext
-        await refreshUser();
+      if (auth.currentUser?.emailVerified) {
         // Redirigir
         nav('/', { replace: true });
       } else {

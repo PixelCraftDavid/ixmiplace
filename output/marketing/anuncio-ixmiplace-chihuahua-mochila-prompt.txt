@@ -1,0 +1,17 @@
+Mode: built-in image_gen
+Use case: ads-marketing.
+Create a completely NEW IxmiPlace advertisement in Spanish, portrait 4:5, dramatically different from earlier cream paper two-panel meme posters. This campaign must feel like a cinematic streetwear/editorial magazine cover with ONE hero puppy and confident modern typography.
+Input 1: official IxmiPlace logo reference. Preserve the recognizable heart/house/door symbol and readable IxmiPlace branding in a small clean white brand capsule at upper left. Input 2: a REAL QR code encoding https://ixmiplace.vercel.app; reproduce the complete exact black-white module pattern with its quiet zone, not a decorative imitation.
+Single hero: an incredibly cute BABY CHIHUAHUA puppy, tiny tan short-haired body, oversized upright ears, big sparkling dark eyes, little black nose, tiny paws. Wearing a small stylish forest-green bucket hat (gorrito) with ears visible, and a mustard-orange miniature backpack actually worn with straps and visible backpack behind its shoulder. No eyeglasses. Photoreal and endearing, subtly funny determined ready-to-move expression; dog anatomy with four natural legs, no human hands. Hero puppy stands on an urban sidewalk, low-angle close-up with full body visible, backpack and hat clearly recognizable. Puppy dominates center-right/lower center. Warm sunlight, soft cinematic shadows, brilliant powder-blue sky, softly defocused warm terracotta and pastel Mexican neighborhood homes, subtle lifestyle realism, not crowded scenery. Small suitcase is NOT needed: focus on requested backpack and hat.
+Design style: bold contemporary sans-serif typography, asymmetric magazine layout, sky-blue/coral/white accent palette with small forest-green brand accents. Full-bleed photography, no cream paper texture, no torn paper, no photo panels, no collage, no paw-print border, no enormous green footer. Clean readable negative space upper sky area for headline. Crisp premium real campaign design.
+EXACT Spanish copy:
+Large headline upper left across three strong lines: "Mochila lista." / "Gorrito puesto." / "Hogar pendiente."
+Smaller subtitle: "Encuentra tu próximo espacio en Ixmiquilpan."
+Small witty speech bubble near puppy: "¿Aquí aceptan ternura?"
+Near bottom, a compact white translucent informational card on the left with two readable sentences:
+"Explora casas, rentas y hospedaje."
+"¿Tienes un espacio? También puedes publicarlo."
+Bottom CTA in a clean bold band or floating label: "Busca. Publica. Conecta."
+Website large readable: "ixmiplace.vercel.app"
+QR code bottom right in generous pure-white square card, roughly 230 pixels wide at 1122 px poster width or proportionally more, untouched black and white modules, no skew, no logo over code, adequate white quiet zone. Beneath: "Escanea y entra".
+Keep text highly legible over the photograph. Puppy face fully unobstructed, no text touching eyes or clothes, logo no distortion, URL exactly as specified. No fake testimonials, no promises about pet-friendly properties, no invented prices or availability. "¿Aquí aceptan ternura?" is a playful puppy meme, not a platform guarantee. Entire composition within generous safe margins.

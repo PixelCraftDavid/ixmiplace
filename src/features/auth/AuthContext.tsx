@@ -34,6 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadProfile(user: FbUser): Promise<AppUser | null> {
     try {
+      // Firestore checks the signed token, which can still predate email verification.
+      const session = await user.getIdTokenResult();
+      if (session.claims.email_verified !== user.emailVerified) {
+        await user.getIdToken(true);
+      }
       const ref = doc(db, 'users', user.uid);
       const snap = await getDoc(ref);
 
@@ -128,9 +133,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function refreshUser() {
-    if (!auth.currentUser) return;
-    await auth.currentUser.reload();
     const refreshed = auth.currentUser;
+    if (!refreshed) return;
+    await refreshed.reload();
+    if (auth.currentUser?.uid !== refreshed.uid) return;
+    // Refresh the server-visible verification claim before any profile writes.
+    await refreshed.getIdToken(true);
+    await loadProfile(refreshed);
+    if (auth.currentUser?.uid !== refreshed.uid) return;
     setFbUser(
       Object.assign(Object.create(Object.getPrototypeOf(refreshed)), refreshed)
     );

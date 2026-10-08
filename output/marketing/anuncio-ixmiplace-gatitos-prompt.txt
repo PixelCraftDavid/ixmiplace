@@ -1,0 +1,14 @@
+Mode: built-in image_gen
+Use case: ads-marketing.
+Create a NEW spectacular Spanish vertical 4:5 social-media poster for IxmiPlace, the local property/community platform in Ixmiquilpan. It must clearly explain that visitors can BOTH create listings and browse listings. This is a new cat meme campaign, not an edit of the dog poster.
+Input image 1 is the official logo branding reference: preserve its distinctive heart/house/door symbol and readable IxmiPlace name. Input image 2 is an actual QR insert encoding https://ixmiplace.vercel.app: reproduce its complete black/white pattern faithfully in a white card with adequate quiet margin. Do not invent or embellish its module pattern.
+Art direction: warm cream textured paper, deep forest green, golden mustard accents; premium editorial graphic design, playful original cat meme photographs, bold clear typography, expressive funny adorable cats and just enough hand-drawn arrows/paw-print accents. Spacious readable hierarchy, mobile readable, no clutter, polished real advertising poster.
+Top: official logo and the exact headline "¿Buscas casa? ¿Tienes un espacio?" with "En IxmiPlace puedes hacer las dos." beneath it.
+Middle: TWO balanced original cat meme photo panels. Left: a comically concerned fluffy orange cat with wide eyes next to a laptop searching for a home, small house photos and a thinking scribble. Caption "Yo buscando dónde vivir". Right: a smug happy gray tabby cat with sunglasses proudly showing its smartphone with a simple house listing illustration, stylish interior background. Caption "Yo publicando mi espacio". Photoreal cats, natural anatomy, playful not generic cartoons. Obvious visual distinction between browsing and publishing.
+Below: a beautifully organized concise explanation with three simple icons and these EXACT sentences, legible large and spelled correctly:
+"Publica tu espacio con fotos y detalles."
+"Explora casas, rentas y hospedaje."
+"Contacta directamente a quien publica."
+Secondary compact line: "Roomies · Negocios locales · Favoritos".
+Bottom forest green CTA band: left text "Tu comunidad, tu hogar." and large clear gold website "ixmiplace.vercel.app". Right: the actual QR from image 2, flat square pure white background, black modules unmodified, no logos over the code, generous white quiet zone, sufficiently large to scan (roughly 230 pixels wide at 1122 pixel poster width or proportionally more). Caption "Escanea y descubre IxmiPlace".
+No invented pricing, discounts, security guarantees, claims about numbers of users, no App Store badges, no fake testimonials, no extra logos. Preserve precise URL. All text Spanish with correct accents. Entire poster in frame, clean professional margins, no cropped content.

@@ -1,0 +1,17 @@
+Mode: built-in image_gen
+Use case: ads-marketing.
+Create a NEW elegant, minimal, premium editorial advertising poster for IxmiPlace, portrait 4:5, suitable for Instagram and print. A calm sophisticated real-estate/community brand campaign in Spanish. Visually distinct from all humorous meme campaigns: quiet design, architectural photography, abundant negative space, refined typography.
+Input 1: official IxmiPlace logo reference. Preserve its exact recognizable heart/house/door symbol, forest-green and warm-gold colors, name "ixmiplace" and brand tagline; do not redesign or distort it. Use as a modest carefully spaced logo at top, not dominating the composition.
+Input 2: a REAL functional QR code encoding https://ixmiplace.vercel.app. Copy its full exact black/white module pattern faithfully in a generous pure-white quiet zone; no stylistic modification, no logo over it, no perspective.
+Creative concept: "Un espacio para tu siguiente capítulo." The home is a sense of belonging. Minimal warm architectural editorial: a graceful light-limestone archway and partially open pale oak door reveal a softly sunlit calm interior, subtle olive-green foliage in an understated ceramic planter, slender golden afternoon shadows and a tasteful off-white linen detail. Realistic photographic texture and high-end art direction, no people, no pets, no clutter, no random decorative furniture. Image is atmospheric campaign imagery, not a specific property offer.
+Color palette: warm ivory, soft limestone beige, deep forest green, restrained warm antique-gold hairline accents. Matte sophisticated finish. No loud colors, gradients, sticker effects, emojis, comic bubbles or cartoons.
+Layout: top third airy ivory field with small official logo, a thin elegant gold rule if needed, then large beautifully typeset luxury editorial serif headline with balanced line breaks. Pair headline with a clean light sans-serif subtitle. Center full-width architectural photograph occupying roughly 40% of poster, blended tastefully into clean paper-like ivory margins, no busy photo collage, no harsh glare. Bottom fifth an airy cream CTA area with text on left and functional QR card on right, generous spacing. Clear hierarchy, highly readable copy, polished alignment, safe margins.
+Text EXACTLY:
+Main headline: "Un espacio para tu siguiente capítulo."
+Subtitle: "Casas, rentas y hospedaje en Ixmiquilpan."
+Small supporting sentence: "Encuentra tu lugar o publica tu espacio."
+CTA: "Explora. Publica. Conecta."
+Website prominent and perfectly spelled: "ixmiplace.vercel.app"
+Small caption below QR: "Escanea y descubre"
+Optional brand tagline only if already part of logo: "TU COMUNIDAD, TU HOGAR".
+QR around 210-240 pixels square at 1122px poster width, black-white exact source pattern and quiet margin, all fully inside the canvas. Do not overdecorate. Avoid invented prices, availability, verification badges, promises of guaranteed deals, user counts, security claims or extra brands. Elegant restrained design that communicates trust through craftsmanship without unsupported claims. All Spanish accents correct, no cropped text.
